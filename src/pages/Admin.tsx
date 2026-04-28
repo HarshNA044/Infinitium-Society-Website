@@ -18,7 +18,8 @@ import {
   query, orderBy, serverTimestamp, getDoc 
 } from 'firebase/firestore';
 import { 
-  onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User
+  onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User,
+  signInWithEmailAndPassword
 } from 'firebase/auth';
 import { cn } from '../lib/utils';
 
@@ -26,6 +27,9 @@ export default function Admin_Page() {
   const { request, loading: apiLoading } = useApi();
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [events, setEvents] = useState([]);
   const [members, setMembers] = useState<any[]>([]);
@@ -70,13 +74,25 @@ export default function Admin_Page() {
     return () => unsubscribe();
   }, []);
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setLoginError(null);
+    try {
+      await signInWithEmailAndPassword(auth, loginEmail, loginPassword);
+    } catch (error: any) {
+      console.error("Login failed", error);
+      setLoginError(error.message || "Invalid credentials. Please try again.");
+    }
+  };
+
+  const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
+    setLoginError(null);
     try {
       await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error("Login failed", error);
-      alert("Login failed. Please try again.");
+    } catch (error: any) {
+      console.error("Google login failed", error);
+      setLoginError("Social login failed. Please try again.");
     }
   };
 
@@ -430,9 +446,53 @@ export default function Admin_Page() {
               This area is restricted to INFINITIUM core administrators. Please authenticate with your authorized Google account.
             </p>
           </div>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2 text-left">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Email Address</label>
+              <input 
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className="w-full px-6 py-4 bg-zinc-900 border border-zinc-700 rounded-2xl text-white outline-none focus:border-brand-600 transition-all font-bold text-sm"
+                placeholder="admin@example.com"
+                required
+              />
+            </div>
+            <div className="space-y-2 text-left">
+              <label className="text-[10px] font-black uppercase tracking-widest text-zinc-500 ml-2">Password</label>
+              <input 
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                className="w-full px-6 py-4 bg-zinc-900 border border-zinc-700 rounded-2xl text-white outline-none focus:border-brand-600 transition-all font-bold text-sm"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            {loginError && (
+              <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest text-center animate-shake">
+                {loginError}
+              </p>
+            )}
+            <button 
+              type="submit"
+              className="w-full py-5 bg-brand-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-brand-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-600/20"
+            >
+              <LogIn className="w-5 h-5" /> Access Dashboard
+            </button>
+          </form>
+
+          <div className="relative flex items-center justify-center py-4">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-zinc-700"></div>
+            </div>
+            <span className="relative px-4 bg-zinc-800 text-[10px] font-black text-zinc-500 uppercase tracking-widest leading-none">OR</span>
+          </div>
+
           <button 
-            onClick={handleLogin}
-            className="w-full py-5 bg-white text-zinc-950 rounded-2xl font-black uppercase tracking-widest hover:bg-brand-400 hover:text-white transition-all flex items-center justify-center gap-3 active:scale-95"
+            type="button"
+            onClick={handleGoogleLogin}
+            className="w-full py-5 bg-white text-zinc-950 rounded-2xl font-black uppercase tracking-widest hover:bg-brand-400 hover:text-white transition-all flex items-center justify-center gap-3 active:scale-95 shadow-xl shadow-white/5"
           >
             <Github className="w-5 h-5" /> Sign in with Google
           </button>
