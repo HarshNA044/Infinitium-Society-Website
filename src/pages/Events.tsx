@@ -71,7 +71,7 @@ export default function Events_Page() {
 
       const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
       if (!appsScriptUrl) {
-        throw new Error("VITE_APPS_SCRIPT_URL is not configured. Please check environment variables.");
+        throw new Error("Google Sheets Integration is not configured. Please add 'VITE_APPS_SCRIPT_URL' to your App Secrets in Settings.");
       }
 
       await fetch(appsScriptUrl, {
