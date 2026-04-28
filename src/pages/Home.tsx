@@ -5,7 +5,8 @@ import {
   Plus, QrCode as QrIcon, Lightbulb, Book, MessageSquare, Globe2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useApi } from '../hooks/useApi';
+import { db } from '../lib/firebase';
+import { collection, getDocs, orderBy, query, limit } from 'firebase/firestore';
 
 const StatCard = ({ label, value, icon: Icon, delay }: any) => (
   <motion.div
@@ -25,18 +26,47 @@ const StatCard = ({ label, value, icon: Icon, delay }: any) => (
 );
 
 export default function Home_Page() {
-  const { request } = useApi();
   const [events, setEvents] = useState<any[]>([]);
   const [stats, setStats] = useState({ totalRegistrations: 0, totalAttendance: 0, eventsCount: 0 });
   const [achievements, setAchievements] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    request('/api/events').then(data => {
-      const sorted = [...data].sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setEvents(sorted);
-    });
-    request('/api/stats').then(setStats);
-    request('/api/achievements').then(setAchievements);
+    const loadHomeData = async () => {
+      try {
+        // Fetch events from Firestore
+        const eventsQuery = query(collection(db, 'events'), orderBy('date', 'desc'));
+        const eventsSnap = await getDocs(eventsQuery);
+        const eventsList = eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        setEvents(eventsList);
+
+        // Fetch achievements
+        const achQuery = query(collection(db, 'achievements'), orderBy('createdAt', 'desc'), limit(1));
+        const achSnap = await getDocs(achQuery);
+        setAchievements(achSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+        // Compute stats from events
+        let totalReg = 0;
+        let totalAtt = 0;
+        eventsList.forEach((e: any) => {
+          totalReg += (e.stats?.registrations || 0);
+          totalAtt += (e.stats?.attendance || 0);
+        });
+
+        setStats({
+          totalRegistrations: totalReg,
+          totalAttendance: totalAtt,
+          eventsCount: eventsList.length
+        });
+
+      } catch (error) {
+        console.error("Error loading home data", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadHomeData();
   }, []);
 
   const featuredEvent = events[0];
@@ -131,7 +161,7 @@ export default function Home_Page() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {events.slice(0, 3).map((event: any) => (
+            {events.slice(0, 6).map((event: any) => (
               <motion.div
                 key={event.id}
                 initial={{ opacity: 0, y: 20 }}

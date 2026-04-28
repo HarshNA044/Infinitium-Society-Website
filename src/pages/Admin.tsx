@@ -64,7 +64,6 @@ export default function Admin_Page() {
       setUser(currentUser);
       setAuthLoading(false);
       if (currentUser && currentUser.email === 'teaminfinitium.arsd@gmail.com') {
-        loadData();
         loadFirebaseData();
       }
     });
@@ -91,11 +90,6 @@ export default function Admin_Page() {
     } catch (error) {
       console.error("Logout failed", error);
     }
-  };
-
-  const loadData = () => {
-    request('/api/events').then(setEvents);
-    request('/api/stats').then(setStats);
   };
 
   const loadFirebaseData = async () => {
@@ -141,7 +135,22 @@ export default function Admin_Page() {
 
       // Load Events
       const eventsSnap = await getDocs(query(collection(db, 'events'), orderBy('date', 'desc')));
-      setEvents(eventsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any);
+      const eventsList = eventsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      setEvents(eventsList);
+
+      // Compute stats from events
+      let totalReg = 0;
+      let totalAtt = 0;
+      eventsList.forEach((e: any) => {
+        totalReg += (e.stats?.registrations || 0);
+        totalAtt += (e.stats?.attendance || 0);
+      });
+
+      setStats({
+        totalRegistrations: totalReg,
+        totalAttendance: totalAtt,
+        eventsCount: eventsList.length
+      });
     } catch (error) {
       console.error("Error loading Firebase data", error);
     }
@@ -380,7 +389,7 @@ export default function Admin_Page() {
               alreadyMarked: result.alreadyMarked,
               ticketId: decodedText
             });
-            loadData();
+            loadFirebaseData();
           } else {
             throw new Error(result.message || "Verification failed");
           }
@@ -1285,15 +1294,18 @@ export default function Admin_Page() {
                      Cancel
                    </button>
                    <button 
-                     onClick={() => {
-                        if (deleteConfirm.id && deleteConfirm.type) {
-                           const endpoint = deleteConfirm.type === 'member' ? 'members' : 
-                                            deleteConfirm.type === 'event' ? 'events' :
-                                            deleteConfirm.type === 'gallery' ? 'gallery' : 'achievements';
-                           request(`/api/${endpoint}/${deleteConfirm.id}`, { method: 'DELETE' }).then(() => {
-                              loadData();
+                     onClick={async () => {
+                        if (deleteConfirm && deleteConfirm.id && deleteConfirm.type) {
+                           const col = deleteConfirm.type === 'member' ? 'members' : 
+                                       deleteConfirm.type === 'event' ? 'events' :
+                                       deleteConfirm.type === 'gallery' ? 'gallery' : 'achievements';
+                           try {
+                              await deleteDoc(doc(db, col, deleteConfirm.id));
+                              loadFirebaseData();
                               setDeleteConfirm(null);
-                           });
+                            } catch (err) {
+                              console.error(err);
+                            }
                         }
                      }}
                      className="flex-1 py-4 bg-red-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-xl shadow-red-600/20"
