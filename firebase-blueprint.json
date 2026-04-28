@@ -1,0 +1,137 @@
+{
+  "entities": {
+    "AboutContent": {
+      "title": "About Content",
+      "description": "Information for the internal About page",
+      "type": "object",
+      "properties": {
+        "hero": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "subtitle": { "type": "string" },
+            "image": { "type": "string" }
+          },
+          "required": ["title", "subtitle", "image"]
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "text": { "type": "string" }
+            },
+            "required": ["id", "title", "text"]
+          }
+        },
+        "impacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "text": { "type": "string" }
+            },
+            "required": ["id", "title", "text"]
+          }
+        },
+        "departments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "title": { "type": "string" },
+              "aim": { "type": "string" },
+              "tasks": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["id", "title", "aim", "tasks"]
+          }
+        }
+      },
+      "required": ["hero", "objectives", "impacts", "departments"]
+    },
+    "GalleryItem": {
+      "title": "Gallery Item",
+      "description": "A single image/item in the society gallery",
+      "type": "object",
+      "properties": {
+        "src": { "type": "string", "description": "Image URL" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["src", "title", "category", "description"]
+    },
+    "Achievement": {
+      "title": "Achievement",
+      "description": "An award or accomplishment for the hall of fame",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string", "description": "Display date e.g. Oct 2025" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "date"]
+    },
+    "Member": {
+      "title": "Member",
+      "description": "A core team member of the society",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "role": { "type": "string" },
+        "tenure": { "type": "string", "description": "e.g. 2024-25" },
+        "image": { "type": "string", "description": "Avatar URL" },
+        "linkedin": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "role", "tenure", "image"]
+    },
+    "Event": {
+      "title": "Event",
+      "description": "A society event with a linked Google Sheet",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "subtitle": { "type": "string" },
+        "description": { "type": "string" },
+        "date": { "type": "string" },
+        "location": { "type": "string" },
+        "image": { "type": "string" },
+        "type": { "type": "string", "enum": ["Seminar", "Fest", "Workshop"] },
+        "status": { "type": "string", "enum": ["Upcoming", "Ongoing", "Past"] },
+        "sheetId": { "type": "string", "description": "The ID of the Google Sheet for registrations" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "description", "date", "type", "sheetId"]
+    }
+  },
+  "firestore": {
+    "/about": {
+      "schema": "AboutContent",
+      "description": "Contains metadata and content for the about page"
+    },
+    "/gallery": {
+      "schema": "GalleryItem",
+      "description": "Collection of gallery items"
+    },
+    "/achievements": {
+      "schema": "Achievement",
+      "description": "Collection of achievements/hall of fame entries"
+    },
+    "/members": {
+      "schema": "Member",
+      "description": "Collection of core team members"
+    },
+    "/events": {
+      "schema": "Event",
+      "description": "Collection of society events"
+    }
+  }
+}

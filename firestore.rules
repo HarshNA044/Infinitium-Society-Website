@@ -1,0 +1,140 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isAdmin() {
+      // Bootstrapped admin using the known email from runtime metadata
+      return isEmailVerified() && request.auth.token.email == 'teaminfinitium.arsd@gmail.com';
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- About Rules ---
+    match /about/{docId} {
+      function isValidAbout(data) {
+        return data.keys().hasAll(['hero', 'objectives', 'impacts', 'departments']) 
+          && data.keys().size() == 4
+          && data.hero is map
+          && data.hero.title is string && data.hero.title.size() <= 200
+          && data.hero.subtitle is string && data.hero.subtitle.size() <= 1000
+          && data.hero.image is string && data.hero.image.size() <= 500
+          && data.objectives is list
+          && data.impacts is list
+          && data.departments is list;
+      }
+
+      allow read: if true;
+      allow create: if isAdmin() && isValidAbout(incoming());
+      allow update: if isAdmin() && isValidAbout(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['hero', 'objectives', 'impacts', 'departments'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // --- Gallery Rules ---
+    match /gallery/{itemId} {
+      function isValidGalleryItem(data) {
+        return data.keys().hasAll(['src', 'title', 'category', 'description'])
+          && data.keys().size() >= 4 && data.keys().size() <= 5
+          && data.src is string && data.src.size() <= 500
+          && data.title is string && data.title.size() <= 200
+          && data.category is string && data.category.size() <= 50
+          && data.description is string && data.description.size() <= 1000
+          && (!data.keys().hasAll(['createdAt']) || data.createdAt is timestamp);
+      }
+
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(itemId) && isValidGalleryItem(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(itemId) && isValidGalleryItem(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['src', 'title', 'category', 'description', 'createdAt'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // --- Achievements Rules ---
+    match /achievements/{id} {
+      function isValidAchievement(data) {
+        return data.keys().hasAll(['title', 'description', 'date'])
+          && data.keys().size() >= 3 && data.keys().size() <= 4
+          && data.title is string && data.title.size() <= 200
+          && data.description is string && data.description.size() <= 2000
+          && data.date is string && data.date.size() <= 50
+          && (!data.keys().hasAll(['createdAt']) || data.createdAt is timestamp);
+      }
+
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(id) && isValidAchievement(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(id) && isValidAchievement(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'date', 'createdAt'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // --- Members Rules ---
+    match /members/{memberId} {
+      function isValidMember(data) {
+        return data.keys().hasAll(['name', 'role', 'tenure', 'image'])
+          && data.keys().size() >= 4 && data.keys().size() <= 6
+          && data.name is string && data.name.size() <= 100
+          && data.role is string && data.role.size() <= 100
+          && data.tenure is string && data.tenure.matches('^[0-9]{4}-[0-9]{2}$')
+          && data.image is string && data.image.size() <= 500
+          && (!data.keys().hasAll(['linkedin']) || data.linkedin is string)
+          && (!data.keys().hasAll(['createdAt']) || data.createdAt is timestamp);
+      }
+
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(memberId) && isValidMember(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(memberId) && isValidMember(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'tenure', 'image', 'linkedin', 'createdAt'])
+      );
+      allow delete: if isAdmin();
+    }
+
+    // --- Events Rules ---
+    match /events/{eventId} {
+      function isValidEvent(data) {
+        return data.keys().hasAll(['title', 'description', 'date', 'type', 'sheetId'])
+          && data.keys().size() >= 5 && data.keys().size() <= 12
+          && data.title is string && data.title.size() <= 200
+          && data.description is string && data.description.size() <= 2000
+          && data.sheetId is string && data.sheetId.size() <= 100
+          && (!data.keys().hasAll(['subtitle']) || data.subtitle is string)
+          && (!data.keys().hasAll(['location']) || data.location is string)
+          && (!data.keys().hasAll(['image']) || data.image is string)
+          && (!data.keys().hasAll(['status']) || data.status is string)
+          && (!data.keys().hasAll(['createdAt']) || data.createdAt is timestamp);
+      }
+
+      allow read: if true;
+      allow create: if isAdmin() && isValidId(eventId) && isValidEvent(incoming()) && incoming().createdAt == request.time;
+      allow update: if isAdmin() && isValidId(eventId) && isValidEvent(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'subtitle', 'description', 'date', 'location', 'image', 'type', 'status', 'sheetId', 'createdAt'])
+      );
+      allow delete: if isAdmin();
+    }
+  }
+}
