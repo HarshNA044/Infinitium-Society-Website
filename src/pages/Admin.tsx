@@ -42,6 +42,7 @@ export default function Admin_Page() {
   // Scanner state
   const [scanResult, setScanResult] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [selectedScanEventId, setSelectedScanEventId] = useState<string>('');
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
   // New states for expanded control
@@ -338,7 +339,13 @@ export default function Admin_Page() {
   };
 
   useEffect(() => {
-    if (activeTab === 'scanner' && isScanning) {
+    if (activeTab === 'scanner' && isScanning && selectedScanEventId) {
+      const targetEvent = events.find((e: any) => e.id === selectedScanEventId);
+      if (!targetEvent) {
+        setIsScanning(false);
+        return;
+      }
+
       scannerRef.current = new Html5QrcodeScanner(
         "reader", 
         { fps: 10, qrbox: { width: 250, height: 250 } }, 
@@ -347,23 +354,45 @@ export default function Admin_Page() {
       
       scannerRef.current.render(async (decodedText) => {
         try {
-          const result = await request('/api/mark-attendance', {
+          const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+          if (!appsScriptUrl) throw new Error("Apps Script URL not configured");
+
+          setScanResult({ loading: true });
+          
+          const response = await fetch(appsScriptUrl, {
             method: 'POST',
-            body: JSON.stringify({ ticketId: decodedText })
+            body: JSON.stringify({ 
+              action: 'markAttendance',
+              sheetId: targetEvent.sheetId,
+              ticketId: decodedText 
+            })
           });
-          setScanResult({ success: true, ...result });
-          loadData();
+          
+          const result = await response.json();
+          
+          if (result.status === 'success') {
+            setScanResult({ 
+              success: true, 
+              student: result.student,
+              alreadyMarked: result.alreadyMarked,
+              ticketId: decodedText
+            });
+            loadData();
+          } else {
+            throw new Error(result.message || "Verification failed");
+          }
         } catch (err: any) {
           setScanResult({ success: false, error: err.message });
         }
         stopScanner();
+        setIsScanning(false);
       }, (err) => {
         // ignore errors
       });
     }
 
     return () => stopScanner();
-  }, [activeTab, isScanning]);
+  }, [activeTab, isScanning, selectedScanEventId]);
 
   const stopScanner = () => {
     if (scannerRef.current) {
@@ -416,6 +445,10 @@ export default function Admin_Page() {
       </div>
     );
   }
+
+  const scannableEvents = events.filter((e: any) => 
+    e.status === 'Upcoming'
+  );
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col md:flex-row">
@@ -896,15 +929,39 @@ export default function Admin_Page() {
                     <Scan className="w-10 h-10" />
                   </div>
                   <h3 className="text-2xl font-black mb-4 text-white italic tracking-tighter uppercase">Attendance Core</h3>
-                  <p className="text-brand-100/60 mb-10 leading-relaxed text-sm font-bold uppercase tracking-widest">
-                    Point your camera at a student's digital ticket for instant validation & demographic logging.
-                  </p>
-                  <button 
-                    onClick={() => setIsScanning(true)}
-                    className="w-full py-5 bg-brand-600 text-white rounded-3xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-600/20"
-                  >
-                    <Camera className="w-5 h-5" /> Open Scanner
-                  </button>
+                  <p className="text-brand-100/60 mb-8 leading-relaxed text-sm font-bold uppercase tracking-widest">
+                     Select an upcoming event to start marking attendance.
+                   </p>
+
+                   {scannableEvents.length > 0 ? (
+                    <div className="w-full space-y-6">
+                      <select 
+                        value={selectedScanEventId}
+                        onChange={(e) => setSelectedScanEventId(e.target.value)}
+                        className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-4 text-white font-bold text-sm outline-none focus:border-brand-600 transition-all"
+                      >
+                        <option value="" className="bg-zinc-900">Select Upcoming Event</option>
+                        {scannableEvents.map((e: any) => (
+                          <option key={e.id} value={e.id} className="bg-zinc-900">
+                            {e.title}
+                          </option>
+                        ))}
+                      </select>
+
+                      <button 
+                        disabled={!selectedScanEventId}
+                        onClick={() => setIsScanning(true)}
+                        className="w-full py-5 bg-brand-600 text-white rounded-3xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-600/20 disabled:opacity-50"
+                      >
+                        <Camera className="w-5 h-5" /> Open Scanner
+                      </button>
+                    </div>
+                   ) : (
+                    <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-200 text-xs font-bold uppercase tracking-widest leading-loose">
+                      No upcoming events available for scanning.<br/>
+                      Marking attendance is restricted to events with "Upcoming" status.
+                    </div>
+                   )}
                   <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-600/10 blur-3xl"></div>
                </div>
              ) : (
@@ -942,9 +999,11 @@ export default function Admin_Page() {
                           <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle className="w-10 h-10" />
                           </div>
-                          <h3 className="text-2xl font-bold text-zinc-900 mb-2">Success!</h3>
-                          <p className="text-lg font-bold text-brand-600 mb-4">{scanResult.registration.studentName}</p>
-                          <p className="text-zinc-500 text-sm mb-10">Attendance marked for {scanResult.registration.rollNo}</p>
+                          <h3 className="text-2xl font-bold text-zinc-900 mb-2">
+                            {scanResult.alreadyMarked ? "Already Marked" : "Success!"}
+                          </h3>
+                          <p className="text-lg font-bold text-brand-600 mb-4 uppercase italic tracking-tight">{scanResult.student?.studentName}</p>
+                          <p className="text-zinc-500 text-sm mb-10">Attendance marked for {scanResult.student?.rollNo}</p>
                         </>
                       ) : (
                         <>

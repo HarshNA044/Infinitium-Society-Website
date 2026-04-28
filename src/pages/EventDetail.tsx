@@ -274,25 +274,25 @@ export default function EventDetail_Page() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200"
+              className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200"
             >
               {!registrationSuccess ? (
-                <div className="p-10 md:p-14">
-                   <div className="flex justify-between items-center mb-10">
-                     <h2 className="text-3xl font-black text-slate-900 tracking-tighter uppercase italic">Register</h2>
+                <div className="p-8 md:p-10">
+                   <div className="flex justify-between items-center mb-6">
+                     <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Register</h2>
                      <button onClick={() => setIsRegistering(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
-                       <X className="w-6 h-6" />
+                       <X className="w-5 h-5" />
                      </button>
                    </div>
                    
-                   <div className="bg-brand-950 p-8 rounded-3xl mb-10 text-white relative overflow-hidden border border-brand-900">
-                     <p className="text-[10px] font-black text-brand-400 uppercase tracking-[0.3em] mb-2">EVENT CONFIRMATION</p>
-                     <p className="text-xl font-bold italic text-brand-200">{event?.title}</p>
-                     <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/20 blur-2xl rotate-45 transform translate-x-12 -translate-y-12"></div>
+                   <div className="bg-brand-950 p-6 rounded-3xl mb-6 text-white relative overflow-hidden border border-brand-900">
+                     <p className="text-[9px] font-black text-brand-400 uppercase tracking-[0.3em] mb-1">EVENT CONFIRMATION</p>
+                     <p className="text-lg font-bold italic text-brand-200">{event?.title}</p>
+                     <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/20 blur-2xl rotate-45 transform translate-x-8 -translate-y-8"></div>
                    </div>
 
-                   <form onSubmit={handleRegister} className="space-y-8">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <form onSubmit={handleRegister} className="space-y-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Full Name</label>
                           <input 
@@ -300,7 +300,7 @@ export default function EventDetail_Page() {
                             type="text" 
                             value={formData.studentName}
                             onChange={(e) => setFormData({...formData, studentName: e.target.value})}
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
+                            className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
                             placeholder="John Doe"
                           />
                         </div>
@@ -311,7 +311,7 @@ export default function EventDetail_Page() {
                             type="text" 
                             value={formData.rollNo}
                             onChange={(e) => setFormData({...formData, rollNo: e.target.value})}
-                            className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
+                            className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
                             placeholder="22/CS/001"
                           />
                         </div>
@@ -323,48 +323,48 @@ export default function EventDetail_Page() {
                          type="email" 
                          value={formData.email}
                          onChange={(e) => setFormData({...formData, email: e.target.value})}
-                         className="w-full px-6 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
+                         className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
                          placeholder="name@arsd.du.ac.in"
                        />
                      </div>
                      <button 
                        disabled={loading}
                        type="submit"
-                       className="w-full py-5 bg-brand-600 text-white rounded-3xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-brand-600/10"
+                       className="w-full py-4.5 bg-brand-600 text-white rounded-3xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-brand-600/10"
                      >
                        {loading ? 'Processing...' : 'Confirm Registration'}
                      </button>
                    </form>
                 </div>
               ) : (
-                <div className="p-10 md:p-14 text-center">
-                  <div className="w-20 h-20 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-sm border border-emerald-100">
-                    <CheckCircle2 className="w-10 h-10" />
+                <div className="p-8 md:p-10 text-center">
+                  <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-emerald-100">
+                    <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tighter uppercase italic">Success</h2>
-                  <p className="text-xs text-slate-500 mb-10 font-bold uppercase tracking-widest leading-loose">
+                  <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase italic">Success</h2>
+                  <p className="text-[10px] text-slate-500 mb-8 font-bold uppercase tracking-widest leading-loose">
                     Registration confirmed for <span className="text-brand-600 italic">{event?.title}</span>. 
                     <br />Save the ticket below.
                   </p>
                   
-                  <div className="bg-slate-50 p-10 rounded-[3rem] border border-slate-200 mb-10 flex flex-col items-center shadow-inner">
-                    <div className="bg-white p-4 rounded-3xl shadow-2xl">
+                  <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200 mb-8 flex flex-col items-center shadow-inner">
+                    <div className="bg-white p-3 rounded-2xl shadow-xl">
                       <QRCodeCanvas 
                         value={registrationSuccess.ticketId} 
-                        size={180}
+                        size={150}
                         level="H"
                         includeMargin={false}
                       />
                     </div>
-                    <p className="mt-8 font-black text-[10px] text-slate-400 tracking-[0.4em] uppercase">{registrationSuccess.ticketId}</p>
+                    <p className="mt-6 font-black text-[9px] text-slate-400 tracking-[0.4em] uppercase">{registrationSuccess.ticketId}</p>
                   </div>
-
-                  <div className="flex flex-col gap-4">
+ 
+                  <div className="flex flex-col gap-3">
                     <button 
                       onClick={downloadTicket}
-                      className="w-full py-5 bg-brand-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20"
+                      className="w-full py-4 bg-brand-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20"
                     >
-                      <Download className="w-5 h-5" /> Download PDF Ticket
+                      <Download className="w-4 h-4" /> Download PDF Ticket
                     </button>
                     <button 
                       onClick={() => {
@@ -372,7 +372,7 @@ export default function EventDetail_Page() {
                         setRegistrationSuccess(null);
                         setFormData({ studentName: '', rollNo: '', email: '' });
                       }}
-                      className="w-full py-4 text-slate-400 font-black uppercase text-[10px] tracking-widest hover:text-slate-900 transition-colors"
+                      className="w-full py-3 text-slate-400 font-black uppercase text-[9px] tracking-widest hover:text-slate-900 transition-colors"
                     >
                       Return to Details
                     </button>

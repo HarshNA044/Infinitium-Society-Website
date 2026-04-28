@@ -18,34 +18,73 @@
 function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
-    var sheetId = data.sheetId; // Target Sheet ID passed from frontend
-    var eventTitle = data.eventTitle || "Unknown Event";
+    var action = data.action || "register";
+    var sheetId = data.sheetId;
     
     if (!sheetId) {
       throw new Error("Missing sheetId");
     }
 
     var ss = SpreadsheetApp.openById(sheetId);
-    var sheet = ss.getSheets()[0]; // Get the first sheet
+    var sheet = ss.getSheets()[0];
     
-    // Check if sheet is empty to add headers
-    if (sheet.getLastRow() === 0) {
-      sheet.appendRow(["Timestamp", "Student Name", "Roll No", "Email", "Ticket ID", "Status"]);
-      sheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#f3f3f3");
+    if (action === "register") {
+      // Check if sheet is empty to add headers
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow(["Timestamp", "Student Name", "Roll No", "Email", "Ticket ID", "Status"]);
+        sheet.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#f3f3f3");
+      }
+      
+      // Append the data
+      sheet.appendRow([
+        new Date(),
+        data.studentName,
+        data.rollNo,
+        data.email,
+        data.ticketId,
+        "Registered"
+      ]);
+      
+      return ContentService.createTextOutput(JSON.stringify({ "status": "success" }))
+        .setMimeType(ContentService.MimeType.JSON);
+    } 
+    else if (action === "markAttendance") {
+      var ticketId = data.ticketId;
+      if (!ticketId) throw new Error("Missing ticketId");
+      
+      var rows = sheet.getDataRange().getValues();
+      var ticketColumnIndex = 4; // 0-indexed, so 5th column
+      var statusColumnIndex = 5; // 6th column
+      
+      var foundIndex = -1;
+      for (var i = 1; i < rows.length; i++) {
+        if (rows[i][ticketColumnIndex] === ticketId) {
+          foundIndex = i;
+          break;
+        }
+      }
+      
+      if (foundIndex === -1) {
+        throw new Error("Ticket ID not found in this event's records");
+      }
+      
+      var alreadyMarked = rows[foundIndex][statusColumnIndex] === "Attended";
+      if (!alreadyMarked) {
+        sheet.getRange(foundIndex + 1, statusColumnIndex + 1).setValue("Attended");
+      }
+      
+      var studentData = {
+        studentName: rows[foundIndex][1],
+        rollNo: rows[foundIndex][2],
+        email: rows[foundIndex][3]
+      };
+      
+      return ContentService.createTextOutput(JSON.stringify({ 
+        "status": "success", 
+        "alreadyMarked": alreadyMarked,
+        "student": studentData 
+      })).setMimeType(ContentService.MimeType.JSON);
     }
-    
-    // Append the data
-    sheet.appendRow([
-      new Date(),
-      data.studentName,
-      data.rollNo,
-      data.email,
-      data.ticketId,
-      "Registered"
-    ]);
-    
-    return ContentService.createTextOutput(JSON.stringify({ "status": "success" }))
-      .setMimeType(ContentService.MimeType.JSON);
       
   } catch (err) {
     return ContentService.createTextOutput(JSON.stringify({ "status": "error", "message": err.toString() }))
