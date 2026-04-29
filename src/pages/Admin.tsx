@@ -4,7 +4,7 @@ import {
   BarChart3, Plus, Scan, Users, Calendar, 
   Trash2, CheckCircle, XCircle, ChevronLeft,
   LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
-  Trophy, Download, LogIn, Github
+  Trophy, Download, LogIn, Github, Menu, X
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -39,6 +39,8 @@ export default function Admin_Page() {
   const [eventImagePreview, setEventImagePreview] = useState<string | null>(null);
   const [galleryImagePreview, setGalleryImagePreview] = useState<string | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'member' | 'event' | 'gallery' | 'achievement' } | null>(null);
+  
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
   // Scanner state
   const [scanResult, setScanResult] = useState<any>(null);
@@ -470,10 +472,42 @@ export default function Admin_Page() {
   );
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex flex-col md:flex-row">
-      {/* Sidebar */}
-      <aside className="w-full md:w-64 bg-white border-r border-zinc-200 p-6 flex flex-col gap-8">
+    <div className="min-h-screen bg-zinc-50 flex flex-col md:flex-row relative">
+      {/* Mobile Sidebar Header */}
+      <div className="md:hidden bg-white border-b border-zinc-200 p-4 flex items-center justify-between sticky top-0 z-[60]">
         <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
+            <LayoutDashboard className="w-4 h-4" />
+          </div>
+          <h2 className="font-bold text-sm uppercase tracking-widest text-zinc-900 italic">INFINITIUM ADMIN</h2>
+        </div>
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 bg-zinc-50 rounded-xl border border-zinc-100"
+        >
+          {isSidebarOpen ? <XCircle className="w-6 h-6 text-zinc-600" /> : <Menu className="w-6 h-6 text-zinc-600" />}
+        </button>
+      </div>
+
+      {/* Sidebar Overlay */}
+      <AnimatePresence>
+        {isSidebarOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsSidebarOpen(false)}
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm md:hidden z-[70]"
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Sidebar */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 w-64 bg-white border-r border-zinc-200 p-6 flex flex-col gap-8 z-[80] transition-transform duration-300 md:relative md:translate-x-0",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="hidden md:flex items-center gap-3">
           <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
             <LayoutDashboard className="w-4 h-4" />
           </div>
@@ -507,7 +541,10 @@ export default function Admin_Page() {
           ].map(tab => (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => {
+                setActiveTab(tab.id);
+                setIsSidebarOpen(false);
+              }}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all",
                 activeTab === tab.id ? "bg-brand-600 text-white shadow-lg shadow-brand-600/20" : "text-zinc-500 hover:bg-brand-50 hover:text-brand-600"
@@ -625,7 +662,7 @@ export default function Admin_Page() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-               <div className="bento-card lg:col-span-2 h-[400px]">
+               <div className="bento-card lg:col-span-2 h-[300px] md:h-[400px]">
                  <div className="flex justify-between items-center mb-8">
                    <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest">Event Performance</h3>
                    <div className="flex gap-2">

@@ -86,20 +86,20 @@ export default function Home_Page() {
             <Zap className="w-64 h-64 text-brand-300" />
           </div>
           <span className="bg-brand-500/20 text-[10px] font-black uppercase tracking-[0.3em] py-1.5 px-4 rounded-full self-start mb-8 backdrop-blur-md border border-brand-500/30">Society of Physical Sciences</span>
-          <h2 className="text-5xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter uppercase italic">
+          <h2 className="text-4xl sm:text-6xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter uppercase italic">
             INFINITIUM <br /> <span className="text-brand-300">INSPIRING</span> <br /> INNOVATION
           </h2>
-          <div className="flex flex-wrap gap-8 items-center mt-4">
+          <div className="flex flex-wrap gap-6 md:gap-8 items-center mt-4">
             <div className="flex flex-col max-w-lg">
-              <span className="text-[10px] text-brand-300/70 uppercase font-bold tracking-widest mb-1">Legacy of ARSD College</span>
-              <p className="text-sm font-medium text-brand-100/90 leading-relaxed uppercase tracking-tight">
+              <span className="text-[9px] md:text-[10px] text-brand-300/70 uppercase font-bold tracking-widest mb-1">Legacy of ARSD College</span>
+              <p className="text-xs md:text-sm font-medium text-brand-100/90 leading-relaxed uppercase tracking-tight">
                 INFINITIUM stands as the premier scientific hub of Atma Ram Sanatan Dharma College, 
                 unifying curiosity and academic rigor to shape the next generation of pioneers.
               </p>
             </div>
             <Link 
               to="/about"
-              className="md:ml-auto bg-brand-500 text-brand-950 px-10 py-5 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-white transition-all shadow-2xl shadow-brand-950/20 active:scale-95"
+              className="w-full md:w-auto md:ml-auto bg-brand-500 text-brand-950 px-10 py-5 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-white transition-all shadow-2xl shadow-brand-950/20 active:scale-95 text-center"
             >
               Our Story
             </Link>

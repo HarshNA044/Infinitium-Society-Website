@@ -94,18 +94,18 @@ export default function Feedback_Page() {
              <form onSubmit={handleSubmit} className="space-y-8 bg-brand-50 p-10 rounded-[3rem] border border-brand-100">
                 <div>
                    <label className="text-[10px] font-black block mb-6 uppercase tracking-[0.2em] text-brand-600">How was your overall experience?</label>
-                   <div className="flex gap-4">
+                   <div className="flex flex-wrap gap-2 md:gap-4">
                       {[1,2,3,4,5].map(s => (
                         <button 
                           type="button"
                           key={s} 
                           onClick={() => setRating(s)}
                           className={cn(
-                            "w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-sm",
+                            "w-12 h-12 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center transition-all shadow-sm",
                             rating >= s ? "bg-brand-600 text-white" : "bg-white text-zinc-300"
                           )}
                         >
-                          <Star className={cn("w-6 h-6", rating >= s && "fill-white")} />
+                          <Star className={cn("w-5 h-5 md:w-6 md:h-6", rating >= s && "fill-white")} />
                         </button>
                       ))}
                    </div>

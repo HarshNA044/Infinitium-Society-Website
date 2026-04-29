@@ -113,36 +113,27 @@ export default function About_Page() {
     <div className="py-24 px-4 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Hero Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-32">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center mb-20 md:mb-32">
           <motion.div
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-8 border border-brand-100">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
               <Users className="w-3 h-3" /> About INFINITIUM
             </div>
-            <h1 className="text-5xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] italic uppercase mb-10">
-              {data.hero.title.split(' & ').map((part: string, i: number) => (
-                <React.Fragment key={i}>
-                  {i > 0 && <br />}
-                  {part.includes('CURIOSITY') ? (
-                    <>IGNITING <br /> <span className="text-brand-600">CURIOSITY</span></>
-                  ) : part}
-                </React.Fragment>
-              ))}
-              {/* Fallback to original text if split logic is too simple */}
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] italic uppercase mb-8 md:mb-10">
               {data.hero.title === "IGNITING CURIOSITY & FOSTERING EXCELLENCE" ? (
                 <>IGNITING <br /> <span className="text-brand-600">CURIOSITY</span> <br /> & FOSTERING <br /> EXCELLENCE</>
               ) : data.hero.title}
             </h1>
-            <p className="text-lg text-slate-600 font-medium leading-relaxed max-w-xl">
+            <p className="text-base md:text-lg text-slate-600 font-medium leading-relaxed max-w-xl">
               {data.hero.subtitle}
             </p>
           </motion.div>
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="aspect-square bg-slate-100 rounded-[4rem] overflow-hidden relative"
+            className="aspect-square bg-slate-100 rounded-[3rem] md:rounded-[4rem] overflow-hidden relative"
           >
             <img 
               src={data.hero.image} 

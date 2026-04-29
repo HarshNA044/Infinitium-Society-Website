@@ -163,7 +163,7 @@ export default function App() {
     <Router>
       <div className="min-h-screen bg-white font-sans text-brand-950 selection:bg-brand-100 selection:text-brand-900">
         <Navigation />
-        <main className="pt-16">
+        <main className="pt-20">
           <Routes>
             <Route path="/" element={<Home_Page />} />
             <Route path="/about" element={<About_Page />} />
