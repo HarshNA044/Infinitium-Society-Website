@@ -20,7 +20,7 @@ import {
 import { 
   onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User
 } from 'firebase/auth';
-import { cn } from '../lib/utils';
+import { cn, compressImage } from '../lib/utils';
 
 export default function Admin_Page() {
   const { request, loading: apiLoading } = useApi();
@@ -158,48 +158,42 @@ export default function Admin_Page() {
     }
   };
 
-  const handleMemberFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMemberFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        alert("Image size exceeds 2MB. Please choose a smaller file.");
-        return;
+      try {
+        const compressed = await compressImage(file, 400, 400, 0.6); // Members need small avatar style images
+        setMemberImagePreview(compressed);
+      } catch (err) {
+        console.error("Compression failed", err);
+        alert("Failed to process image.");
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setMemberImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
-  const handleEventFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEventFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Image size exceeds 5MB. Please choose a smaller file.");
-        return;
+      try {
+        const compressed = await compressImage(file, 1000, 600, 0.7); // Events need wider banners
+        setEventImagePreview(compressed);
+      } catch (err) {
+        console.error("Compression failed", err);
+        alert("Failed to process image.");
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setEventImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
-  const handleGalleryFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        alert("Image size exceeds 5MB. Please choose a smaller file.");
-        return;
+      try {
+        const compressed = await compressImage(file, 1200, 1200, 0.7); // Gallery needs better quality
+        setGalleryImagePreview(compressed);
+      } catch (err) {
+        console.error("Compression failed", err);
+        alert("Failed to process image.");
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setGalleryImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
     }
   };
 
