@@ -191,7 +191,7 @@ export default function Events_Page() {
 
         {/* Filters */}
         <div className="flex flex-wrap justify-center gap-2 mb-12">
-          {['All', 'Seminar', 'Fest', 'Workshop'].map(f => (
+          {['All', 'Seminar', 'Fest', 'Workshop', 'Field Trip'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}

@@ -412,10 +412,23 @@ export default function Admin_Page() {
   const COLORS = ['#14b8a6', '#0d9488', '#0f766e', '#115e59']; // brand-500, 600, 700, 800
 
   const chartData = events.map((e: any) => ({
-    name: e.title?.split(':')[0] || 'Event',
+    name: e.title?.split(':')[0]?.substring(0, 15) || 'Event',
     registrations: e.stats?.registrations || 0,
     attendance: e.stats?.attendance || 0,
   }));
+
+  const typeData = events.reduce((acc: any, e: any) => {
+    const type = e.type || 'Other';
+    const existing = acc.find((item: any) => item.name === type);
+    if (existing) {
+      existing.value += 1;
+    } else {
+      acc.push({ name: type, value: 1 });
+    }
+    return acc;
+  }, []);
+
+  const PIE_COLORS = ['#0d9488', '#0f766e', '#115e59', '#134e4a', '#14b8a6'];
 
   if (authLoading) {
     return (
@@ -655,55 +668,98 @@ export default function Admin_Page() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-               <div className="bento-card lg:col-span-2 h-[300px] md:h-[400px]">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+               <div className="bento-card lg:col-span-2 h-[400px]">
                  <div className="flex justify-between items-center mb-8">
-                   <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest">Event Performance</h3>
-                   <div className="flex gap-2">
+                   <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest">Event Statistics (Reg vs Att)</h3>
+                   <div className="flex gap-4">
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-brand-600 rounded-full"></div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Regs</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">Registrations</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">Attnd</span>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase">Attendance</span>
                       </div>
                    </div>
                  </div>
                  <ResponsiveContainer width="100%" height="100%">
                    <BarChart data={chartData}>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} />
-                     <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 10, fontWeight: 700}} />
+                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} />
+                     <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} />
                      <Tooltip 
-                        contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '12px', fontWeight: 'bold'}}
+                        cursor={{fill: '#f8fafc'}}
+                        contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 'bold'}}
                      />
-                     <Bar dataKey="registrations" fill="#14b8a6" radius={[6, 6, 0, 0]} barSize={20} />
-                     <Bar dataKey="attendance" fill="#10b981" radius={[6, 6, 0, 0]} barSize={20} />
+                     <Bar dataKey="registrations" fill="#14b8a6" radius={[4, 4, 0, 0]} barSize={32} />
+                     <Bar dataKey="attendance" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
                    </BarChart>
                  </ResponsiveContainer>
                </div>
                
-               <div className="bento-card bg-brand-950 border border-brand-900 text-white">
-                 <h3 className="text-xs font-black uppercase text-brand-400 tracking-[0.3em] mb-8">Recent Activity</h3>
-                 <div className="space-y-6">
-                    {[
-                      { user: "Aryan S.", action: "Registered", time: "2m ago", event: "Pulsar 2026" },
-                      { user: "Ishita M.", action: "Attended", time: "15m ago", event: "AI Seminar" },
-                      { user: "Kabir R.", action: "Registered", time: "1h ago", event: "UI Workshop" },
-                      { user: "Mehak P.", action: "Feedback", time: "2h ago", event: "Pulsar 2026" },
-                    ].map((item, i) => (
-                      <div key={i} className="flex gap-4 items-start border-l-2 border-brand-800 pl-4 py-1">
-                        <div className="flex-1">
-                          <p className="text-xs font-bold text-brand-100"><span className="text-brand-400">{item.user}</span> {item.action}</p>
-                          <p className="text-[9px] text-brand-100/40 uppercase font-black tracking-widest mt-1">{item.event} • {item.time}</p>
-                        </div>
+               <div className="bento-card h-[400px]">
+                 <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-8">Event Distribution</h3>
+                 <ResponsiveContainer width="100%" height="100%">
+                   <PieChart>
+                     <Pie
+                       data={typeData}
+                       innerRadius={60}
+                       outerRadius={80}
+                       paddingAngle={5}
+                       dataKey="value"
+                     >
+                       {typeData.map((_, index) => (
+                         <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                       ))}
+                     </Pie>
+                     <Tooltip 
+                       contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px'}}
+                     />
+                   </PieChart>
+                 </ResponsiveContainer>
+                 <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+                    {typeData.map((item, index) => (
+                      <div key={item.name} className="flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></div>
+                        <span className="text-[9px] font-bold text-slate-500 uppercase">{item.name}: {item.value}</span>
                       </div>
                     ))}
                  </div>
-                 <button className="mt-auto w-full py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-brand-600 transition-all">
-                    View Full Audit Log
-                 </button>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+               <div className="bento-card lg:col-span-3 bg-brand-950 border border-brand-900 text-white">
+                 <h3 className="text-xs font-black uppercase text-brand-400 tracking-[0.3em] mb-8">System Health & Recent Activity</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                   <div className="space-y-6">
+                      {[
+                        { user: "Aryan S.", action: "Registered", time: "2m ago", event: "Pulsar 2026" },
+                        { user: "Ishita M.", action: "Attended", time: "15m ago", event: "AI Seminar" },
+                      ].map((item, i) => (
+                        <div key={i} className="flex gap-4 items-start border-l-2 border-brand-800 pl-4 py-1">
+                          <div className="flex-1">
+                            <p className="text-xs font-bold text-brand-100"><span className="text-brand-400">{item.user}</span> {item.action}</p>
+                            <p className="text-[9px] text-brand-100/40 uppercase font-black tracking-widest mt-1">{item.event} • {item.time}</p>
+                          </div>
+                        </div>
+                      ))}
+                   </div>
+                   <div className="space-y-6">
+                      {[
+                        { user: "Kabir R.", action: "Registered", time: "1h ago", event: "UI Workshop" },
+                        { user: "Mehak P.", action: "Feedback", time: "2h ago", event: "Pulsar 2026" },
+                      ].map((item, i) => (
+                        <div key={i} className="flex gap-4 items-start border-l-2 border-brand-800 pl-4 py-1">
+                          <div className="flex-1">
+                            <p className="text-xs font-bold text-brand-100"><span className="text-brand-400">{item.user}</span> {item.action}</p>
+                            <p className="text-[9px] text-brand-100/40 uppercase font-black tracking-widest mt-1">{item.event} • {item.time}</p>
+                          </div>
+                        </div>
+                      ))}
+                   </div>
+                 </div>
                </div>
             </div>
           </div>
