@@ -131,16 +131,47 @@ const Navigation = () => {
 };
 
 const Footer = () => (
-  <footer className="mt-12 bg-white border-t border-slate-200 py-8">
+  <footer className="mt-24 bg-slate-950 text-white pt-20 pb-10">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center">
-        <p>© 2026 INFINITIUM Society • ARSD College, University of Delhi</p>
-        <div className="flex gap-6">
-          <Link to="/about" className="hover:text-brand-600 transition-colors">About</Link>
-          <Link to="/achievements" className="hover:text-brand-600 transition-colors">Achievements</Link>
-          <Link to="/feedback" className="hover:text-brand-600 transition-colors">Feedback</Link>
-          <Link to="/contact" className="text-brand-600">Contact Us</Link>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 border-b border-white/5 pb-16">
+        <div className="col-span-1 md:col-span-2">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center font-black italic">I</div>
+            <h1 className="text-2xl font-black italic tracking-tighter uppercase">INFINITIUM</h1>
+          </div>
+          <p className="text-slate-400 text-xs font-medium uppercase tracking-widest leading-relaxed max-w-sm">
+            The premier society of Physical Sciences at Atma Ram Sanatan Dharma College, 
+            inspiring innovation and academic excellence.
+          </p>
         </div>
+        
+        <div>
+          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-500 mb-6">Quick Links</h4>
+          <ul className="space-y-4">
+            <li><Link to="/about" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">About Us</Link></li>
+            <li><Link to="/events" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Our Events</Link></li>
+            <li><Link to="/members" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Members</Link></li>
+            <li><Link to="/achievements" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Success</Link></li>
+            <li><Link to="/feedback" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Feedback</Link></li>
+            <li><Link to="/admin" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Admin Portal</Link></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-500 mb-6">Connect</h4>
+          <ul className="space-y-4">
+            <li><a href="https://instagram.com" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Instagram</a></li>
+            <li><a href="https://linkedin.com" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">LinkedIn</a></li>
+            <li><Link to="/contact" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Contact</Link></li>
+            <li><a href="mailto:teaminfinitium.arsd@gmail.com" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Email</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="text-center">
+        <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
+          © 2026 INFINITIUM Society ARSD College, University of Delhi.
+        </p>
       </div>
     </div>
   </footer>

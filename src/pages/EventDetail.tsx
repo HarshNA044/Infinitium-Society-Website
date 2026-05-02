@@ -221,12 +221,6 @@ export default function EventDetail_Page() {
                      <Tag className="w-4 h-4 text-brand-600" />
                      <span className="text-[10px] font-black uppercase tracking-widest">{event.type}</span>
                   </div>
-                  <div className="flex items-center gap-3 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-100 sm:ml-auto">
-                     <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-                     <span className="text-[10px] font-black text-emerald-800 uppercase">
-                       {event.stats?.registrations || 0} Students Joined
-                     </span>
-                  </div>
                </div>
             </div>
 

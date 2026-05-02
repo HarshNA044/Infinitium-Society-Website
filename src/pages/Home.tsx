@@ -53,23 +53,49 @@ export default function Home_Page() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-12 md:row-span-4 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.95)_0%,rgba(255,255,255,0.7)_100%)] backdrop-blur-3xl rounded-3xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-2xl shadow-brand-500/10 group border border-white/50"
+          className="md:col-span-12 md:row-span-4 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.95)_0%,rgba(255,255,255,0.7)_100%)] backdrop-blur-3xl rounded-3xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-start shadow-2xl shadow-brand-500/10 group border border-white/50"
         >
           {/* Decorative Background Elements */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-            <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 blur-[100px] rounded-full animate-pulse" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(94,234,212,0.08)_0%,transparent_70%)]" />
+            {/* Animated Light Color Blobs */}
+            <motion.div 
+              animate={{ 
+                x: [0, 50, 0],
+                y: [0, 30, 0],
+                scale: [1, 1.2, 1]
+              }}
+              transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 blur-[100px] rounded-full" 
+            />
+
+            <motion.div 
+              animate={{ 
+                x: [0, 30, 0],
+                y: [0, -50, 0],
+              }}
+              transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 5 }}
+              className="absolute top-1/4 right-1/4 w-80 h-80 bg-rose-200/10 blur-[100px] rounded-full" 
+            />
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.2, 1],
+                opacity: [0.3, 0.6, 0.3]
+              }}
+              transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(94,234,212,0.1)_0%,transparent_70%)]" 
+            />
             
-            {/* Floating Scientific Icons */}
+            {/* Floating Scientific Icons with Unique Colors */}
             <motion.div 
               animate={{ 
                 y: [0, -20, 0],
                 rotate: [0, 10, -10, 0]
               }}
               transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-10 right-20 text-brand-600/10"
+              className="absolute top-10 right-20 text-cyan-500/20"
             >
-              <Cpu className="w-32 h-32" />
+              <div className="absolute inset-0 bg-cyan-400/20 blur-[60px] rounded-full" />
+              <Cpu className="w-32 h-32 relative z-10" />
             </motion.div>
 
             <motion.div 
@@ -78,9 +104,10 @@ export default function Home_Page() {
                 rotate: [0, -5, 5, 0]
               }}
               transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute bottom-20 left-40 text-brand-600/10"
+              className="absolute bottom-20 left-40 text-emerald-500/20"
             >
-              <TestTube2 className="w-24 h-24" />
+              <div className="absolute inset-0 bg-emerald-400/20 blur-[60px] rounded-full" />
+              <TestTube2 className="w-24 h-24 relative z-10" />
             </motion.div>
 
             <motion.div 
@@ -89,9 +116,10 @@ export default function Home_Page() {
                 rotate: [0, 360]
               }}
               transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="absolute top-1/2 -right-10 text-brand-600/5"
+              className="absolute top-1/2 -right-10 text-indigo-500/10"
             >
-              <Monitor className="w-48 h-48" />
+              <div className="absolute inset-0 bg-indigo-400/15 blur-[80px] rounded-full" />
+              <Monitor className="w-48 h-48 relative z-10" />
             </motion.div>
           </div>
 
