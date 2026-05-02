@@ -53,73 +53,44 @@ export default function Home_Page() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-12 md:row-span-4 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.95)_0%,rgba(255,255,255,0.7)_100%)] backdrop-blur-3xl rounded-3xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-start shadow-2xl shadow-brand-500/10 group border border-white/50"
+          className="md:col-span-12 md:row-span-4 bg-white/90 backdrop-blur-xl rounded-3xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-xl shadow-brand-500/5 group border border-white/50 transform-gpu"
         >
-          {/* Decorative Background Elements */}
+          {/* Decorative Background Elements - Optimized for performance */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-            {/* Animated Light Color Blobs */}
+            {/* Subtle Static Blobs instead of animated ones */}
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/5 blur-[80px] rounded-full" />
+            <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-rose-200/5 blur-[80px] rounded-full" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(94,234,212,0.03)_0%,transparent_70%)]" />
+            
+            {/* Very slow, subtle icon floats */}
             <motion.div 
               animate={{ 
-                x: [0, 50, 0],
-                y: [0, 30, 0],
-                scale: [1, 1.2, 1]
+                y: [0, -5, 0],
               }}
-              transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 blur-[100px] rounded-full" 
-            />
+              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-10 right-20 text-cyan-500/10 transform-gpu"
+            >
+              <Cpu className="w-32 h-32" />
+            </motion.div>
 
             <motion.div 
               animate={{ 
-                x: [0, 30, 0],
-                y: [0, -50, 0],
-              }}
-              transition={{ duration: 20, repeat: Infinity, ease: "easeInOut", delay: 5 }}
-              className="absolute top-1/4 right-1/4 w-80 h-80 bg-rose-200/10 blur-[100px] rounded-full" 
-            />
-            <motion.div 
-              animate={{ 
-                scale: [1, 1.2, 1],
-                opacity: [0.3, 0.6, 0.3]
+                y: [0, 5, 0],
               }}
               transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(94,234,212,0.1)_0%,transparent_70%)]" 
-            />
-            
-            {/* Floating Scientific Icons with Unique Colors */}
-            <motion.div 
-              animate={{ 
-                y: [0, -20, 0],
-                rotate: [0, 10, -10, 0]
-              }}
-              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-10 right-20 text-cyan-500/20"
+              className="absolute bottom-20 left-40 text-emerald-500/10 transform-gpu"
             >
-              <div className="absolute inset-0 bg-cyan-400/20 blur-[60px] rounded-full" />
-              <Cpu className="w-32 h-32 relative z-10" />
+              <TestTube2 className="w-24 h-24" />
             </motion.div>
 
             <motion.div 
               animate={{ 
-                y: [0, 15, 0],
-                rotate: [0, -5, 5, 0]
-              }}
-              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute bottom-20 left-40 text-emerald-500/20"
-            >
-              <div className="absolute inset-0 bg-emerald-400/20 blur-[60px] rounded-full" />
-              <TestTube2 className="w-24 h-24 relative z-10" />
-            </motion.div>
-
-            <motion.div 
-              animate={{ 
-                scale: [1, 1.1, 1],
                 rotate: [0, 360]
               }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-              className="absolute top-1/2 -right-10 text-indigo-500/10"
+              transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+              className="absolute top-1/2 -right-10 text-indigo-500/5 transform-gpu"
             >
-              <div className="absolute inset-0 bg-indigo-400/15 blur-[80px] rounded-full" />
-              <Monitor className="w-48 h-48 relative z-10" />
+              <Monitor className="w-48 h-48" />
             </motion.div>
           </div>
 
@@ -127,10 +98,6 @@ export default function Home_Page() {
             <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
               <Zap className="w-64 h-64 text-brand-600" />
             </div>
-            
-            <span className="bg-white/80 backdrop-blur-md text-brand-600 text-[10px] font-black uppercase tracking-[0.3em] py-2 px-5 rounded-full self-start mb-8 border border-white shadow-sm inline-block">
-              Society of Physical Sciences
-            </span>
             
             <h2 className="text-4xl sm:text-6xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter uppercase italic">
               INFINITIUM <br /> <span className="text-brand-600">INSPIRING</span> <br /> INNOVATION
