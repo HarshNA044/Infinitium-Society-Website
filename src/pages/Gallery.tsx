@@ -31,7 +31,7 @@ export default function Gallery_Page() {
       <div className="max-w-7xl mx-auto">
         <header className="mb-24 flex flex-col md:flex-row justify-between items-end gap-6">
           <div className="max-w-2xl">
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.8] mb-8 italic uppercase text-center md:text-left">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 italic uppercase text-left">
               Moments <br /> <span className="text-brand-600">Captured</span>
             </h1>
           </div>

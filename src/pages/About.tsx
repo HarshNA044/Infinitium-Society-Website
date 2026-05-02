@@ -121,7 +121,7 @@ export default function About_Page() {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
               <Users className="w-3 h-3" /> About INFINITIUM
             </div>
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] italic uppercase mb-8 md:mb-10">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] italic uppercase mb-8 md:mb-12 text-left">
               {data.hero.title === "IGNITING CURIOSITY & FOSTERING EXCELLENCE" ? (
                 <>IGNITING <br /> <span className="text-brand-600">CURIOSITY</span> <br /> & FOSTERING <br /> EXCELLENCE</>
               ) : data.hero.title}

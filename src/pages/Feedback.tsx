@@ -87,8 +87,10 @@ export default function Feedback_Page() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24">
         {/* Feedback Area */}
         <div>
-           <h1 className="text-5xl font-black tracking-tighter mb-8 italic uppercase text-slate-900">Share Your Thought</h1>
-           <p className="text-zinc-500 text-lg mb-12 font-medium">Your feedback helps INFINITIUM grow better and serve the student community better.</p>
+           <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 italic uppercase text-left">
+             Feedback & <br /> <span className="text-brand-600">Ideas</span>
+           </h1>
+           <p className="text-zinc-500 text-lg mb-12 font-medium text-left">Your feedback helps INFINITIUM grow better and serve the student community better.</p>
            
            {!submitted ? (
              <form onSubmit={handleSubmit} className="space-y-8 bg-brand-50 p-10 rounded-3xl border border-brand-100">

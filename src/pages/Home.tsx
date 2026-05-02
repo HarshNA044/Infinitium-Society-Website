@@ -19,7 +19,6 @@ const SectionHeader = ({ title }: { title: string }) => (
 
 export default function Home_Page() {
   const [events, setEvents] = useState<any[]>([]);
-  const [stats, setStats] = useState({ totalRegistrations: 0, totalAttendance: 0, eventsCount: 0 });
   const [achievements, setAchievements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -34,20 +33,6 @@ export default function Home_Page() {
         const achQuery = query(collection(db, 'achievements'), orderBy('createdAt', 'desc'), limit(1));
         const achSnap = await getDocs(achQuery);
         setAchievements(achSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-
-        let totalReg = 0;
-        let totalAtt = 0;
-        eventsList.forEach((e: any) => {
-          totalReg += (e.stats?.registrations || 0);
-          totalAtt += (e.stats?.attendance || 0);
-        });
-
-        setStats({
-          totalRegistrations: totalReg,
-          totalAttendance: totalAtt,
-          eventsCount: eventsList.length
-        });
-
       } catch (error) {
         console.error("Error loading home data", error);
       } finally {
@@ -64,11 +49,11 @@ export default function Home_Page() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:auto-rows-[minmax(80px,_auto)]">
         
-        {/* Main Hero / Featured Event (Span 8x4) */}
+        {/* Main Hero / Featured Event (Span 12x4) */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-8 md:row-span-4 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.95)_0%,rgba(255,255,255,0.7)_100%)] backdrop-blur-3xl rounded-3xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-2xl shadow-brand-500/10 group border border-white/50"
+          className="md:col-span-12 md:row-span-4 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.95)_0%,rgba(255,255,255,0.7)_100%)] backdrop-blur-3xl rounded-3xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-2xl shadow-brand-500/10 group border border-white/50"
         >
           {/* Decorative Background Elements */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -141,48 +126,29 @@ export default function Home_Page() {
           </div>
         </motion.div>
 
-        {/* Quick Stats (Span 4x3) */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.1 }}
-          className="md:col-span-4 md:row-span-3 bento-card justify-between"
-        >
-          <div className="flex justify-between items-start">
-            <h3 className="text-sm font-bold uppercase text-slate-400 tracking-tighter">Society Stats</h3>
-            <div className="bg-emerald-100 text-emerald-700 p-2 rounded-xl"><ArrowRight className="w-5 h-5 -rotate-45" /></div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <div className="text-3xl font-black text-slate-900 tracking-tighter">{stats.totalRegistrations}</div>
-              <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Registrations</div>
-            </div>
-            <div>
-              <div className="text-3xl font-black text-slate-900 tracking-tighter">{stats.eventsCount}</div>
-              <div className="text-[10px] uppercase font-bold text-slate-500 tracking-widest">Events Held</div>
-            </div>
-          </div>
-          <div className="mt-4 h-2 bg-slate-100 rounded-full overflow-hidden flex">
-            <div className="h-full bg-brand-600 w-3/4"></div>
-            <div className="h-full bg-brand-300 w-1/4"></div>
-          </div>
-          <p className="text-[10px] text-slate-400 font-bold mt-2 uppercase tracking-widest">Member Growth: 85% Positive</p>
-        </motion.div>
-
-        {/* Quick Registration (Span 4x1) */}
+        {/* Quick Registration (Span 12x1) */}
         <motion.div 
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="md:col-span-4 md:row-span-1 bg-amber-400 rounded-2xl border border-amber-500 p-6 flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer"
+          className="md:col-span-12 md:row-span-1 bg-amber-400 rounded-2xl border border-amber-500 p-6 flex items-center justify-between hover:scale-[1.01] transition-transform cursor-pointer"
           onClick={() => window.scrollTo({ top: document.getElementById('events-section')?.offsetTop || 0, behavior: 'smooth' })}
         >
           <div className="flex flex-col">
             <h4 className="font-black text-amber-950 uppercase text-lg tracking-tighter leading-none">Quick Register</h4>
-            <p className="text-[9px] text-amber-900 font-bold uppercase leading-none opacity-70 mt-1">Join upcoming events instantly</p>
+            <p className="text-[9px] text-amber-900 font-bold uppercase leading-none opacity-70 mt-1">Join upcoming events instantly and be part of the innovation</p>
           </div>
-          <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-lg shadow-amber-950/10">
-            <Plus className="w-6 h-6" />
+          <div className="flex items-center gap-4">
+             <div className="flex -space-x-2">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="w-8 h-8 rounded-full border-2 border-amber-400 bg-amber-200 flex items-center justify-center text-[10px] font-black text-amber-800">
+                    {String.fromCharCode(64 + i)}
+                  </div>
+                ))}
+             </div>
+             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-lg shadow-amber-950/10">
+               <Plus className="w-6 h-6" />
+             </div>
           </div>
         </motion.div>
 
@@ -250,12 +216,12 @@ export default function Home_Page() {
           </div>
         </div>
 
-        {/* Gallery Preview (Span 3x4) */}
+        {/* Gallery Preview (Span 6x4) */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="md:col-span-3 md:row-span-4 bento-card"
+          className="md:col-span-6 md:row-span-4 bento-card"
         >
           <h3 className="text-xs font-bold uppercase text-slate-400 mb-6 flex items-center justify-between">
             Gallery Preview 
@@ -275,63 +241,12 @@ export default function Home_Page() {
           </div>
         </motion.div>
 
-        {/* Attendee Insights (Span 5x4) */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="md:col-span-5 md:row-span-4 bento-card shadow-brand-600/5 shadow-2xl"
-        >
-          <div className="flex justify-between items-center mb-8">
-            <h3 className="text-sm font-bold uppercase text-slate-900 tracking-tighter">Student Demographics</h3>
-            <div className="text-[10px] font-bold text-brand-600 uppercase bg-brand-50 px-2 py-1 rounded tracking-widest">Live Feed</div>
-          </div>
-          <div className="flex-1 flex flex-col gap-6">
-            <div className="space-y-3">
-              <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-                <span>Physical Sciences</span>
-                <span className="text-slate-900">85%</span>
-              </div>
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-brand-500 rounded-full" style={{ width: '85%' }}></div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-                <span>Computer Science</span>
-                <span className="text-slate-900">60%</span>
-              </div>
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-brand-300 rounded-full" style={{ width: '60%' }}></div>
-              </div>
-            </div>
-            <div className="space-y-3">
-              <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-slate-500">
-                <span>Applied Physics</span>
-                <span className="text-slate-900">40%</span>
-              </div>
-              <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
-                <div className="h-full bg-brand-200 rounded-full" style={{ width: '40%' }}></div>
-              </div>
-            </div>
-            <div className="mt-auto p-5 bg-slate-50 rounded-2xl flex items-center gap-4 border border-slate-100">
-              <div className="w-12 h-12 bg-brand-100 rounded-2xl flex items-center justify-center text-brand-600">
-                 <Users className="w-6 h-6" />
-              </div>
-              <div>
-                <p className="text-sm font-black text-slate-900 uppercase tracking-tighter">98% Retention</p>
-                <p className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">Member loyalty score</p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Featured Achievements (Span 4x4) */}
+        {/* Featured Achievements (Span 6x4) */}
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
-          className="md:col-span-4 md:row-span-4 bg-white rounded-3xl p-8 text-slate-950 flex flex-col justify-between relative overflow-hidden border border-slate-100 shadow-sm"
+          className="md:col-span-6 md:row-span-4 bg-white rounded-3xl p-8 text-slate-950 flex flex-col justify-between relative overflow-hidden border border-slate-100 shadow-sm"
         >
           <div className="absolute top-6 left-6">
              <span className="text-[9px] font-black uppercase text-slate-400 tracking-[0.3em]">Our Legacy</span>

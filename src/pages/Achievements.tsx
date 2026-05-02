@@ -33,7 +33,7 @@ export default function Achievements_Page() {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
               <Trophy className="w-3 h-3" /> Hall of Fame
             </div>
-            <h1 className="text-4xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.8] mb-8 italic uppercase">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 italic uppercase text-left">
               Our Success <br /> <span className="text-brand-600">Stories</span>
             </h1>
           </div>

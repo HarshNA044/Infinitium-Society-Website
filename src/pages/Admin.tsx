@@ -259,7 +259,10 @@ export default function Admin_Page() {
       description: formData.get('description') as string,
       sheetId: formData.get('sheetId') as string,
       status: editingEvent?.status || 'Upcoming',
-      stats: editingEvent?.stats || { registrations: 0, attendance: 0 }
+      stats: {
+        registrations: parseInt(formData.get('registrations') as string) || 0,
+        attendance: parseInt(formData.get('attendance') as string) || 0
+      }
     };
 
     const path = 'events';
@@ -1227,6 +1230,28 @@ export default function Admin_Page() {
                        className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 transition-all" 
                        placeholder="https://..." 
                      />
+                   </div>
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Sync Registrations</label>
+                        <input 
+                         name="registrations" 
+                         type="number"
+                         defaultValue={editingEvent?.stats?.registrations || 0}
+                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold" 
+                         placeholder="Check from Sheet" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Sync Attendance</label>
+                        <input 
+                         name="attendance" 
+                         type="number"
+                         defaultValue={editingEvent?.stats?.attendance || 0}
+                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-emerald-600" 
+                         placeholder="Check from Sheet" 
+                        />
+                      </div>
                    </div>
                    <textarea 
                     name="description" 

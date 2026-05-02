@@ -181,7 +181,7 @@ export default function Events_Page() {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
               <Calendar className="w-3 h-3" /> Schedule
             </div>
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.8] mb-8 italic uppercase text-center md:text-left">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 italic uppercase text-left">
               Events & <br /> <span className="text-brand-600">Archive</span>
             </h1>
           </div>
@@ -232,7 +232,9 @@ export default function Events_Page() {
                   <div className="bg-brand-50 w-12 h-12 rounded-2xl flex items-center justify-center text-brand-600 shadow-sm border border-brand-100 group-hover:scale-110 transition-transform">
                     <Calendar className="w-6 h-6" />
                   </div>
-                  <span className="text-[9px] bento-tag bg-brand-950 text-brand-300 font-black uppercase tracking-widest">{event.type}</span>
+                  <div className="flex flex-col items-end gap-2">
+                     <span className="text-[9px] bento-tag bg-brand-950 text-brand-300 font-black uppercase tracking-widest">{event.type}</span>
+                  </div>
                 </div>
                 <h3 className="text-xl font-black text-slate-900 mb-3 tracking-tighter uppercase leading-tight group-hover:text-brand-600 transition-colors italic">{event.title}</h3>
                 <p className="text-xs text-slate-500 mb-8 leading-relaxed line-clamp-3 font-medium flex-1">
