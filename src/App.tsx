@@ -9,7 +9,7 @@ import {
 import { cn } from './lib/utils';
 
 // --- Components ---
-const Logo = () => (
+export const Logo = () => (
   <div className="relative w-12 h-12 flex items-center justify-center bg-brand-950 rounded-full shadow-lg shadow-brand-500/20 group-hover:rotate-12 transition-transform overflow-hidden border border-brand-900">
     <svg viewBox="0 0 100 100" className="w-full h-full p-2">
       {/* Atom Icon */}

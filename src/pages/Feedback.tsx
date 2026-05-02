@@ -91,7 +91,7 @@ export default function Feedback_Page() {
            <p className="text-zinc-500 text-lg mb-12 font-medium">Your feedback helps INFINITIUM grow better and serve the student community better.</p>
            
            {!submitted ? (
-             <form onSubmit={handleSubmit} className="space-y-8 bg-brand-50 p-10 rounded-[3rem] border border-brand-100">
+             <form onSubmit={handleSubmit} className="space-y-8 bg-brand-50 p-10 rounded-3xl border border-brand-100">
                 <div>
                    <label className="text-[10px] font-black block mb-6 uppercase tracking-[0.2em] text-brand-600">How was your overall experience?</label>
                    <div className="flex flex-wrap gap-2 md:gap-4">
@@ -112,9 +112,9 @@ export default function Feedback_Page() {
                 </div>
                 <div>
                    <label className="text-[10px] font-black block mb-6 uppercase tracking-[0.2em] text-brand-600">Your detailed feedback</label>
-                   <textarea className="w-full px-6 py-5 bg-white rounded-[2rem] h-40 border-2 border-brand-50 outline-none focus:border-brand-600 transition-all font-medium text-sm" placeholder="What did you like the most?"></textarea>
+                   <textarea className="w-full px-6 py-5 bg-white rounded-xl h-40 border-2 border-brand-50 outline-none focus:border-brand-600 transition-all font-medium text-sm" placeholder="What did you like the most?"></textarea>
                 </div>
-                <button className="w-full py-5 bg-brand-600 text-white rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all flex items-center justify-center gap-4 shadow-xl shadow-brand-600/20">
+                <button className="w-full py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all flex items-center justify-center gap-4 shadow-xl shadow-brand-600/20">
                    Submit Feedback <Send className="w-5 h-5" />
                 </button>
              </form>
@@ -122,7 +122,7 @@ export default function Feedback_Page() {
              <motion.div 
                initial={{ opacity: 0, scale: 0.9 }} 
                animate={{ opacity: 1, scale: 1 }}
-               className="bg-emerald-50 p-12 rounded-[3.5rem] text-center border-2 border-emerald-100"
+               className="bg-emerald-50 p-12 rounded-3xl text-center border-2 border-emerald-100"
              >
                 <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8">
                    <CheckCircle className="w-10 h-10" />
@@ -135,29 +135,29 @@ export default function Feedback_Page() {
 
         {/* Certificate Area */}
         <div>
-           <div className="bg-brand-950 p-12 md:p-16 rounded-[4rem] text-white h-full flex flex-col justify-center border border-brand-900 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-64 h-64 bg-brand-500/10 blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
-              <div className="bg-brand-500/10 backdrop-blur-md w-16 h-16 rounded-2xl flex items-center justify-center text-brand-400 mb-8 border border-white/10">
+           <div className="bg-white p-12 md:p-16 rounded-3xl text-slate-950 h-full flex flex-col justify-center border border-slate-100 shadow-xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50 blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
+              <div className="bg-brand-50 w-16 h-16 rounded-2xl flex items-center justify-center text-brand-600 mb-8 border border-brand-100">
                 <Award className="w-8 h-8" />
               </div>
-              <h2 className="text-5xl font-black mb-6 tracking-tighter uppercase italic">Claim Your <br /><span className="text-brand-400">Certificate</span></h2>
-              <p className="text-brand-100/60 text-sm mb-10 leading-relaxed font-bold uppercase tracking-widest">
+              <h2 className="text-5xl font-black mb-6 tracking-tighter uppercase italic leading-none">Claim Your <br /><span className="text-brand-600">Certificate</span></h2>
+              <p className="text-slate-500 text-sm mb-10 leading-relaxed font-bold uppercase tracking-widest">
                 If you attended our recent event and your attendance was marked by the admin team, your certificate is ready.
               </p>
 
               <div className="space-y-6">
                  <div className="relative">
                     <input 
-                      value={searchRoll}
-                      onChange={(e) => setSearchRoll(e.target.value)}
-                      className="w-full px-8 py-5 bg-white/5 rounded-3xl border border-white/10 outline-none focus:bg-white/10 transition-all pr-32 font-bold text-sm tracking-widest uppercase placeholder:text-zinc-600" 
-                      placeholder="Roll No (e.g. 22/CS/001)" 
+                       value={searchRoll}
+                       onChange={(e) => setSearchRoll(e.target.value)}
+                       className="w-full px-8 py-5 bg-slate-50 rounded-3xl border border-slate-100 outline-none focus:border-brand-600 transition-all pr-32 font-bold text-sm tracking-widest uppercase placeholder:text-zinc-400" 
+                       placeholder="Roll No (e.g. 22/CS/001)" 
                     />
                     <button 
-                      onClick={checkCertificate}
-                      className="absolute right-3 top-3 bottom-3 px-6 bg-brand-500 text-brand-950 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white transition-all shadow-xl shadow-brand-500/20"
+                       onClick={checkCertificate}
+                       className="absolute right-3 top-3 bottom-3 px-6 bg-brand-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all shadow-xl shadow-brand-600/20"
                     >
-                      Check
+                       Check
                     </button>
                  </div>
 
@@ -166,18 +166,18 @@ export default function Feedback_Page() {
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white/5 p-8 rounded-3xl border border-white/10 space-y-8 overflow-hidden backdrop-blur-md"
+                        className="bg-brand-50 p-8 rounded-3xl border border-brand-100 space-y-8 overflow-hidden"
                       >
                          <div className="flex justify-between items-center">
                            <div>
-                              <p className="font-black text-2xl uppercase italic tracking-tighter text-brand-300">{certResult.name}</p>
-                              <p className="text-brand-100/40 text-[10px] font-black uppercase tracking-widest">{certResult.event}</p>
+                              <p className="font-black text-2xl uppercase italic tracking-tighter text-brand-600">{certResult.name}</p>
+                              <p className="text-brand-900/40 text-[10px] font-black uppercase tracking-widest">{certResult.event}</p>
                            </div>
-                           <CheckCircle className="text-brand-400 w-10 h-10" />
+                           <CheckCircle className="text-emerald-500 w-10 h-10" />
                          </div>
                          <button 
                            onClick={downloadCert}
-                           className="w-full py-5 bg-brand-500 text-brand-950 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-white transition-all flex items-center justify-center gap-3 shadow-2xl"
+                           className="w-full py-5 bg-brand-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-600/20"
                          >
                            <Download className="w-5 h-5" /> Download Certificate
                          </button>

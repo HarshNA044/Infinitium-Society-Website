@@ -2,27 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { 
   ArrowRight, Calendar, Users, Trophy, ChevronRight, Zap, Star, 
-  Plus, QrCode as QrIcon, Lightbulb, Book, MessageSquare, Globe2
+  Plus, QrCode as QrIcon, Lightbulb, Book, MessageSquare, Globe2,
+  Cpu, TestTube2, Monitor
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { collection, getDocs, orderBy, query, limit } from 'firebase/firestore';
 
-const StatCard = ({ label, value, icon: Icon, delay }: any) => (
-  <motion.div
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ delay }}
-    className="bg-white p-8 rounded-3xl border border-zinc-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all"
-  >
-    <div className="flex items-center gap-4 mb-4">
-      <div className="w-12 h-12 bg-brand-50 rounded-2xl flex items-center justify-center text-brand-600">
-        <Icon className="w-6 h-6" />
-      </div>
-      <span className="text-3xl font-bold tracking-tight text-zinc-900">{value}</span>
-    </div>
-    <span className="text-zinc-500 font-medium">{label}</span>
-  </motion.div>
+const SectionHeader = ({ title }: { title: string }) => (
+  <div className="flex items-center justify-center gap-4 mb-4">
+    <div className="h-px bg-brand-800 w-12 hidden md:block"></div>
+    <span className="text-[10px] font-black uppercase text-brand-300 tracking-[0.5em]">{title}</span>
+    <div className="h-px bg-brand-800 w-12 hidden md:block"></div>
+  </div>
 );
 
 export default function Home_Page() {
@@ -34,18 +26,15 @@ export default function Home_Page() {
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        // Fetch events from Firestore
         const eventsQuery = query(collection(db, 'events'), orderBy('date', 'desc'));
         const eventsSnap = await getDocs(eventsQuery);
         const eventsList = eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setEvents(eventsList);
 
-        // Fetch achievements
         const achQuery = query(collection(db, 'achievements'), orderBy('createdAt', 'desc'), limit(1));
         const achSnap = await getDocs(achQuery);
         setAchievements(achSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-        // Compute stats from events
         let totalReg = 0;
         let totalAtt = 0;
         eventsList.forEach((e: any) => {
@@ -69,7 +58,6 @@ export default function Home_Page() {
     loadHomeData();
   }, []);
 
-  const featuredEvent = events[0];
   const latestAchievement = achievements[0];
 
   return (
@@ -80,29 +68,76 @@ export default function Home_Page() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-8 md:row-span-4 bg-brand-950 rounded-[2.5rem] p-8 md:p-12 relative overflow-hidden text-white flex flex-col justify-end shadow-2xl shadow-brand-500/20 group border border-brand-900"
+          className="md:col-span-8 md:row-span-4 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.95)_0%,rgba(255,255,255,0.7)_100%)] backdrop-blur-3xl rounded-3xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-2xl shadow-brand-500/10 group border border-white/50"
         >
-          <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
-            <Zap className="w-64 h-64 text-brand-300" />
-          </div>
-          <span className="bg-brand-500/20 text-[10px] font-black uppercase tracking-[0.3em] py-1.5 px-4 rounded-full self-start mb-8 backdrop-blur-md border border-brand-500/30">Society of Physical Sciences</span>
-          <h2 className="text-4xl sm:text-6xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter uppercase italic">
-            INFINITIUM <br /> <span className="text-brand-300">INSPIRING</span> <br /> INNOVATION
-          </h2>
-          <div className="flex flex-wrap gap-6 md:gap-8 items-center mt-4">
-            <div className="flex flex-col max-w-lg">
-              <span className="text-[9px] md:text-[10px] text-brand-300/70 uppercase font-bold tracking-widest mb-1">Legacy of ARSD College</span>
-              <p className="text-xs md:text-sm font-medium text-brand-100/90 leading-relaxed uppercase tracking-tight">
-                INFINITIUM stands as the premier scientific hub of Atma Ram Sanatan Dharma College, 
-                unifying curiosity and academic rigor to shape the next generation of pioneers.
-              </p>
-            </div>
-            <Link 
-              to="/about"
-              className="w-full md:w-auto md:ml-auto bg-brand-500 text-brand-950 px-10 py-5 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-white transition-all shadow-2xl shadow-brand-950/20 active:scale-95 text-center"
+          {/* Decorative Background Elements */}
+          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+            <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/10 blur-[100px] rounded-full animate-pulse" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(94,234,212,0.08)_0%,transparent_70%)]" />
+            
+            {/* Floating Scientific Icons */}
+            <motion.div 
+              animate={{ 
+                y: [0, -20, 0],
+                rotate: [0, 10, -10, 0]
+              }}
+              transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+              className="absolute top-10 right-20 text-brand-600/10"
             >
-              Our Story
-            </Link>
+              <Cpu className="w-32 h-32" />
+            </motion.div>
+
+            <motion.div 
+              animate={{ 
+                y: [0, 15, 0],
+                rotate: [0, -5, 5, 0]
+              }}
+              transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+              className="absolute bottom-20 left-40 text-brand-600/10"
+            >
+              <TestTube2 className="w-24 h-24" />
+            </motion.div>
+
+            <motion.div 
+              animate={{ 
+                scale: [1, 1.1, 1],
+                rotate: [0, 360]
+              }}
+              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+              className="absolute top-1/2 -right-10 text-brand-600/5"
+            >
+              <Monitor className="w-48 h-48" />
+            </motion.div>
+          </div>
+
+          <div className="relative z-10">
+            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
+              <Zap className="w-64 h-64 text-brand-600" />
+            </div>
+            
+            <span className="bg-white/80 backdrop-blur-md text-brand-600 text-[10px] font-black uppercase tracking-[0.3em] py-2 px-5 rounded-full self-start mb-8 border border-white shadow-sm inline-block">
+              Society of Physical Sciences
+            </span>
+            
+            <h2 className="text-4xl sm:text-6xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter uppercase italic">
+              INFINITIUM <br /> <span className="text-brand-600">INSPIRING</span> <br /> INNOVATION
+            </h2>
+
+            <div className="flex flex-wrap gap-6 md:gap-8 items-center mt-4 pt-8 border-t border-slate-900/5">
+              <div className="flex flex-col max-w-lg">
+                <span className="text-[9px] md:text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Legacy of ARSD College</span>
+                <p className="text-xs md:text-sm font-medium text-slate-500 leading-relaxed uppercase tracking-tight">
+                  INFINITIUM stands as the premier scientific hub of Atma Ram Sanatan Dharma College, 
+                  unifying curiosity and academic rigor to shape the next generation of pioneers.
+                </p>
+              </div>
+              <Link 
+                to="/about"
+                className="w-full md:w-auto md:ml-auto bg-brand-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all shadow-xl shadow-brand-600/20 active:scale-95 text-center"
+              >
+                Our Story
+              </Link>
+            </div>
           </div>
         </motion.div>
 
@@ -139,7 +174,7 @@ export default function Home_Page() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="md:col-span-4 md:row-span-1 bg-amber-400 rounded-[2rem] border border-amber-500 p-6 flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer"
+          className="md:col-span-4 md:row-span-1 bg-amber-400 rounded-2xl border border-amber-500 p-6 flex items-center justify-between hover:scale-[1.02] transition-transform cursor-pointer"
           onClick={() => window.scrollTo({ top: document.getElementById('events-section')?.offsetTop || 0, behavior: 'smooth' })}
         >
           <div className="flex flex-col">
@@ -167,7 +202,7 @@ export default function Home_Page() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="group bg-white border border-zinc-100 rounded-[2.5rem] hover:shadow-2xl hover:shadow-brand-600/5 transition-all flex flex-col overflow-hidden"
+                className="group bg-white border border-zinc-100 rounded-3xl hover:shadow-2xl hover:shadow-brand-600/5 transition-all flex flex-col overflow-hidden"
               >
                 <div className="aspect-[21/9] w-full relative overflow-hidden bg-slate-100">
                   <img 
@@ -208,7 +243,7 @@ export default function Home_Page() {
           <div className="flex justify-center">
             <Link 
               to="/events" 
-              className="group flex items-center gap-3 px-12 py-5 bg-brand-950 text-white rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all shadow-2xl shadow-brand-950/20 border border-brand-900 active:scale-95"
+              className="group flex items-center gap-3 px-12 py-5 bg-brand-950 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all shadow-2xl shadow-brand-950/20 border border-brand-900 active:scale-95"
             >
               View All Events <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
@@ -279,7 +314,7 @@ export default function Home_Page() {
                 <div className="h-full bg-brand-200 rounded-full" style={{ width: '40%' }}></div>
               </div>
             </div>
-            <div className="mt-auto p-5 bg-slate-50 rounded-[2rem] flex items-center gap-4 border border-slate-100">
+            <div className="mt-auto p-5 bg-slate-50 rounded-2xl flex items-center gap-4 border border-slate-100">
               <div className="w-12 h-12 bg-brand-100 rounded-2xl flex items-center justify-center text-brand-600">
                  <Users className="w-6 h-6" />
               </div>
@@ -296,49 +331,49 @@ export default function Home_Page() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
-          className="md:col-span-4 md:row-span-4 bg-brand-950 rounded-[2.5rem] p-8 text-white flex flex-col justify-between relative overflow-hidden border border-brand-900"
+          className="md:col-span-4 md:row-span-4 bg-white rounded-3xl p-8 text-slate-950 flex flex-col justify-between relative overflow-hidden border border-slate-100 shadow-sm"
         >
           <div className="absolute top-6 left-6">
-             <span className="text-[9px] font-black uppercase text-brand-400 tracking-[0.3em]">Our Legacy</span>
+             <span className="text-[9px] font-black uppercase text-slate-400 tracking-[0.3em]">Our Legacy</span>
           </div>
           <div className="mt-8 text-center sm:text-left">
-            <Trophy className="w-16 h-16 text-brand-400 mb-6 mx-auto sm:mx-0 drop-shadow-[0_0_15px_rgba(94,234,212,0.4)]" />
+            <Trophy className="w-16 h-16 text-brand-600 mb-6 mx-auto sm:mx-0" />
             <h4 className="text-2xl font-black mb-2 italic tracking-tighter uppercase">{latestAchievement?.title || "Recent Win"}</h4>
-            <p className="text-xs text-brand-200/60 mb-8 leading-relaxed uppercase font-bold tracking-widest">
+            <p className="text-xs text-slate-400 mb-8 leading-relaxed uppercase font-bold tracking-widest">
               {latestAchievement?.description || "Empowering the next generation of scientific leaders."}
             </p>
           </div>
           <Link 
             to="/achievements"
-            className="w-full bg-brand-500 text-brand-950 py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-500/30 hover:bg-white transition-all active:scale-95 text-center"
+            className="w-full bg-brand-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-600/20 hover:bg-brand-950 transition-all active:scale-95 text-center"
           >
             Explore Success
           </Link>
-          <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-500/10 blur-3xl"></div>
+          <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-50 blur-3xl"></div>
         </motion.div>
 
       </div>
 
-      <div className="mt-16 bg-brand-950 rounded-[3.5rem] p-12 md:p-24 text-white relative overflow-hidden border border-brand-900">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500/20 blur-[100px] -translate-y-1/2 translate-x-1/2" />
+      <div className="mt-16 bg-white rounded-[2.5rem] p-12 md:p-24 text-slate-950 relative overflow-hidden border border-slate-100 shadow-xl shadow-brand-950/5">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-50 blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10 text-center max-w-3xl mx-auto">
           <SectionHeader title="Recruitment Process" />
           <h3 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase mb-10 leading-none">
-            Become a part of <span className="text-brand-400">The Future</span>
+            Become a part of <span className="text-brand-600">The Future</span>
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 text-left">
-            <div className="bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md">
-              <div className="w-10 h-10 bg-brand-500 text-brand-950 rounded-xl flex items-center justify-center mb-4 font-black">1</div>
+            <div className="bg-slate-50 border border-slate-100 p-8 rounded-2xl">
+              <div className="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center mb-4 font-black">1</div>
               <h4 className="text-xl font-bold mb-2 uppercase tracking-tight italic">Google Forms</h4>
-              <p className="text-sm text-brand-200/60 font-medium">Apply via our online form. Simple questions to know more about your passion and skills.</p>
+              <p className="text-sm text-slate-500 font-medium">Apply via our online form. Simple questions to know more about your passion and skills.</p>
             </div>
-            <div className="bg-white/5 border border-white/10 p-8 rounded-3xl backdrop-blur-md">
-              <div className="w-10 h-10 bg-brand-500 text-brand-950 rounded-xl flex items-center justify-center mb-4 font-black">2</div>
+            <div className="bg-slate-50 border border-slate-100 p-8 rounded-2xl">
+              <div className="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center mb-4 font-black">2</div>
               <h4 className="text-xl font-bold mb-2 uppercase tracking-tight italic">Interview Round</h4>
-              <p className="text-sm text-brand-200/60 font-medium">A personal interaction with our core team to understand your vision and fit within INFINITIUM.</p>
+              <p className="text-sm text-slate-500 font-medium">A personal interaction with our core team to understand your vision and fit within INFINITIUM.</p>
             </div>
           </div>
-          <button className="px-12 py-5 bg-brand-500 text-brand-950 rounded-2xl font-black uppercase text-sm tracking-widest hover:bg-white transition-all shadow-2xl shadow-brand-500/20">
+          <button className="px-12 py-5 bg-brand-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest hover:bg-brand-950 transition-all shadow-2xl shadow-brand-600/20">
             Join INFINITIUM Today
           </button>
         </div>
@@ -346,11 +381,3 @@ export default function Home_Page() {
     </div>
   );
 }
-
-const SectionHeader = ({ title }: { title: string }) => (
-  <div className="flex items-center justify-center gap-4 mb-4">
-    <div className="h-px bg-brand-800 w-12 hidden md:block"></div>
-    <span className="text-[10px] font-black uppercase text-brand-300 tracking-[0.5em]">{title}</span>
-    <div className="h-px bg-brand-800 w-12 hidden md:block"></div>
-  </div>
-);

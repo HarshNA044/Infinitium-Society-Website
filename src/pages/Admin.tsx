@@ -440,23 +440,23 @@ export default function Admin_Page() {
 
   if (!user || user.email !== 'teaminfinitium.arsd@gmail.com') {
     return (
-      <div className="min-h-screen bg-zinc-900 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-zinc-800 rounded-[3rem] p-12 border border-zinc-700 shadow-2xl text-center space-y-8">
-          <div className="w-20 h-20 bg-brand-600 rounded-3xl flex items-center justify-center mx-auto shadow-xl shadow-brand-600/40">
+      <div className="min-h-screen bg-brand-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-3xl p-12 border border-slate-100 shadow-2xl shadow-brand-950/10 text-center space-y-8">
+          <div className="w-20 h-20 bg-brand-600 rounded-2xl flex items-center justify-center mx-auto shadow-xl shadow-brand-600/20">
             <LayoutDashboard className="w-10 h-10 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Admin Access</h1>
-            <p className="text-zinc-400 font-medium leading-relaxed">
+            <h1 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter mb-4">Admin Access</h1>
+            <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-2 leading-relaxed">
               This area is restricted to INFINITIUM core administrators. Please authenticate with your authorized Google account.
             </p>
           </div>
           <div className="py-8">
             <button 
               onClick={handleGoogleLogin}
-              className="w-full py-5 bg-white text-zinc-950 rounded-2xl font-black uppercase tracking-widest hover:bg-brand-400 hover:text-white transition-all flex items-center justify-center gap-3 active:scale-95 shadow-xl shadow-white/5"
+              className="w-full py-5 bg-zinc-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-brand-600 transition-all flex items-center justify-center gap-4 active:scale-95 shadow-xl shadow-brand-950/20 group"
             >
-              <Github className="w-5 h-5" /> Sign in with Google
+              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5 group-hover:scale-125 transition-transform" alt="Google" /> Sign in with Google
             </button>
           </div>
           {loginError && (
@@ -465,7 +465,7 @@ export default function Admin_Page() {
               </p>
             )}
           {user && user.email !== 'teaminfinitium.arsd@gmail.com' && (
-            <p className="text-red-400 text-xs font-bold uppercase tracking-widest">
+            <p className="text-red-600 text-xs font-bold uppercase tracking-widest">
               Access Denied for {user.email}
             </p>
           )}
@@ -521,7 +521,7 @@ export default function Admin_Page() {
           <h2 className="font-bold text-lg">Admin View</h2>
         </div>
 
-        <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 mb-4">
+        <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100 mb-4">
           <div className="flex items-center gap-3">
             <img src={user.photoURL || ''} className="w-8 h-8 rounded-full" alt="Admin" />
             <div className="overflow-hidden">
@@ -730,18 +730,18 @@ export default function Admin_Page() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-               <div className="bento-card lg:col-span-3 bg-brand-950 border border-brand-900 text-white">
-                 <h3 className="text-xs font-black uppercase text-brand-400 tracking-[0.3em] mb-8">System Health & Recent Activity</h3>
+               <div className="bento-card lg:col-span-3 bg-white border border-slate-100 shadow-sm text-slate-900">
+                 <h3 className="text-xs font-black uppercase text-slate-400 tracking-[0.3em] mb-8">System Health & Recent Activity</h3>
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                    <div className="space-y-6">
                       {[
                         { user: "Aryan S.", action: "Registered", time: "2m ago", event: "Pulsar 2026" },
                         { user: "Ishita M.", action: "Attended", time: "15m ago", event: "AI Seminar" },
                       ].map((item, i) => (
-                        <div key={i} className="flex gap-4 items-start border-l-2 border-brand-800 pl-4 py-1">
+                        <div key={i} className="flex gap-4 items-start border-l-2 border-brand-100 pl-4 py-1">
                           <div className="flex-1">
-                            <p className="text-xs font-bold text-brand-100"><span className="text-brand-400">{item.user}</span> {item.action}</p>
-                            <p className="text-[9px] text-brand-100/40 uppercase font-black tracking-widest mt-1">{item.event} • {item.time}</p>
+                            <p className="text-xs font-bold text-slate-900"><span className="text-brand-600">{item.user}</span> {item.action}</p>
+                            <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1">{item.event} • {item.time}</p>
                           </div>
                         </div>
                       ))}
@@ -751,10 +751,10 @@ export default function Admin_Page() {
                         { user: "Kabir R.", action: "Registered", time: "1h ago", event: "UI Workshop" },
                         { user: "Mehak P.", action: "Feedback", time: "2h ago", event: "Pulsar 2026" },
                       ].map((item, i) => (
-                        <div key={i} className="flex gap-4 items-start border-l-2 border-brand-800 pl-4 py-1">
+                        <div key={i} className="flex gap-4 items-start border-l-2 border-brand-100 pl-4 py-1">
                           <div className="flex-1">
-                            <p className="text-xs font-bold text-brand-100"><span className="text-brand-400">{item.user}</span> {item.action}</p>
-                            <p className="text-[9px] text-brand-100/40 uppercase font-black tracking-widest mt-1">{item.event} • {item.time}</p>
+                            <p className="text-xs font-bold text-slate-900"><span className="text-brand-600">{item.user}</span> {item.action}</p>
+                            <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1">{item.event} • {item.time}</p>
                           </div>
                         </div>
                       ))}
@@ -766,7 +766,7 @@ export default function Admin_Page() {
         )}
 
         {activeTab === 'events' && (
-          <div className="bg-white rounded-[2rem] border border-zinc-100 shadow-sm overflow-x-auto">
+          <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-x-auto">
              <table className="w-full text-left border-collapse min-w-[800px]">
                <thead className="bg-zinc-50">
                  <tr>

@@ -57,24 +57,24 @@ export default function Contact_Page() {
           <motion.div 
             initial={{ opacity: 0, y: 20 }} 
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white p-12 md:p-16 rounded-[4rem] shadow-2xl shadow-brand-900/5 border border-brand-100"
+            className="bg-white p-12 md:p-16 rounded-3xl shadow-2xl shadow-brand-900/5 border border-brand-100"
           >
             <form className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                  <div className="space-y-3">
                    <label className="text-[10px] uppercase font-black tracking-widest text-zinc-400 ml-2">Your Name</label>
-                   <input className="w-full px-6 py-4 bg-zinc-50 border-2 border-zinc-100 rounded-3xl focus:border-brand-600 outline-none transition-all font-bold text-sm" placeholder="Alex" />
+                   <input className="w-full px-6 py-4 bg-zinc-50 border-2 border-zinc-100 rounded-2xl focus:border-brand-600 outline-none transition-all font-bold text-sm" placeholder="Alex" />
                  </div>
                  <div className="space-y-3">
                    <label className="text-[10px] uppercase font-black tracking-widest text-zinc-400 ml-2">Email Address</label>
-                   <input className="w-full px-6 py-4 bg-zinc-50 border-2 border-zinc-100 rounded-3xl focus:border-brand-600 outline-none transition-all font-bold text-sm" placeholder="alex@gmail.com" />
+                   <input className="w-full px-6 py-4 bg-zinc-50 border-2 border-zinc-100 rounded-2xl focus:border-brand-600 outline-none transition-all font-bold text-sm" placeholder="alex@gmail.com" />
                  </div>
               </div>
               <div className="space-y-3">
                  <label className="text-[10px] uppercase font-black tracking-widest text-zinc-400 ml-2">Message</label>
-                 <textarea className="w-full px-6 py-4 bg-zinc-50 border-2 border-zinc-100 rounded-3xl h-40 focus:border-brand-600 outline-none transition-all font-bold text-sm" placeholder="How can we help?"></textarea>
+                 <textarea className="w-full px-6 py-4 bg-zinc-50 border-2 border-zinc-100 rounded-2xl h-40 focus:border-brand-600 outline-none transition-all font-bold text-sm" placeholder="How can we help?"></textarea>
               </div>
-              <button className="w-full py-5 bg-brand-950 text-white rounded-[2rem] font-black uppercase text-xs tracking-widest hover:bg-brand-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 border border-brand-900 shadow-xl shadow-brand-950/20">
+              <button className="w-full py-5 bg-brand-950 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 border border-brand-900 shadow-xl shadow-brand-950/20">
                 Send Message <Send className="w-5 h-5" />
               </button>
             </form>

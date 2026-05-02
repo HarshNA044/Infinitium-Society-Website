@@ -274,7 +274,7 @@ export default function EventDetail_Page() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-lg rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200"
+              className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200"
             >
               {!registrationSuccess ? (
                 <div className="p-8 md:p-10">
@@ -285,10 +285,10 @@ export default function EventDetail_Page() {
                      </button>
                    </div>
                    
-                   <div className="bg-brand-950 p-6 rounded-3xl mb-6 text-white relative overflow-hidden border border-brand-900">
-                     <p className="text-[9px] font-black text-brand-400 uppercase tracking-[0.3em] mb-1">EVENT CONFIRMATION</p>
-                     <p className="text-lg font-bold italic text-brand-200">{event?.title}</p>
-                     <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/20 blur-2xl rotate-45 transform translate-x-8 -translate-y-8"></div>
+                   <div className="bg-brand-50 p-6 rounded-3xl mb-6 text-slate-900 relative overflow-hidden border border-brand-100">
+                     <p className="text-[9px] font-black text-brand-600 uppercase tracking-[0.3em] mb-1">EVENT CONFIRMATION</p>
+                     <p className="text-lg font-bold italic text-slate-700">{event?.title}</p>
+                     <div className="absolute top-0 right-0 w-24 h-24 bg-brand-200/20 blur-2xl rotate-45 transform translate-x-8 -translate-y-8"></div>
                    </div>
 
                    <form onSubmit={handleRegister} className="space-y-6">
