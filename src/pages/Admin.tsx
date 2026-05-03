@@ -29,6 +29,7 @@ export default function Admin_Page() {
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedEventDate, setSelectedEventDate] = useState<string>('');
   const [events, setEvents] = useState([]);
   const [members, setMembers] = useState<any[]>([]);
   const [stats, setStats] = useState({ totalRegistrations: 0, totalAttendance: 0, eventsCount: 0 });
@@ -280,7 +281,8 @@ export default function Admin_Page() {
   const handleEventSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const data = {
+    const sheetId = formData.get('sheetId') as string;
+    const data: any = {
       title: formData.get('title') as string,
       subtitle: formData.get('subtitle') as string,
       type: formData.get('type') as string,
@@ -288,13 +290,16 @@ export default function Admin_Page() {
       location: formData.get('location') as string,
       image: eventImagePreview || formData.get('image') as string,
       description: formData.get('description') as string,
-      sheetId: formData.get('sheetId') as string,
       status: editingEvent?.status || 'Upcoming',
       stats: {
         registrations: parseInt(formData.get('registrations') as string) || 0,
         attendance: parseInt(formData.get('attendance') as string) || 0
       }
     };
+
+    if (sheetId !== null) {
+      data.sheetId = sheetId;
+    }
 
     const path = 'events';
     try {
@@ -592,6 +597,8 @@ export default function Admin_Page() {
             <button 
               onClick={() => {
                 setEditingEvent(null);
+                setSelectedEventDate('');
+                setEventImagePreview(null);
                 setShowAddEvent(true);
               }}
               className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
@@ -846,6 +853,7 @@ export default function Admin_Page() {
                           <button 
                             onClick={() => {
                               setEditingEvent(event);
+                              setSelectedEventDate(event.date);
                               setEventImagePreview(event.image);
                               setShowAddEvent(true);
                             }}
@@ -1309,6 +1317,7 @@ export default function Admin_Page() {
                         name="date" 
                         type="date" 
                         defaultValue={editingEvent?.date}
+                        onChange={(e) => setSelectedEventDate(e.target.value)}
                         required 
                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100" 
                       />
@@ -1320,16 +1329,18 @@ export default function Admin_Page() {
                     className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300" 
                     placeholder="Event Location (e.g. Auditorium)" 
                    />
-                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Google Sheet ID</label>
-                     <input 
-                       name="sheetId" 
-                       defaultValue={editingEvent?.sheetId}
-                       required
-                       className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 font-mono text-xs" 
-                       placeholder="Enter Google Sheet ID (from URL)" 
-                     />
-                   </div>
+                   {(!selectedEventDate || new Date(selectedEventDate) >= new Date(new Date().setHours(0,0,0,0))) && (
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Google Sheet ID</label>
+                      <input 
+                        name="sheetId" 
+                        defaultValue={editingEvent?.sheetId}
+                        required
+                        className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 font-mono text-xs" 
+                        placeholder="Enter Google Sheet ID (from URL)" 
+                      />
+                    </div>
+                   )}
                    <div className="space-y-2">
                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Or Poster Image URL</label>
                      <input 

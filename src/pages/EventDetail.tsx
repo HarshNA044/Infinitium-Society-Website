@@ -122,7 +122,7 @@ export default function EventDetail_Page() {
     doc.text(event.location, 25, 108);
     
     doc.setTextColor(100, 116, 139);
-    doc.text('DATE', 120, 100);
+    doc.text('WHEN', 120, 100);
     doc.setTextColor(30, 41, 59);
     doc.text(event.date, 120, 108);
 
@@ -211,7 +211,7 @@ export default function EventDetail_Page() {
                <div className="flex flex-wrap gap-8 items-center mt-6 py-6 border-y border-slate-100">
                   <div className="flex items-center gap-2 text-slate-500">
                      <Calendar className="w-4 h-4 text-brand-600" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">{event.date}</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest">When: {event.date}</span>
                   </div>
                   <div className="flex items-center gap-2 text-slate-500">
                      <MapPin className="w-4 h-4 text-brand-600" />
