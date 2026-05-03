@@ -449,7 +449,7 @@ export default function Admin_Page() {
             <LayoutDashboard className="w-10 h-10 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter mb-4">Admin Access</h1>
+            <h1 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter mb-4">Admin Login</h1>
             <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-2 leading-relaxed">
               This area is restricted to INFINITIUM core administrators. Please authenticate with your authorized Google account.
             </p>
@@ -521,7 +521,7 @@ export default function Admin_Page() {
           <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
             <LayoutDashboard className="w-4 h-4" />
           </div>
-          <h2 className="font-bold text-lg">Admin View</h2>
+          <h2 className="font-bold text-lg">Admin Login</h2>
         </div>
 
         <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100 mb-4">

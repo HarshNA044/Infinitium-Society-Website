@@ -76,7 +76,7 @@ const Navigation = () => {
               to="/admin"
               className="ml-4 px-4 py-2 bg-brand-950 text-white rounded-xl text-xs font-bold uppercase tracking-wider hover:bg-brand-900 transition-all flex items-center gap-2"
             >
-              Admin Portal
+              Admin Login
             </Link>
           </div>
 
@@ -120,7 +120,7 @@ const Navigation = () => {
                 onClick={() => setIsOpen(false)}
                 className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold uppercase tracking-wider text-white bg-brand-950 mt-4"
               >
-                Admin Portal
+                Admin Login
               </Link>
             </div>
           </motion.div>
@@ -153,7 +153,7 @@ const Footer = () => (
             <li><Link to="/members" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Members</Link></li>
             <li><Link to="/achievements" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Success</Link></li>
             <li><Link to="/feedback" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Feedback</Link></li>
-            <li><Link to="/admin" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Admin Portal</Link></li>
+            <li><Link to="/admin" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Admin Login</Link></li>
           </ul>
         </div>
 

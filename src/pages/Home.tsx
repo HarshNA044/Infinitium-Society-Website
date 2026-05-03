@@ -20,6 +20,7 @@ const SectionHeader = ({ title }: { title: string }) => (
 export default function Home_Page() {
   const [events, setEvents] = useState<any[]>([]);
   const [achievements, setAchievements] = useState<any[]>([]);
+  const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -33,6 +34,10 @@ export default function Home_Page() {
         const achQuery = query(collection(db, 'achievements'), orderBy('createdAt', 'desc'), limit(1));
         const achSnap = await getDocs(achQuery);
         setAchievements(achSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+        const galleryQuery = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'), limit(4));
+        const gallerySnap = await getDocs(galleryQuery);
+        setGalleryImages(gallerySnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } catch (error) {
         console.error("Error loading home data", error);
       } finally {
@@ -68,9 +73,9 @@ export default function Home_Page() {
                 y: [0, -5, 0],
               }}
               transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-10 right-20 text-amber-700/15 transform-gpu"
+              className="absolute top-10 right-10 sm:right-20 lg:right-40 text-amber-900/10 transform-gpu"
             >
-              <Cpu className="w-32 h-32" />
+              <Cpu className="w-24 h-24 md:w-32 md:h-32" />
             </motion.div>
 
             <motion.div 
@@ -78,9 +83,9 @@ export default function Home_Page() {
                 y: [0, 5, 0],
               }}
               transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute bottom-20 left-40 text-rose-700/15 transform-gpu"
+              className="absolute top-40 left-10 md:bottom-20 md:left-40 text-rose-900/10 transform-gpu"
             >
-              <TestTube2 className="w-24 h-24" />
+              <TestTube2 className="w-16 h-16 md:w-24 md:h-24" />
             </motion.div>
 
             <motion.div 
@@ -88,9 +93,9 @@ export default function Home_Page() {
                 rotate: [0, 360]
               }}
               transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-              className="absolute top-1/2 -right-10 text-blue-700/15 transform-gpu"
+              className="absolute top-1/2 -right-10 md:-right-20 lg:-right-10 text-blue-900/10 transform-gpu"
             >
-              <Monitor className="w-48 h-48" />
+              <Monitor className="w-32 h-32 md:w-48 md:h-48" />
             </motion.div>
 
             <motion.div 
@@ -99,9 +104,9 @@ export default function Home_Page() {
                 y: [0, -10, 0],
               }}
               transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-              className="absolute bottom-1/4 right-1/4 text-violet-700/10 transform-gpu"
+              className="absolute bottom-1/2 right-1/2 md:bottom-1/4 md:right-1/4 text-violet-900/10 transform-gpu"
             >
-              <Globe2 className="w-36 h-36" />
+              <Globe2 className="w-24 h-24 md:w-36 md:h-36" />
             </motion.div>
           </div>
 
@@ -116,7 +121,7 @@ export default function Home_Page() {
 
             <div className="flex flex-wrap gap-6 md:gap-8 items-center mt-4 pt-8 border-t border-slate-900/5">
               <div className="flex flex-col max-w-lg">
-                <span className="text-[9px] md:text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Legacy of ARSD College</span>
+                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Legacy of ARSD College</span>
                 <p className="text-xs md:text-sm font-medium text-slate-500 leading-relaxed uppercase tracking-tight">
                   INFINITIUM stands as the premier scientific hub of Atma Ram Sanatan Dharma College, 
                   unifying curiosity and academic rigor to shape the next generation of pioneers.
@@ -131,6 +136,7 @@ export default function Home_Page() {
             </div>
           </div>
         </motion.div>
+
 
         {/* Quick Registration (Span 12x1) */}
         <motion.div 
@@ -234,16 +240,25 @@ export default function Home_Page() {
             <Link to="/gallery" className="text-brand-600 hover:underline transition-colors uppercase italic font-black">View All</Link>
           </h3>
           <div className="grid grid-cols-2 gap-3 flex-1">
-            <div className="bg-slate-200 rounded-2xl h-full overflow-hidden">
-              <img src="https://images.unsplash.com/photo-1540575861501-7ce0e1d1aa99?q=80&w=400" className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="Preview 1" />
-            </div>
-            <div className="bg-slate-200 rounded-2xl h-full overflow-hidden">
-              <img src="https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?q=80&w=400" className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="Preview 2" />
-            </div>
-            <div className="bg-slate-200 rounded-2xl h-full overflow-hidden">
-              <img src="https://images.unsplash.com/photo-1523580494863-6f30312248f5?q=80&w=400" className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="Preview 3" />
-            </div>
-            <div className="bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xl">+12</div>
+            {galleryImages.length > 0 ? (
+              <>
+                {galleryImages.slice(0, 3).map((img, idx) => (
+                  <div key={img.id || idx} className="bg-slate-200 rounded-2xl h-full overflow-hidden">
+                    <img src={img.src} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt={img.title || `Preview ${idx + 1}`} />
+                  </div>
+                ))}
+                <div className="bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xl">
+                  {galleryImages.length > 3 ? `+${galleryImages.length - 3}` : '+0'}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-slate-200 rounded-2xl h-full overflow-hidden animate-pulse"></div>
+                <div className="bg-slate-200 rounded-2xl h-full overflow-hidden animate-pulse"></div>
+                <div className="bg-slate-200 rounded-2xl h-full overflow-hidden animate-pulse"></div>
+                <div className="bg-slate-100 rounded-2xl animate-pulse"></div>
+              </>
+            )}
           </div>
         </motion.div>
 
