@@ -23,7 +23,7 @@ const Card = ({ icon: Icon, title, text, delay }: any) => (
     whileInView={{ opacity: 1, scale: 1 }}
     viewport={{ once: true }}
     transition={{ delay }}
-    className="p-8 bg-white border border-zinc-100 rounded-3xl shadow-sm hover:shadow-xl hover:border-brand-100 transition-all group"
+    className="p-8 bg-white border border-zinc-100 rounded-xl shadow-sm hover:shadow-xl hover:border-brand-100 transition-all group"
   >
     <div className="w-14 h-14 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
       <Icon className="w-7 h-7" />
@@ -39,7 +39,7 @@ const DepartmentCard = ({ icon: Icon, title, aim, tasks, delay }: any) => (
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ delay }}
-    className="p-8 bg-white text-slate-950 rounded-3xl relative overflow-hidden border border-slate-100 shadow-sm"
+    className="p-8 bg-white text-slate-950 rounded-2xl relative overflow-hidden border border-slate-100 shadow-sm"
   >
     <div className="absolute top-0 right-0 p-8 opacity-5">
       <Icon className="w-32 h-32 text-brand-600" />
@@ -133,7 +133,7 @@ export default function About_Page() {
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="aspect-square bg-slate-100 rounded-3xl md:rounded-[2.5rem] overflow-hidden relative"
+            className="aspect-square bg-slate-100 rounded-2xl md:rounded-2xl overflow-hidden relative"
           >
             <img 
               src={data.hero.image} 
@@ -164,7 +164,7 @@ export default function About_Page() {
         </section>
 
         {/* Impacts Section */}
-        <section className="mb-32 p-12 md:p-20 bg-white rounded-[2.5rem] text-slate-950 overflow-hidden relative border border-slate-100 shadow-xl shadow-brand-950/5">
+        <section className="mb-32 p-12 md:p-20 bg-white rounded-2xl text-slate-950 overflow-hidden relative border border-slate-100 shadow-xl shadow-brand-950/5">
           <div className="absolute top-0 right-0 w-96 h-96 bg-brand-50 blur-[100px] -translate-y-1/2 translate-x-1/2" />
           <SectionTitle subtitle="Transforming Lives">Impacts on Students</SectionTitle>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
@@ -208,7 +208,7 @@ export default function About_Page() {
         </section>
 
         {/* CTA Section */}
-        <section className="p-12 md:p-24 bg-brand-50 border border-brand-100 rounded-[2.5rem] text-center overflow-hidden relative">
+        <section className="p-12 md:p-24 bg-brand-50 border border-brand-100 rounded-2xl text-center overflow-hidden relative">
           <div className="absolute top-0 left-0 p-8">
              <span className="text-[10px] font-black uppercase text-brand-400 tracking-[0.4em]">Join the movement</span>
           </div>
@@ -219,10 +219,10 @@ export default function About_Page() {
             If you're a student at ARSD College with a thirst for knowledge and a passion for discovery, join INFINITIUM today! Together, let's shape a brighter future.
           </p>
           <div className="flex flex-wrap justify-center gap-4">
-            <button className="px-10 py-5 bg-brand-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-600/20 hover:bg-brand-950 transition-colors">
+            <button className="px-10 py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-600/20 hover:bg-brand-950 transition-colors">
                Apply for Core Team
             </button>
-            <Link to="/events" className="px-10 py-5 bg-white border-2 border-brand-200 text-brand-800 rounded-2xl flex items-center justify-center font-black uppercase text-xs tracking-widest hover:border-brand-600 transition-all">
+            <Link to="/events" className="px-10 py-5 bg-white border-2 border-brand-200 text-brand-800 rounded-xl flex items-center justify-center font-black uppercase text-xs tracking-widest hover:border-brand-600 transition-all">
                Explore Events
             </Link>
           </div>

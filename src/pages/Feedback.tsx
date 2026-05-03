@@ -93,7 +93,7 @@ export default function Feedback_Page() {
            <p className="text-zinc-500 text-lg mb-12 font-medium text-left">Your feedback helps INFINITIUM grow better and serve the student community better.</p>
            
            {!submitted ? (
-             <form onSubmit={handleSubmit} className="space-y-8 bg-brand-50 p-10 rounded-3xl border border-brand-100">
+             <form onSubmit={handleSubmit} className="space-y-8 bg-brand-50 p-10 rounded-2xl border border-brand-100">
                 <div>
                    <label className="text-[10px] font-black block mb-6 uppercase tracking-[0.2em] text-brand-600">How was your overall experience?</label>
                    <div className="flex flex-wrap gap-2 md:gap-4">
@@ -124,7 +124,7 @@ export default function Feedback_Page() {
              <motion.div 
                initial={{ opacity: 0, scale: 0.9 }} 
                animate={{ opacity: 1, scale: 1 }}
-               className="bg-emerald-50 p-12 rounded-3xl text-center border-2 border-emerald-100"
+               className="bg-emerald-50 p-12 rounded-2xl text-center border-2 border-emerald-100"
              >
                 <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-8">
                    <CheckCircle className="w-10 h-10" />
@@ -137,7 +137,7 @@ export default function Feedback_Page() {
 
         {/* Certificate Area */}
         <div>
-           <div className="bg-white p-12 md:p-16 rounded-3xl text-slate-950 h-full flex flex-col justify-center border border-slate-100 shadow-xl relative overflow-hidden">
+           <div className="bg-white p-12 md:p-16 rounded-2xl text-slate-950 h-full flex flex-col justify-center border border-slate-100 shadow-xl relative overflow-hidden">
               <div className="absolute top-0 right-0 w-64 h-64 bg-brand-50 blur-[80px] -translate-y-1/2 translate-x-1/2"></div>
               <div className="bg-brand-50 w-16 h-16 rounded-2xl flex items-center justify-center text-brand-600 mb-8 border border-brand-100">
                 <Award className="w-8 h-8" />
@@ -152,12 +152,12 @@ export default function Feedback_Page() {
                     <input 
                        value={searchRoll}
                        onChange={(e) => setSearchRoll(e.target.value)}
-                       className="w-full px-8 py-5 bg-slate-50 rounded-3xl border border-slate-100 outline-none focus:border-brand-600 transition-all pr-32 font-bold text-sm tracking-widest uppercase placeholder:text-zinc-400" 
+                       className="w-full px-8 py-5 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:border-brand-600 transition-all pr-32 font-bold text-sm tracking-widest uppercase placeholder:text-zinc-400" 
                        placeholder="Roll No (e.g. 22/CS/001)" 
                     />
                     <button 
                        onClick={checkCertificate}
-                       className="absolute right-3 top-3 bottom-3 px-6 bg-brand-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all shadow-xl shadow-brand-600/20"
+                       className="absolute right-3 top-3 bottom-3 px-6 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all shadow-xl shadow-brand-600/20"
                     >
                        Check
                     </button>
@@ -168,7 +168,7 @@ export default function Feedback_Page() {
                       <motion.div 
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-brand-50 p-8 rounded-3xl border border-brand-100 space-y-8 overflow-hidden"
+                        className="bg-brand-50 p-8 rounded-2xl border border-brand-100 space-y-8 overflow-hidden"
                       >
                          <div className="flex justify-between items-center">
                            <div>
@@ -179,7 +179,7 @@ export default function Feedback_Page() {
                          </div>
                          <button 
                            onClick={downloadCert}
-                           className="w-full py-5 bg-brand-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-600/20"
+                           className="w-full py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-600/20"
                          >
                            <Download className="w-5 h-5" /> Download Certificate
                          </button>

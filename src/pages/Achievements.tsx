@@ -52,7 +52,7 @@ export default function Achievements_Page() {
               className="bento-card group hover:shadow-2xl hover:shadow-brand-600/5 transition-all"
             >
               <div className="flex justify-between items-start mb-6">
-                <div className="w-12 h-12 bg-brand-50 text-brand-500 rounded-2xl flex items-center justify-center border border-brand-100 group-hover:scale-110 transition-transform">
+                <div className="w-12 h-12 bg-brand-50 text-brand-500 rounded-xl flex items-center justify-center border border-brand-100 group-hover:scale-110 transition-transform">
                   <Trophy className="w-6 h-6 text-brand-600" />
                 </div>
                 <span className="text-[10px] bento-tag bg-slate-100 text-slate-500 font-black">{item.date}</span>

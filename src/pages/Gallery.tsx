@@ -50,7 +50,7 @@ export default function Gallery_Page() {
               transition={{ delay: idx * 0.1 }}
               className="group relative"
             >
-              <div className="relative overflow-hidden rounded-3xl bg-slate-100 aspect-square cursor-zoom-in border border-slate-100 shadow-sm group-hover:shadow-xl transition-all">
+              <div className="relative overflow-hidden rounded-2xl bg-slate-100 aspect-square cursor-zoom-in border border-slate-100 shadow-sm group-hover:shadow-xl transition-all">
                 <img 
                   src={item.src} 
                   className="w-full h-full object-cover brightness-90 group-hover:scale-110 transition-all duration-700" 
@@ -58,7 +58,7 @@ export default function Gallery_Page() {
                   referrerPolicy="no-referrer"
                 />
                 <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                   <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-2xl border border-white/20 text-white flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform">
+                   <div className="bg-white/20 backdrop-blur-md px-6 py-3 rounded-xl border border-white/20 text-white flex items-center gap-2 transform translate-y-4 group-hover:translate-y-0 transition-transform">
                      <ZoomIn className="w-5 h-5 text-brand-400" />
                      <span className="text-[10px] font-black uppercase tracking-widest">Enlarge</span>
                    </div>

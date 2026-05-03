@@ -58,7 +58,7 @@ export default function Home_Page() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-12 md:row-span-4 bg-white/90 backdrop-blur-xl rounded-3xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-xl shadow-brand-500/5 group border border-white/50 transform-gpu"
+          className="md:col-span-12 md:row-span-4 bg-white/90 backdrop-blur-xl rounded-2xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-xl shadow-brand-500/5 group border border-white/50 transform-gpu"
         >
           {/* Decorative Background Elements - Optimized for performance */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -129,7 +129,7 @@ export default function Home_Page() {
               </div>
               <Link 
                 to="/about"
-                className="w-full md:w-auto md:ml-auto bg-brand-600 text-white px-10 py-5 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all shadow-xl shadow-brand-600/20 active:scale-95 text-center"
+                className="w-full md:w-auto md:ml-auto bg-brand-600 text-white px-10 py-5 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all shadow-xl shadow-brand-600/20 active:scale-95 text-center"
               >
                 Our Story
               </Link>
@@ -180,7 +180,7 @@ export default function Home_Page() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="group bg-white border border-zinc-100 rounded-3xl hover:shadow-2xl hover:shadow-brand-600/5 transition-all flex flex-col overflow-hidden"
+                className="group bg-white border border-zinc-100 rounded-2xl hover:shadow-2xl hover:shadow-brand-600/5 transition-all flex flex-col overflow-hidden"
               >
                 <div className="aspect-[21/9] w-full relative overflow-hidden bg-slate-100">
                   <img 
@@ -209,7 +209,7 @@ export default function Home_Page() {
                   </div>
                   <Link 
                     to={`/events/${event.id}`}
-                    className="w-full py-4 border-2 border-zinc-100 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 group-hover:border-brand-500 group-hover:bg-brand-500 group-hover:text-white transition-all shadow-sm"
+                    className="w-full py-4 border-2 border-zinc-100 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 group-hover:border-brand-500 group-hover:bg-brand-500 group-hover:text-white transition-all shadow-sm"
                   >
                     Explore Event
                   </Link>
@@ -221,7 +221,7 @@ export default function Home_Page() {
           <div className="flex justify-center">
             <Link 
               to="/events" 
-              className="group flex items-center gap-3 px-12 py-5 bg-brand-950 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all shadow-2xl shadow-brand-950/20 border border-brand-900 active:scale-95"
+              className="group flex items-center gap-3 px-12 py-5 bg-brand-950 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all shadow-2xl shadow-brand-950/20 border border-brand-900 active:scale-95"
             >
               View All Events <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
@@ -267,7 +267,7 @@ export default function Home_Page() {
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.5 }}
-          className="md:col-span-6 md:row-span-4 bg-white rounded-3xl p-8 text-slate-950 flex flex-col justify-between relative overflow-hidden border border-slate-100 shadow-sm"
+          className="md:col-span-6 md:row-span-4 bg-white rounded-2xl p-8 text-slate-950 flex flex-col justify-between relative overflow-hidden border border-slate-100 shadow-sm"
         >
           <div className="absolute top-6 left-6">
              <span className="text-[9px] font-black uppercase text-slate-400 tracking-[0.3em]">Our Legacy</span>
@@ -281,7 +281,7 @@ export default function Home_Page() {
           </div>
           <Link 
             to="/achievements"
-            className="w-full bg-brand-600 text-white py-4 rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-600/20 hover:bg-brand-950 transition-all active:scale-95 text-center"
+            className="w-full bg-brand-600 text-white py-4 rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-600/20 hover:bg-brand-950 transition-all active:scale-95 text-center"
           >
             Explore Success
           </Link>
@@ -290,7 +290,7 @@ export default function Home_Page() {
 
       </div>
 
-      <div className="mt-16 bg-white rounded-[2.5rem] p-12 md:p-24 text-slate-950 relative overflow-hidden border border-slate-100 shadow-xl shadow-brand-950/5">
+      <div className="mt-16 bg-white rounded-xl p-12 md:p-24 text-slate-950 relative overflow-hidden border border-slate-100 shadow-xl shadow-brand-950/5">
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-50 blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10 text-center max-w-3xl mx-auto">
           <SectionHeader title="Recruitment Process" />
@@ -298,18 +298,18 @@ export default function Home_Page() {
             Become a part of <span className="text-brand-600">The Future</span>
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 text-left">
-            <div className="bg-slate-50 border border-slate-100 p-8 rounded-2xl">
-              <div className="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center mb-4 font-black">1</div>
+            <div className="bg-slate-50 border border-slate-100 p-8 rounded-xl">
+              <div className="w-10 h-10 bg-brand-600 text-white rounded-lg flex items-center justify-center mb-4 font-black">1</div>
               <h4 className="text-xl font-bold mb-2 uppercase tracking-tight italic">Google Forms</h4>
               <p className="text-sm text-slate-500 font-medium">Apply via our online form. Simple questions to know more about your passion and skills.</p>
             </div>
-            <div className="bg-slate-50 border border-slate-100 p-8 rounded-2xl">
-              <div className="w-10 h-10 bg-brand-600 text-white rounded-xl flex items-center justify-center mb-4 font-black">2</div>
+            <div className="bg-slate-50 border border-slate-100 p-8 rounded-xl">
+              <div className="w-10 h-10 bg-brand-600 text-white rounded-lg flex items-center justify-center mb-4 font-black">2</div>
               <h4 className="text-xl font-bold mb-2 uppercase tracking-tight italic">Interview Round</h4>
               <p className="text-sm text-slate-500 font-medium">A personal interaction with our core team to understand your vision and fit within INFINITIUM.</p>
             </div>
           </div>
-          <button className="px-12 py-5 bg-brand-600 text-white rounded-2xl font-black uppercase text-sm tracking-widest hover:bg-brand-950 transition-all shadow-2xl shadow-brand-600/20">
+          <button className="px-12 py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-sm tracking-widest hover:bg-brand-950 transition-all shadow-2xl shadow-brand-600/20">
             Join INFINITIUM Today
           </button>
         </div>

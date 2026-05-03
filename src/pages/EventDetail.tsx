@@ -237,7 +237,7 @@ export default function EventDetail_Page() {
                  ) : (
                    <button 
                      onClick={() => setIsRegistering(true)}
-                     className="px-10 py-5 bg-brand-600 text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20 active:scale-95 flex items-center gap-3"
+                     className="px-10 py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-[0.2em] hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20 active:scale-95 flex items-center gap-3"
                    >
                      Register for Event <ArrowRight className="w-4 h-4" />
                    </button>
@@ -274,7 +274,7 @@ export default function EventDetail_Page() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200"
+              className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200"
             >
               {!registrationSuccess ? (
                 <div className="p-8 md:p-10">
@@ -285,7 +285,7 @@ export default function EventDetail_Page() {
                      </button>
                    </div>
                    
-                   <div className="bg-brand-50 p-6 rounded-3xl mb-6 text-slate-900 relative overflow-hidden border border-brand-100">
+                   <div className="bg-brand-50 p-6 rounded-2xl mb-6 text-slate-900 relative overflow-hidden border border-brand-100">
                      <p className="text-[9px] font-black text-brand-600 uppercase tracking-[0.3em] mb-1">EVENT CONFIRMATION</p>
                      <p className="text-lg font-bold italic text-slate-700">{event?.title}</p>
                      <div className="absolute top-0 right-0 w-24 h-24 bg-brand-200/20 blur-2xl rotate-45 transform translate-x-8 -translate-y-8"></div>
@@ -330,7 +330,7 @@ export default function EventDetail_Page() {
                      <button 
                        disabled={loading}
                        type="submit"
-                       className="w-full py-4.5 bg-brand-600 text-white rounded-3xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-brand-600/10"
+                       className="w-full py-4.5 bg-brand-600 text-white rounded-xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-brand-600/10"
                      >
                        {loading ? 'Processing...' : 'Confirm Registration'}
                      </button>
@@ -347,7 +347,7 @@ export default function EventDetail_Page() {
                     <br />Save the ticket below.
                   </p>
                   
-                  <div className="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-200 mb-8 flex flex-col items-center shadow-inner">
+                  <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 mb-8 flex flex-col items-center shadow-inner">
                     <div className="bg-white p-3 rounded-2xl shadow-xl">
                       <QRCodeCanvas 
                         value={registrationSuccess.ticketId} 
@@ -362,7 +362,7 @@ export default function EventDetail_Page() {
                   <div className="flex flex-col gap-3">
                     <button 
                       onClick={downloadTicket}
-                      className="w-full py-4 bg-brand-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20"
+                      className="w-full py-4 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20"
                     >
                       <Download className="w-4 h-4" /> Download PDF Ticket
                     </button>

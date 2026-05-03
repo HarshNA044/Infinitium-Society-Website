@@ -4,7 +4,7 @@ import {
   BarChart3, Plus, Scan, Users, Calendar, 
   Trash2, CheckCircle, XCircle, ChevronLeft,
   LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
-  Trophy, Download, LogIn, Github, Menu, X
+  Trophy, Download, LogIn, Github, Menu, X, MessageSquare
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -12,6 +12,7 @@ import {
 } from 'recharts';
 import { Html5QrcodeScanner } from 'html5-qrcode';
 import { useApi } from '../hooks/useApi';
+import { Logo } from '../App';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { 
   collection, getDocs, doc, setDoc, updateDoc, deleteDoc, 
@@ -56,6 +57,8 @@ export default function Admin_Page() {
   const [gallery, setGallery] = useState<any[]>([]);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [editingGallery, setEditingGallery] = useState<any>(null);
+
+  const [messages, setMessages] = useState<any[]>([]);
 
   // About management state
   const [aboutData, setAboutData] = useState<any>(null);
@@ -107,6 +110,10 @@ export default function Admin_Page() {
       // Load Gallery
       const gallerySnap = await getDocs(query(collection(db, 'gallery'), orderBy('createdAt', 'desc')));
       setGallery(gallerySnap.docs.map(d => ({ id: d.id, ...d.data() })));
+
+      // Load Messages
+      const messagesSnap = await getDocs(query(collection(db, 'contact_messages'), orderBy('timestamp', 'desc')));
+      setMessages(messagesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
 
       // Load About
       const aboutDoc = await getDoc(doc(db, 'about', 'current'));
@@ -444,10 +451,8 @@ export default function Admin_Page() {
   if (!user || user.email !== 'teaminfinitium.arsd@gmail.com') {
     return (
       <div className="min-h-screen bg-brand-50 flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-3xl p-12 border border-slate-100 shadow-2xl shadow-brand-950/10 text-center space-y-8">
-          <div className="w-20 h-20 bg-brand-600 rounded-2xl flex items-center justify-center mx-auto shadow-xl shadow-brand-600/20">
-            <LayoutDashboard className="w-10 h-10 text-white" />
-          </div>
+        <div className="max-w-md w-full bg-white rounded-2xl p-12 border border-slate-100 shadow-2xl shadow-brand-950/10 text-center space-y-8">
+          <Logo className="w-24 h-24 mx-auto" />
           <div>
             <h1 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter mb-4">Admin Login</h1>
             <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-2 leading-relaxed">
@@ -457,7 +462,7 @@ export default function Admin_Page() {
           <div className="py-8">
             <button 
               onClick={handleGoogleLogin}
-              className="w-full py-5 bg-zinc-900 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-brand-600 transition-all flex items-center justify-center gap-4 active:scale-95 shadow-xl shadow-brand-950/20 group"
+              className="w-full py-5 bg-zinc-900 text-white rounded-xl font-black uppercase tracking-widest hover:bg-brand-600 transition-all flex items-center justify-center gap-4 active:scale-95 shadow-xl shadow-brand-950/20 group"
             >
               <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5 group-hover:scale-125 transition-transform" alt="Google" /> Sign in with Google
             </button>
@@ -486,10 +491,8 @@ export default function Admin_Page() {
       {/* Mobile Sidebar Header */}
       <div className="md:hidden bg-white border-b border-zinc-200 p-4 flex items-center justify-between sticky top-0 z-[60]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
-            <LayoutDashboard className="w-4 h-4" />
-          </div>
-          <h2 className="font-bold text-sm uppercase tracking-widest text-zinc-900 italic">INFINITIUM ADMIN</h2>
+          <Logo className="w-10 h-10" />
+          <h2 className="font-black text-sm uppercase tracking-tighter text-zinc-900 italic">INFINITIUM</h2>
         </div>
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -518,10 +521,8 @@ export default function Admin_Page() {
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="hidden md:flex items-center gap-3">
-          <div className="w-8 h-8 bg-zinc-900 rounded-lg flex items-center justify-center text-white">
-            <LayoutDashboard className="w-4 h-4" />
-          </div>
-          <h2 className="font-bold text-lg">Admin Login</h2>
+          <Logo className="w-10 h-10" />
+          <h2 className="font-black text-sm uppercase tracking-tighter italic">INFINITIUM</h2>
         </div>
 
         <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100 mb-4">
@@ -546,6 +547,7 @@ export default function Admin_Page() {
             { id: 'members', icon: Users, label: 'Members' },
             { id: 'achievements', icon: Trophy, label: 'Achievements' },
             { id: 'gallery', icon: Camera, label: 'Gallery' },
+            { id: 'messages', icon: MessageSquare, label: 'Messages' },
             { id: 'about', icon: LayoutDashboard, label: 'About Page' },
             { id: 'scanner', icon: Scan, label: 'QR Scanner' },
           ].map(tab => (
@@ -618,6 +620,32 @@ export default function Admin_Page() {
               className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
             >
               <Plus className="w-5 h-5" /> Add Image
+            </button>
+          )}
+          {activeTab === 'messages' && (
+            <button 
+              onClick={() => {
+                const headers = ['ID', 'Name', 'Email', 'Message', 'Timestamp'];
+                const rows = messages.map(m => [
+                  m.id,
+                  m.name,
+                  m.email,
+                  `"${m.message?.replace(/"/g, '""')}"`,
+                  m.timestamp?.toDate ? m.timestamp.toDate().toLocaleString() : new Date(m.timestamp).toLocaleString()
+                ]);
+                const csvContent = "data:text/csv;charset=utf-8," 
+                  + headers.join(",") + "\n"
+                  + rows.map(e => e.join(",")).join("\n");
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `infinitium_contact_messages_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+              }}
+              className="flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20 border border-brand-700"
+            >
+              <Download className="w-5 h-5" /> Download Excel (CSV)
             </button>
           )}
           {activeTab === 'about' && (
@@ -834,7 +862,7 @@ export default function Admin_Page() {
         {activeTab === 'achievements' && (
           <div className="space-y-6">
             {achievements.map((a: any) => (
-              <div key={a.id} className="bg-white p-8 rounded-[2.5rem] border border-zinc-100 shadow-sm flex justify-between items-center group">
+              <div key={a.id} className="bg-white p-8 rounded-2xl border border-zinc-100 shadow-sm flex justify-between items-center group">
                 <div>
                   <h3 className="text-xl font-black text-zinc-900 uppercase italic tracking-tighter mb-1">{a.title}</h3>
                   <p className="text-xs text-brand-600 font-bold uppercase tracking-widest mb-4">{a.date}</p>
@@ -867,7 +895,7 @@ export default function Admin_Page() {
         {activeTab === 'gallery' && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {gallery.map((item: any) => (
-              <div key={item.id} className="relative group rounded-[2.5rem] overflow-hidden border border-zinc-100 shadow-sm bg-white">
+              <div key={item.id} className="relative group rounded-2xl overflow-hidden border border-zinc-100 shadow-sm bg-white">
                 <div className="aspect-square overflow-hidden relative">
                   <img src={item.src} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" referrerPolicy="no-referrer" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center">
@@ -991,7 +1019,7 @@ export default function Admin_Page() {
               <h3 className="text-xl font-bold mb-6 italic uppercase tracking-tight">Objectives</h3>
               <div className="space-y-8">
                 {aboutData.objectives.map((obj: any, idx: number) => (
-                  <div key={obj.id} className="p-6 bg-zinc-50 rounded-3xl border border-zinc-100 space-y-4">
+                  <div key={obj.id} className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
                     <input 
                       value={obj.title}
                       onChange={(e) => {
@@ -1023,6 +1051,77 @@ export default function Admin_Page() {
                 Editing the Departments and Impacts listed here will instantly reflect across the public About page. 
                 Ensure all URLs are accessible and images are high quality.
               </p>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'messages' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden">
+               <div className="p-8 border-b border-zinc-100 flex justify-between items-center">
+                  <h3 className="text-sm font-black uppercase text-zinc-400 tracking-widest">Contact Form Submissions</h3>
+                  <span className="px-3 py-1 bg-brand-50 text-brand-600 rounded-full text-[10px] font-black uppercase">{messages.length} Total Messages</span>
+               </div>
+               <div className="overflow-x-auto">
+                 <table className="w-full text-left border-collapse min-w-[800px]">
+                   <thead className="bg-zinc-50 border-b border-zinc-100">
+                     <tr>
+                       <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-widest">SENDER</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-widest">MESSAGE</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-widest">DATE</th>
+                       <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-widest text-right">ACTION</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-zinc-100">
+                     {messages.map((m: any) => (
+                       <tr key={m.id} className="hover:bg-zinc-50/50 transition-colors group">
+                         <td className="px-8 py-6">
+                            <p className="font-bold text-zinc-900 text-sm">{m.name}</p>
+                            <p className="text-[11px] text-zinc-400 font-medium">{m.email}</p>
+                         </td>
+                         <td className="px-8 py-6">
+                            <p className="text-zinc-600 text-sm font-medium line-clamp-2 max-w-md">{m.message}</p>
+                         </td>
+                         <td className="px-8 py-6">
+                            <p className="text-[10px] font-bold text-zinc-400 uppercase">
+                              {m.timestamp?.toDate ? m.timestamp.toDate().toLocaleDateString() : new Date(m.timestamp).toLocaleDateString()}
+                            </p>
+                            <p className="text-[9px] text-zinc-300 font-bold uppercase mt-0.5">
+                              {m.timestamp?.toDate ? m.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </p>
+                         </td>
+                         <td className="px-8 py-6 text-right">
+                            <button 
+                              onClick={async () => {
+                                if (window.confirm("Are you sure you want to delete this message?")) {
+                                  try {
+                                    await deleteDoc(doc(db, 'contact_messages', m.id));
+                                    loadFirebaseData();
+                                  } catch (err) {
+                                    console.error(err);
+                                  }
+                                }
+                              }}
+                              className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all opacity-0 group-hover:opacity-100"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                         </td>
+                       </tr>
+                     ))}
+                     {messages.length === 0 && (
+                       <tr>
+                         <td colSpan={4} className="px-8 py-20 text-center">
+                            <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-dashed border-zinc-200">
+                              <MessageSquare className="w-6 h-6 text-zinc-300" />
+                            </div>
+                            <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">No messages found in database</p>
+                         </td>
+                       </tr>
+                     )}
+                   </tbody>
+                 </table>
+               </div>
             </div>
           </div>
         )}
@@ -1060,7 +1159,7 @@ export default function Admin_Page() {
                       <button 
                         disabled={!selectedScanEventId}
                         onClick={() => setIsScanning(true)}
-                        className="w-full py-5 bg-brand-600 text-white rounded-3xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-600/20 disabled:opacity-50"
+                        className="w-full py-5 bg-brand-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-600/20 disabled:opacity-50"
                       >
                         <Camera className="w-5 h-5" /> Open Scanner
                       </button>
@@ -1154,7 +1253,7 @@ export default function Admin_Page() {
                 <h2 className="text-3xl font-bold mb-8">{editingEvent ? 'Edit Event' : 'Create New Event'}</h2>
                 <form className="space-y-6" onSubmit={handleEventSubmit}>
                    <div className="flex flex-col items-center gap-4 mb-8">
-                      <div className="w-full aspect-video rounded-[2.5rem] bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group">
+                      <div className="w-full aspect-video rounded-2xl bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group">
                         {eventImagePreview ? (
                           <img src={eventImagePreview} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
@@ -1298,7 +1397,7 @@ export default function Admin_Page() {
                     className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-32 placeholder:text-zinc-300" 
                     placeholder="Description"
                    ></textarea>
-                   <button type="submit" className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all">
+                   <button type="submit" className="w-full py-5 bg-brand-600 text-white rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all">
                     {editingAchievement ? 'Update Achievement' : 'Save Achievement'}
                    </button>
                 </form>
@@ -1321,7 +1420,7 @@ export default function Admin_Page() {
                 <h2 className="text-3xl font-bold mb-8">{editingGallery ? 'Edit Gallery Item' : 'Add Gallery Image'}</h2>
                 <form className="space-y-6" onSubmit={handleGallerySubmit}>
                    <div className="flex flex-col items-center gap-4 mb-8">
-                      <div className="w-full aspect-square max-w-[300px] rounded-[2.5rem] bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group mx-auto">
+                      <div className="w-full aspect-square max-w-[300px] rounded-2xl bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group mx-auto">
                         {galleryImagePreview ? (
                           <img src={galleryImagePreview} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
@@ -1390,7 +1489,7 @@ export default function Admin_Page() {
                initial={{ opacity: 0, scale: 0.9 }}
                animate={{ opacity: 1, scale: 1 }}
                exit={{ opacity: 0, scale: 0.9 }}
-               className="relative bg-white w-full max-w-sm rounded-[2.5rem] p-10 shadow-2xl text-center"
+               className="relative bg-white w-full max-w-sm rounded-2xl p-10 shadow-2xl text-center"
              >
                 <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <Trash2 className="w-8 h-8" />
@@ -1443,7 +1542,7 @@ export default function Admin_Page() {
                 </h2>
                 <form onSubmit={handleMemberSubmit} className="space-y-6">
                    <div className="flex flex-col items-center gap-4 mb-8">
-                      <div className="w-32 h-32 rounded-[2.5rem] bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group">
+                      <div className="w-32 h-32 rounded-2xl bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group">
                         {memberImagePreview ? (
                           <img src={memberImagePreview} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                         ) : (
@@ -1527,7 +1626,7 @@ export default function Admin_Page() {
                    </div>
                    <button 
                      type="submit"
-                     className="w-full py-5 bg-zinc-900 text-white rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all shadow-xl"
+                     className="w-full py-5 bg-zinc-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all shadow-xl"
                    >
                      {editingMember ? 'Update Profile' : 'Add to Team'}
                    </button>

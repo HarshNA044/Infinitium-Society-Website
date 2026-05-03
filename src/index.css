@@ -33,7 +33,7 @@
   }
   
   .bento-card {
-    @apply bg-white rounded-2xl border border-slate-200 p-6 flex flex-col shadow-sm transition-all hover:shadow-lg;
+    @apply bg-white rounded-xl border border-slate-200 p-6 flex flex-col shadow-sm transition-all hover:shadow-lg;
   }
   
   .bento-tag {

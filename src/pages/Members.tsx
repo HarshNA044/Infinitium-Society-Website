@@ -55,13 +55,13 @@ export default function Members_Page() {
                   </p>
                 </div>
 
-                <div className="p-8 bg-zinc-50 rounded-2xl border border-zinc-100 shadow-sm transition-all hover:shadow-xl hover:shadow-brand-600/5">
+                <div className="p-8 bg-zinc-50 rounded-xl border border-zinc-100 shadow-sm transition-all hover:shadow-xl hover:shadow-brand-600/5">
                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-1">Select Tenure</h3>
                    <div className="relative">
                       <select 
                         value={tenure}
                         onChange={(e) => setTenure(e.target.value)}
-                        className="w-full bg-white border-2 border-zinc-100 rounded-2xl px-6 py-4 text-sm font-black text-slate-900 appearance-none focus:border-brand-600 outline-none transition-all cursor-pointer shadow-sm"
+                        className="w-full bg-white border-2 border-zinc-100 rounded-xl px-6 py-4 text-sm font-black text-slate-900 appearance-none focus:border-brand-600 outline-none transition-all cursor-pointer shadow-sm"
                       >
                         {tenures.map((t, idx) => (
                           <option key={t} value={t}>
@@ -100,7 +100,7 @@ export default function Members_Page() {
                    transition={{ delay: idx * 0.05 }}
                    className="group"
                  >
-                   <div className="relative overflow-hidden rounded-2xl bg-zinc-50 aspect-square mb-4 border border-zinc-100 shadow-sm transition-all hover:shadow-xl hover:shadow-brand-600/10">
+                   <div className="relative overflow-hidden rounded-xl bg-zinc-50 aspect-square mb-4 border border-zinc-100 shadow-sm transition-all hover:shadow-xl hover:shadow-brand-600/10">
                      <img 
                        src={member.image} 
                        alt={member.name} 
@@ -134,7 +134,7 @@ export default function Members_Page() {
              </div>
 
              {filteredMembers.length === 0 && (
-               <div className="py-20 bg-zinc-50 rounded-3xl border-2 border-dashed border-zinc-100 text-center flex flex-col items-center">
+               <div className="py-20 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-100 text-center flex flex-col items-center">
                   <Users className="w-12 h-12 text-zinc-200 mb-4" />
                   <p className="text-slate-400 font-black italic uppercase text-xs tracking-widest">No members found for this tenure.</p>
                </div>

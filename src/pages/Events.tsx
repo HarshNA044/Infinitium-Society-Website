@@ -248,7 +248,7 @@ export default function Events_Page() {
 
                 <Link
                   to={`/events/${event.id}`}
-                  className="w-full py-4 bg-brand-950 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-brand-600/20 active:scale-95 border border-brand-900"
+                  className="w-full py-4 bg-brand-950 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-brand-600/20 active:scale-95 border border-brand-900"
                 >
                   Explore Event <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -276,7 +276,7 @@ export default function Events_Page() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden border border-slate-200 max-h-[90vh] overflow-y-auto"
+              className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200 max-h-[90vh] overflow-y-auto"
             >
               {!registrationSuccess ? (
                 <div className="p-8 md:p-10">
@@ -287,7 +287,7 @@ export default function Events_Page() {
                      </button>
                    </div>
                    
-                   <div className="bg-brand-50 p-8 rounded-3xl mb-10 text-slate-900 relative overflow-hidden border border-brand-100">
+                   <div className="bg-brand-50 p-8 rounded-2xl mb-10 text-slate-900 relative overflow-hidden border border-brand-100">
                      <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mb-2">EVENT CONFIRMATION</p>
                      <p className="text-xl font-bold italic text-slate-700">{selectedEvent?.title}</p>
                      <div className="absolute top-0 right-0 w-32 h-32 bg-brand-200/20 blur-2xl rotate-45 transform translate-x-12 -translate-y-12"></div>
@@ -332,7 +332,7 @@ export default function Events_Page() {
                      <button 
                        disabled={loading}
                        type="submit"
-                       className="w-full py-4.5 bg-brand-600 text-white rounded-3xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-brand-600/10"
+                       className="w-full py-4.5 bg-brand-600 text-white rounded-xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-brand-600/10"
                      >
                        {loading ? 'Processing...' : 'Confirm Registration'}
                      </button>
@@ -349,7 +349,7 @@ export default function Events_Page() {
                     <br />Save the ticket below.
                   </p>
                   
-                  <div className="bg-slate-50 p-8 rounded-3xl border border-slate-200 mb-8 flex flex-col items-center shadow-inner">
+                  <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 mb-8 flex flex-col items-center shadow-inner">
                     <div className="bg-white p-3 rounded-2xl shadow-xl">
                       <QRCodeCanvas 
                         value={registrationSuccess.ticketId} 
@@ -364,7 +364,7 @@ export default function Events_Page() {
                   <div className="flex flex-col gap-3">
                     <button 
                       onClick={downloadTicket}
-                      className="w-full py-4 bg-brand-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20"
+                      className="w-full py-4 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-widest flex items-center justify-center gap-2 hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20"
                     >
                       <Download className="w-4 h-4" /> Download PDF Ticket
                     </button>

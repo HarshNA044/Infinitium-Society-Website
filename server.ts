@@ -139,10 +139,14 @@ async function startServer() {
 
   let contactData = {
     location: "Atma Ram Sanatan Dharma College, Dhuala Kuan, New Delhi, Delhi 110021",
-    email: "infinitium@arsd.du.ac.in",
+    email: "teaminfinitium.arsd@gmail.com",
+    instagram: "@infinitium_arsd",
+    linkedin: "INFINITIUM ARSD",
     phone: "+91 99999 88888",
     mapLink: "https://maps.app.goo.gl/..."
   };
+
+  let contactMessages: any[] = [];
 
   // API Routes
   app.get('/api/events', (req, res) => res.json(events));
@@ -215,6 +219,25 @@ async function startServer() {
     contactData = { ...contactData, ...req.body };
     res.json(contactData);
   });
+
+  app.post('/api/contact', (req, res) => {
+    const { name, email, message } = req.body;
+    const newMessage = { 
+      id: Date.now().toString(), 
+      name, 
+      email, 
+      message, 
+      timestamp: new Date() 
+    };
+    contactMessages.push(newMessage);
+    
+    // Simulate email notification
+    console.log(`[EMAIL NOTIFICATION] To: teaminfinitium.arsd@gmail.com | Subject: New Contact Form Submission from ${name} | Body: ${message} (From: ${email})`);
+    
+    res.json({ success: true, message: 'Message received successfully' });
+  });
+
+  app.get('/api/contact-messages', (req, res) => res.json(contactMessages));
 
   app.post('/api/register', (req, res) => {
     const { eventId, studentName, rollNo, email } = req.body;
