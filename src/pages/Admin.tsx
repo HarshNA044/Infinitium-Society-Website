@@ -372,33 +372,20 @@ export default function Admin_Page() {
       
       scannerRef.current.render(async (decodedText) => {
         try {
-          const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
-          if (!appsScriptUrl) throw new Error("Apps Script URL not configured");
-
           setScanResult({ loading: true });
           
-          const response = await fetch(appsScriptUrl, {
+          const result = await request('/api/mark-attendance', {
             method: 'POST',
-            body: JSON.stringify({ 
-              action: 'markAttendance',
-              sheetId: targetEvent.sheetId,
-              ticketId: decodedText 
-            })
+            body: JSON.stringify({ ticketId: decodedText })
           });
           
-          const result = await response.json();
-          
-          if (result.status === 'success') {
-            setScanResult({ 
-              success: true, 
-              student: result.student,
-              alreadyMarked: result.alreadyMarked,
-              ticketId: decodedText
-            });
-            loadFirebaseData();
-          } else {
-            throw new Error(result.message || "Verification failed");
-          }
+          setScanResult({ 
+            success: true, 
+            student: result.registration,
+            alreadyMarked: result.message === 'Already marked',
+            ticketId: decodedText
+          });
+          loadFirebaseData();
         } catch (err: any) {
           setScanResult({ success: false, error: err.message });
         }
