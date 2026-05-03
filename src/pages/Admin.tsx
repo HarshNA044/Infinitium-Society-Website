@@ -869,7 +869,7 @@ export default function Admin_Page() {
             {gallery.map((item: any) => (
               <div key={item.id} className="relative group rounded-[2.5rem] overflow-hidden border border-zinc-100 shadow-sm bg-white">
                 <div className="aspect-square overflow-hidden relative">
-                  <img src={item.src} className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-grayscale duration-500" referrerPolicy="no-referrer" />
+                  <img src={item.src} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" referrerPolicy="no-referrer" />
                   <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center">
                     <p className="text-white text-[10px] font-black uppercase tracking-widest leading-relaxed line-clamp-4">{item.description}</p>
                   </div>
@@ -911,7 +911,7 @@ export default function Admin_Page() {
                     <img 
                       src={member.image} 
                       alt={member.name} 
-                      className="w-16 h-16 rounded-2xl object-cover grayscale group-hover:grayscale-0 transition-all"
+                      className="w-16 h-16 rounded-2xl object-cover transition-all"
                       referrerPolicy="no-referrer"
                     />
                     <div>

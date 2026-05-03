@@ -53,7 +53,7 @@ export default function Gallery_Page() {
               <div className="relative overflow-hidden rounded-3xl bg-slate-100 aspect-square cursor-zoom-in border border-slate-100 shadow-sm group-hover:shadow-xl transition-all">
                 <img 
                   src={item.src} 
-                  className="w-full h-full object-cover grayscale brightness-90 group-hover:grayscale-0 group-hover:scale-110 transition-all duration-700" 
+                  className="w-full h-full object-cover brightness-90 group-hover:scale-110 transition-all duration-700" 
                   alt={item.title} 
                   referrerPolicy="no-referrer"
                 />

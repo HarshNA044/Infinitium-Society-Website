@@ -137,7 +137,7 @@ export default function About_Page() {
           >
             <img 
               src={data.hero.image} 
-              className="w-full h-full object-cover grayscale brightness-75" 
+              className="w-full h-full object-cover brightness-100" 
               alt="Science Exploration"
             />
             <div className="absolute inset-0 bg-brand-600/20 mix-blend-multiply" />
