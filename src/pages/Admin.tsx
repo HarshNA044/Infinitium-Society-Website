@@ -100,67 +100,91 @@ export default function Admin_Page() {
   const loadFirebaseData = async () => {
     try {
       // Load Members
-      const membersSnap = await getDocs(query(collection(db, 'members'), orderBy('tenure', 'desc')));
-      setMembers(membersSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      try {
+        const membersSnap = await getDocs(query(collection(db, 'members'), orderBy('tenure', 'desc')));
+        setMembers(membersSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.GET, 'members');
+      }
 
       // Load Achievements
-      const achievementsSnap = await getDocs(query(collection(db, 'achievements'), orderBy('createdAt', 'desc')));
-      setAchievements(achievementsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      try {
+        const achievementsSnap = await getDocs(query(collection(db, 'achievements'), orderBy('createdAt', 'desc')));
+        setAchievements(achievementsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.GET, 'achievements');
+      }
 
       // Load Gallery
-      const gallerySnap = await getDocs(query(collection(db, 'gallery'), orderBy('createdAt', 'desc')));
-      setGallery(gallerySnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      try {
+        const gallerySnap = await getDocs(query(collection(db, 'gallery'), orderBy('createdAt', 'desc')));
+        setGallery(gallerySnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.GET, 'gallery');
+      }
 
       // Load Messages
-      const messagesSnap = await getDocs(query(collection(db, 'contact_messages'), orderBy('timestamp', 'desc')));
-      setMessages(messagesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      try {
+        const messagesSnap = await getDocs(query(collection(db, 'contact_messages'), orderBy('timestamp', 'desc')));
+        setMessages(messagesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (e) {
+        handleFirestoreError(e, OperationType.GET, 'contact_messages');
+      }
 
       // Load About
-      const aboutDoc = await getDoc(doc(db, 'about', 'current'));
-      if (aboutDoc.exists()) {
-        setAboutData(aboutDoc.data());
-      } else {
-        // Initialize with default structure to prevent setDoc(null) errors
-        setAboutData({
-          hero: { 
-            title: "INFINITIUM SOCIETY", 
-            subtitle: "The Premier Society of Physical Sciences at ARSD College, University of Delhi. Empowering students with scientific temper and innovation.", 
-            image: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=2070&auto=format&fit=crop" 
-          },
-          objectives: [
-            { id: 'obj1', title: 'Scientific Temper', text: 'Cultivating a curious and analytical mindset among students.' },
-            { id: 'obj2', title: 'Innovation', text: 'Providing a platform for creative solutions and technical growth.' },
-            { id: 'obj3', title: 'Leadership', text: 'Developing organizational and leadership skills through event management.' }
-          ],
-          impacts: [
-            { id: 'imp1', title: '1500+', text: 'Students reached annually' },
-            { id: 'imp2', title: '50+', text: 'Technical events organized' }
-          ],
-          departments: [
-            { id: 'dep1', title: 'Core Team', aim: 'Overall management', tasks: ['Operations', 'Strategy'] }
-          ]
-        });
+      try {
+        const aboutDoc = await getDoc(doc(db, 'about', 'current'));
+        if (aboutDoc.exists()) {
+          setAboutData(aboutDoc.data());
+        } else {
+          // Initialize with default structure
+          setAboutData({
+            hero: { 
+              title: "INFINITIUM SOCIETY", 
+              subtitle: "The Premier Society of Physical Sciences at ARSD College, University of Delhi.", 
+              image: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=2070&auto=format&fit=crop" 
+            },
+            objectives: [
+              { id: 'obj1', title: 'Scientific Temper', text: 'Cultivating a curious and analytical mindset.' },
+              { id: 'obj2', title: 'Innovation', text: 'Providing a platform for creative solutions.' },
+              { id: 'obj3', title: 'Leadership', text: 'Developing organizational skills.' }
+            ],
+            impacts: [
+              { id: 'imp1', title: '1500+', text: 'Students reached annually' },
+              { id: 'imp2', title: '50+', text: 'Technical events organized' }
+            ],
+            departments: [
+              { id: 'dep1', title: 'Core Team', aim: 'Overall management', tasks: ['Operations', 'Strategy'] }
+            ]
+          });
+        }
+      } catch (e) {
+        handleFirestoreError(e, OperationType.GET, 'about');
       }
 
       // Load Events
-      const eventsSnap = await getDocs(query(collection(db, 'events'), orderBy('date', 'desc')));
-      const eventsList = eventsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      setEvents(eventsList);
+      try {
+        const eventsSnap = await getDocs(query(collection(db, 'events'), orderBy('date', 'desc')));
+        const eventsList = eventsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+        setEvents(eventsList);
 
-      // Compute stats from events
-      let totalReg = 0;
-      let totalAtt = 0;
-      eventsList.forEach((e: any) => {
-        totalReg += (e.stats?.registrations || 0);
-        totalAtt += (e.stats?.attendance || 0);
-      });
+        // Compute stats
+        let totalReg = 0;
+        let totalAtt = 0;
+        eventsList.forEach((e: any) => {
+          totalReg += (e.stats?.registrations || 0);
+          totalAtt += (e.stats?.attendance || 0);
+        });
 
-      setStats({
-        totalRegistrations: totalReg,
-        totalAttendance: totalAtt,
-        eventsCount: eventsList.length
-      });
-    } catch (error) {
+        setStats({
+          totalRegistrations: totalReg,
+          totalAttendance: totalAtt,
+          eventsCount: eventsList.length
+        });
+      } catch (e) {
+        handleFirestoreError(e, OperationType.GET, 'events');
+      }
+    } catch (error: any) {
       console.error("Error loading Firebase data", error);
     }
   };

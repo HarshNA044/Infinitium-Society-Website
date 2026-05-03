@@ -136,5 +136,25 @@ service cloud.firestore {
       );
       allow delete: if isAdmin();
     }
+
+    // --- Contact Messages Rules ---
+    match /contact_messages/{messageId} {
+      function isValidMessage(data) {
+        return data.keys().hasAll(['name', 'email', 'message', 'status', 'timestamp'])
+          && data.keys().size() == 5
+          && data.name is string && data.name.size() <= 100
+          && data.email is string && data.email.size() <= 200
+          && data.message is string && data.message.size() <= 5000
+          && data.status in ['new', 'read', 'replied']
+          && data.timestamp is timestamp;
+      }
+
+      allow read: if isAdmin();
+      allow create: if isValidMessage(incoming()) && incoming().timestamp == request.time && incoming().status == 'new';
+      allow update: if isAdmin() && isValidMessage(incoming()) && (
+        incoming().diff(existing()).affectedKeys().hasOnly(['status'])
+      );
+      allow delete: if isAdmin();
+    }
   }
 }

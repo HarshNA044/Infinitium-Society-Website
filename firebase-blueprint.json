@@ -110,6 +110,19 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "description", "date", "type", "sheetId"]
+    },
+    "ContactMessage": {
+      "title": "Contact Message",
+      "description": "A message sent via the contact form",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["new", "read", "replied"] },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "email", "message", "status", "timestamp"]
     }
   },
   "firestore": {
@@ -132,6 +145,10 @@
     "/events": {
       "schema": "Event",
       "description": "Collection of society events"
+    },
+    "/contact_messages": {
+      "schema": "ContactMessage",
+      "description": "Collection of messages from the contact form"
     }
   }
 }
