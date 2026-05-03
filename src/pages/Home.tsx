@@ -62,13 +62,13 @@ export default function Home_Page() {
             <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-rose-200/5 blur-[80px] rounded-full" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(94,234,212,0.03)_0%,transparent_70%)]" />
             
-            {/* Very slow, subtle icon floats */}
+            {/* Very slow, subtle icon floats - Optimized for performance */}
             <motion.div 
               animate={{ 
                 y: [0, -5, 0],
               }}
               transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-10 right-20 text-cyan-500/10 transform-gpu"
+              className="absolute top-10 right-20 text-amber-700/15 transform-gpu"
             >
               <Cpu className="w-32 h-32" />
             </motion.div>
@@ -78,7 +78,7 @@ export default function Home_Page() {
                 y: [0, 5, 0],
               }}
               transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute bottom-20 left-40 text-emerald-500/10 transform-gpu"
+              className="absolute bottom-20 left-40 text-rose-700/15 transform-gpu"
             >
               <TestTube2 className="w-24 h-24" />
             </motion.div>
@@ -88,9 +88,20 @@ export default function Home_Page() {
                 rotate: [0, 360]
               }}
               transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-              className="absolute top-1/2 -right-10 text-indigo-500/5 transform-gpu"
+              className="absolute top-1/2 -right-10 text-blue-700/15 transform-gpu"
             >
               <Monitor className="w-48 h-48" />
+            </motion.div>
+
+            <motion.div 
+              animate={{ 
+                x: [0, 10, 0],
+                y: [0, -10, 0],
+              }}
+              transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+              className="absolute bottom-1/4 right-1/4 text-violet-700/10 transform-gpu"
+            >
+              <Globe2 className="w-36 h-36" />
             </motion.div>
           </div>
 
