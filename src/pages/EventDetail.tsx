@@ -8,7 +8,7 @@ import {
 import { QRCodeCanvas } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 
 export default function EventDetail_Page() {
@@ -16,8 +16,10 @@ export default function EventDetail_Page() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [event, setEvent] = useState<any>(null);
+  const [photos, setPhotos] = useState<any[]>([]);
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState<any>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     studentName: '',
     rollNo: '',
@@ -43,7 +45,19 @@ export default function EventDetail_Page() {
         setLoading(false);
       }
     };
+
+    const fetchPhotos = async () => {
+      if (!id) return;
+      try {
+        const photosSnap = await getDocs(query(collection(db, 'events', id, 'photos'), orderBy('createdAt', 'desc')));
+        setPhotos(photosSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch (err) {
+        console.error("Photos load failed", err);
+      }
+    };
+
     fetchEvent();
+    fetchPhotos();
   }, [id, navigate]);
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -253,8 +267,67 @@ export default function EventDetail_Page() {
                   <Info className="w-4 h-4" /> Policy
                </button>
             </div>
+
+            {photos.length > 0 && (
+              <div className="pt-20 border-t border-slate-100">
+                <div className="flex items-end justify-between mb-12">
+                  <div>
+                    <h2 className="text-3xl font-black italic tracking-tighter uppercase text-slate-900 leading-none">Event Gallery</h2>
+                    <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mt-3">Captured Moments</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {photos.map((photo) => (
+                    <motion.div 
+                      key={photo.id}
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      viewport={{ once: true }}
+                      onClick={() => setSelectedPhoto(photo.src)}
+                      className="aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group cursor-pointer"
+                    >
+                      <img 
+                        src={photo.src} 
+                        alt="Event Moment" 
+                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
+                        referrerPolicy="no-referrer"
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </div>
+            )}
         </div>
       </div>
+
+      {/* Photo Lightbox */}
+      <AnimatePresence>
+        {selectedPhoto && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute inset-0 bg-zinc-950/95 backdrop-blur-xl"
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="relative max-w-5xl w-full max-h-[85vh] flex items-center justify-center"
+            >
+              <img src={selectedPhoto} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" referrerPolicy="no-referrer" />
+              <button 
+                onClick={() => setSelectedPhoto(null)}
+                className="absolute -top-12 right-0 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Registration Modal */}
       <AnimatePresence>

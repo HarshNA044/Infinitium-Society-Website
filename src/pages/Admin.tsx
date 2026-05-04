@@ -58,6 +58,13 @@ export default function Admin_Page() {
   const [gallery, setGallery] = useState<any[]>([]);
   const [showGalleryModal, setShowGalleryModal] = useState(false);
   const [editingGallery, setEditingGallery] = useState<any>(null);
+  const [isImageProcessing, setIsImageProcessing] = useState(false);
+  const [isSubmittingGallery, setIsSubmittingGallery] = useState(false);
+
+  // Event specific photos
+  const [eventPhotos, setEventPhotos] = useState<any[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [eventPhotoModalId, setEventPhotoModalId] = useState<string | null>(null);
 
   const [messages, setMessages] = useState<any[]>([]);
 
@@ -219,12 +226,15 @@ export default function Admin_Page() {
   const handleGalleryFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setIsImageProcessing(true);
       try {
-        const compressed = await compressImage(file, 1200, 1200, 0.7); // Gallery needs better quality
+        const compressed = await compressImage(file, 1024, 1024, 0.7); // 1024 is safer for document limits
         setGalleryImagePreview(compressed);
       } catch (err) {
         console.error("Compression failed", err);
-        alert("Failed to process image.");
+        alert("Failed to process image. It might be too large or an unsupported format.");
+      } finally {
+        setIsImageProcessing(false);
       }
     }
   };
@@ -353,6 +363,12 @@ export default function Admin_Page() {
 
   const handleGallerySubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isImageProcessing) {
+      alert("Please wait for image to finish processing.");
+      return;
+    }
+    
+    setIsSubmittingGallery(true);
     const formData = new FormData(e.currentTarget);
     const data = {
       src: galleryImagePreview || formData.get('src') as string,
@@ -376,6 +392,8 @@ export default function Admin_Page() {
       loadFirebaseData();
     } catch (error) {
       handleFirestoreError(error, editingGallery ? OperationType.UPDATE : OperationType.CREATE, path);
+    } finally {
+      setIsSubmittingGallery(false);
     }
   };
 
@@ -383,6 +401,69 @@ export default function Admin_Page() {
     setShowGalleryModal(false);
     setEditingGallery(null);
     setGalleryImagePreview(null);
+  };
+
+  const loadEventPhotos = async (eventId: string) => {
+    try {
+      const photosSnap = await getDocs(query(collection(db, 'events', eventId, 'photos'), orderBy('createdAt', 'desc')));
+      setEventPhotos(photosSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error("Failed to load event photos", err);
+    }
+  };
+
+  const handleEventPhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>, eventId: string) => {
+    const file = e.target.files?.[0];
+    if (file && eventId) {
+      setIsUploadingPhoto(true);
+      try {
+        const compressed = await compressImage(file, 1024, 1024, 0.7);
+        const photoRef = doc(collection(db, 'events', eventId, 'photos'));
+        await setDoc(photoRef, {
+          src: compressed,
+          createdAt: serverTimestamp(),
+          sharedToGallery: false
+        });
+        loadEventPhotos(eventId);
+      } catch (err) {
+        console.error("Photo upload failed", err);
+        alert("Failed to process photo.");
+      } finally {
+        setIsUploadingPhoto(false);
+      }
+    }
+  };
+
+  const sharePhotoToGallery = async (photo: any, event: any) => {
+    try {
+      const galleryRef = doc(collection(db, 'gallery'));
+      await setDoc(galleryRef, {
+        src: photo.src,
+        title: event.title,
+        description: `Captured during ${event.title}`,
+        category: 'Events',
+        createdAt: serverTimestamp()
+      });
+      
+      const eventPhotoRef = doc(db, 'events', event.id, 'photos', photo.id);
+      await updateDoc(eventPhotoRef, { sharedToGallery: true });
+      
+      loadEventPhotos(event.id);
+      loadFirebaseData();
+      alert("Photo shared to the society gallery!");
+    } catch (error) {
+       handleFirestoreError(error, OperationType.WRITE, 'gallery');
+    }
+  };
+
+  const deleteEventPhoto = async (eventId: string, photoId: string) => {
+    if (!window.confirm("Delete this photo?")) return;
+    try {
+      await deleteDoc(doc(db, 'events', eventId, 'photos', photoId));
+      loadEventPhotos(eventId);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.DELETE, `events/${eventId}/photos/${photoId}`);
+    }
   };
 
   useEffect(() => {
@@ -863,6 +944,16 @@ export default function Admin_Page() {
                             <Edit3 className="w-3.5 h-3.5" /> Edit
                           </button>
                           <button 
+                            onClick={() => {
+                              setEventPhotoModalId(event.id);
+                              loadEventPhotos(event.id);
+                            }}
+                            className="px-3 py-1.5 bg-zinc-50 text-zinc-600 rounded-lg text-xs font-bold hover:bg-zinc-100 transition-all flex items-center gap-1 border border-zinc-100"
+                            title="Manage Photos"
+                          >
+                            <Camera className="w-3.5 h-3.5" /> Photos
+                          </button>
+                          <button 
                             onClick={() => setDeleteConfirm({ id: event.id, type: 'event' })}
                             className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-bold hover:bg-red-100 transition-all flex items-center gap-1 border border-red-100"
                             title="Delete Event"
@@ -1258,6 +1349,100 @@ export default function Admin_Page() {
         )}
       </main>
 
+      {/* Event Photos Manager Modal */}
+      <AnimatePresence>
+        {eventPhotoModalId && (
+          <div className="fixed inset-0 z-[180] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setEventPhotoModalId(null)} />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white w-full max-w-4xl rounded-[2.5rem] p-8 md:p-12 shadow-2xl max-h-[90vh] overflow-hidden flex flex-col"
+            >
+              <div className="flex justify-between items-start mb-8">
+                <div>
+                  <h2 className="text-2xl font-black text-zinc-900 uppercase italic tracking-tighter">
+                    {events.find((e: any) => e.id === eventPhotoModalId)?.title} - Photos
+                  </h2>
+                  <p className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mt-1">Manage event-specific memories</p>
+                </div>
+                <button onClick={() => setEventPhotoModalId(null)} className="p-2 bg-zinc-50 rounded-xl hover:bg-zinc-100 transition-colors">
+                  <XCircle className="w-6 h-6 text-zinc-400" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto pr-2 space-y-8">
+                {/* Upload Zone */}
+                <div className="p-8 border-2 border-dashed border-zinc-200 rounded-3xl bg-zinc-50/50 flex flex-col items-center justify-center text-center group hover:border-brand-300 transition-colors relative">
+                  <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-zinc-100 group-hover:scale-110 transition-transform">
+                    {isUploadingPhoto ? (
+                      <div className="w-8 h-8 border-4 border-brand-100 border-t-brand-600 rounded-full animate-spin"></div>
+                    ) : (
+                      <Plus className="w-8 h-8 text-brand-600" />
+                    )}
+                  </div>
+                  <p className="text-xs font-bold text-zinc-900 uppercase tracking-widest">
+                    {isUploadingPhoto ? "Processing Protocol..." : "Upload Event Photos"}
+                  </p>
+                  <p className="text-[10px] font-medium text-zinc-400 mt-1 uppercase tracking-widest">Supports JPG, PNG up to 1MB</p>
+                  <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed" 
+                    disabled={isUploadingPhoto}
+                    onChange={(e) => handleEventPhotoUpload(e, eventPhotoModalId)}
+                  />
+                </div>
+
+                {/* Photo Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+                  {eventPhotos.map((photo) => {
+                    const currentEvent = events.find((e: any) => e.id === eventPhotoModalId);
+                    return (
+                      <div key={photo.id} className="group relative aspect-square rounded-2xl overflow-hidden bg-zinc-100 border border-zinc-200">
+                        <img src={photo.src} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" referrerPolicy="no-referrer" />
+                        <div className="absolute inset-0 bg-zinc-900/60 opacity-0 group-hover:opacity-100 transition-opacity p-4 flex flex-col justify-between">
+                          <div className="flex justify-end">
+                            <button 
+                              onClick={() => deleteEventPhoto(eventPhotoModalId, photo.id)}
+                              className="p-2 bg-red-500/20 hover:bg-red-500 text-white rounded-xl backdrop-blur-sm transition-colors"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="space-y-2">
+                            {!photo.sharedToGallery ? (
+                              <button 
+                                onClick={() => sharePhotoToGallery(photo, currentEvent)}
+                                className="w-full py-2 bg-brand-600 text-white rounded-xl text-[9px] font-black uppercase tracking-widest hover:bg-brand-500 transition-colors shadow-lg shadow-brand-950/20"
+                              >
+                                Share to Gallery
+                              </button>
+                            ) : (
+                              <div className="w-full py-2 bg-emerald-500 text-white rounded-xl text-[9px] font-black uppercase tracking-widest flex items-center justify-center gap-1.5 cursor-default">
+                                <CheckCircle className="w-3 h-3" /> Shared
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {eventPhotos.length === 0 && !isUploadingPhoto && (
+                  <div className="py-20 text-center">
+                    <Camera className="w-12 h-12 text-zinc-200 mx-auto mb-4" />
+                    <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">No event photos found</p>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* Event Modal */}
       <AnimatePresence>
         {showAddEvent && (
@@ -1451,12 +1636,14 @@ export default function Admin_Page() {
                             <span className="text-[10px] font-black uppercase tracking-widest">No Image Selected</span>
                           </div>
                         )}
-                        <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                        <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" htmlFor="gallery-upload">
                           <Plus className="text-white w-10 h-10" />
-                          <input type="file" className="hidden" accept="image/*" onChange={handleGalleryFileChange} />
+                          <input id="gallery-upload" type="file" className="hidden" accept="image/*" onChange={handleGalleryFileChange} />
                         </label>
                       </div>
-                      <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-center">Click to upload photo from your device</p>
+                      <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-center">
+                        {isImageProcessing ? "Processing Image..." : "Click to upload photo from your device"}
+                      </p>
                    </div>
 
                    <input 
@@ -1493,8 +1680,19 @@ export default function Admin_Page() {
                     className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-32 placeholder:text-zinc-300" 
                     placeholder="Description of the moment"
                    ></textarea>
-                   <button type="submit" className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all">
-                    {editingGallery ? 'Update Item' : 'Add to Gallery'}
+                   <button 
+                    type="submit" 
+                    disabled={isSubmittingGallery || isImageProcessing}
+                    className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                   >
+                    {isSubmittingGallery ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      editingGallery ? 'Update Item' : 'Add to Gallery'
+                    )}
                    </button>
                 </form>
              </motion.div>

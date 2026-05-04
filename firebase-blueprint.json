@@ -123,6 +123,19 @@
         "timestamp": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "email", "message", "status", "timestamp"]
+    },
+    "EventPhoto": {
+      "title": "Event Photo",
+      "description": "An image belongs to a specific event",
+      "type": "object",
+      "properties": {
+        "src": { "type": "string", "description": "Image URL" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "sharedToGallery": { "type": "boolean" }
+      },
+      "required": ["src", "createdAt"]
     }
   },
   "firestore": {
@@ -145,6 +158,10 @@
     "/events": {
       "schema": "Event",
       "description": "Collection of society events"
+    },
+    "/events/{eventId}/photos": {
+      "schema": "EventPhoto",
+      "description": "Photos related to a specific event"
     },
     "/contact_messages": {
       "schema": "ContactMessage",
