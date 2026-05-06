@@ -148,16 +148,13 @@ const Footer = () => (
           <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-500 mb-6">Connect</h4>
           <ul className="space-y-4">
             <li><a href="https://www.instagram.com/infinitium_arsd/" target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-              <span className="p-1.5 bg-rose-500/10 rounded-lg group-hover:bg-rose-500/20 transition-colors"><Image_Instagram className="w-3 h-3 text-rose-400" /></span> Instagram
+              <span className="p-1.5 bg-rose-500/10 rounded-lg"><Image_Instagram className="w-3 h-3 text-rose-400" /></span> Instagram
             </a></li>
             <li><a href="https://www.linkedin.com/company/infinitium-arsd/" target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-              <span className="p-1.5 bg-blue-500/10 rounded-lg group-hover:bg-blue-500/20 transition-colors"><Linkedin className="w-3 h-3 text-blue-400" /></span> LinkedIn
+              <span className="p-1.5 bg-blue-500/10 rounded-lg"><Linkedin className="w-3 h-3 text-blue-400" /></span> LinkedIn
             </a></li>
-            <li><Link to="/contact" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-              <span className="p-1.5 bg-brand-500/10 rounded-lg group-hover:bg-brand-500/20 transition-colors"><Mail className="w-3 h-3 text-brand-400" /></span> Contact Us
-            </Link></li>
             <li><a href="mailto:teaminfinitium.arsd@gmail.com" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-              <span className="p-1.5 bg-zinc-500/10 rounded-lg group-hover:bg-zinc-500/20 transition-colors"><Mail className="w-3 h-3 text-zinc-400" /></span> Email
+              <span className="p-1.5 bg-brand-500/10 rounded-lg"><Mail className="w-3 h-3 text-brand-400" /></span> Email
             </a></li>
           </ul>
         </div>

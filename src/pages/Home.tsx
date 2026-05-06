@@ -338,49 +338,65 @@ export default function Home_Page() {
 
       </div>
 
-      <div className="mt-16 bg-white rounded-xl p-12 md:p-24 text-slate-950 relative overflow-hidden border border-slate-100 shadow-xl shadow-brand-950/5">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-50 blur-[100px] -translate-y-1/2 translate-x-1/2" />
-        <div className="relative z-10 text-center max-w-3xl mx-auto">
+      <div className="mt-16 bg-white rounded-2xl p-12 md:p-20 text-zinc-950 relative overflow-hidden border-2 border-slate-100 shadow-2xl shadow-brand-500/10">
+        {/* Deep Rising Gradient Effect */}
+        <div className="absolute inset-x-0 bottom-0 h-3/4 bg-gradient-to-t from-brand-200/40 via-brand-50/20 to-transparent z-0 pointer-events-none" />
+        <div className="absolute -bottom-48 -left-48 w-[600px] h-[600px] bg-brand-500/10 blur-[120px] rounded-full z-0" />
+        <div className="absolute -bottom-48 -right-48 w-[600px] h-[600px] bg-brand-400/10 blur-[120px] rounded-full z-0" />
+        
+        <div className="relative z-10 text-center max-w-4xl mx-auto">
           <SectionHeader title="Recruitment Process" />
-          <h3 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-10 leading-none">
-            Become a part of <span className="text-brand-600">The Future</span>
+          <h3 className="text-4xl md:text-6xl font-black tracking-tighter uppercase mb-6 leading-[0.9]">
+            Become a part of <br /> <span className="text-brand-600">The Future</span>
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 text-left">
+          <p className="text-slate-500 text-sm md:text-base font-medium max-w-2xl mx-auto mb-16 uppercase tracking-widest leading-relaxed">
+            Perfect for your next milestone, join the frequency and enjoy the result.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-24 mb-20 text-left">
             <motion.div 
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              whileHover={{ y: -10, scale: 1.02 }}
-              transition={{ duration: 0.5 }}
-              className="bg-slate-50 border border-slate-100 p-10 rounded-2xl relative overflow-hidden group transition-all hover:border-brand-200 hover:shadow-2xl hover:shadow-brand-500/5 font-sans"
+              className="relative group"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full blur-3xl transform translate-x-16 -translate-y-16 group-hover:bg-brand-500/10 transition-colors" />
-              <div className="w-14 h-14 bg-brand-600 text-white rounded-2xl flex items-center justify-center mb-8 font-black text-xl shadow-lg shadow-brand-600/20 group-hover:rotate-6 transition-transform">1</div>
-              <h4 className="text-2xl font-black mb-4 uppercase tracking-tighter text-slate-900 leading-none">Google Forms</h4>
-              <p className="text-sm text-slate-500 font-medium leading-relaxed uppercase tracking-wide">
-                Apply via our online form. Simple questions to know more about your passion, skills, and vision for the society.
+              <div className="flex items-center gap-6 mb-6">
+                <div className="w-14 h-14 bg-brand-600 text-white rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-600/20 group-hover:scale-110 transition-transform">
+                  1
+                </div>
+                <h4 className="text-2xl font-black uppercase tracking-tighter text-zinc-900 group-hover:text-brand-600 transition-colors">Google Forms</h4>
+              </div>
+              <p className="text-base text-slate-500 font-medium leading-relaxed uppercase tracking-tight">
+                Connect your passion directly. Apply via our structured online portal where your skills meet our vision.
               </p>
             </motion.div>
 
             <motion.div 
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              whileHover={{ y: -10, scale: 1.02 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-slate-50 border border-slate-100 p-10 rounded-2xl relative overflow-hidden group transition-all hover:border-brand-200 hover:shadow-2xl hover:shadow-brand-500/5 font-sans"
+              transition={{ delay: 0.2 }}
+              className="relative group"
             >
-              <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full blur-3xl transform translate-x-16 -translate-y-16 group-hover:bg-brand-500/10 transition-colors" />
-              <div className="w-14 h-14 bg-brand-600 text-white rounded-2xl flex items-center justify-center mb-8 font-black text-xl shadow-lg shadow-brand-600/20 group-hover:-rotate-6 transition-transform">2</div>
-              <h4 className="text-2xl font-black mb-4 uppercase tracking-tighter text-slate-900 leading-none">Interview Round</h4>
-              <p className="text-sm text-slate-500 font-medium leading-relaxed uppercase tracking-wide">
-                A personal interaction with our core team to understand your unique frequency and how you fit within INFINITIUM.
+              <div className="flex items-center gap-6 mb-6">
+                <div className="w-14 h-14 bg-brand-600 text-white rounded-2xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-600/20 group-hover:scale-110 transition-transform">
+                  2
+                </div>
+                <h4 className="text-2xl font-black uppercase tracking-tighter text-zinc-900 group-hover:text-brand-600 transition-colors">Interview Round</h4>
+              </div>
+              <p className="text-base text-slate-500 font-medium leading-relaxed uppercase tracking-tight">
+                A high-bandwidth interaction with our core team. We go beyond papers to find the pioneer within you.
               </p>
             </motion.div>
           </div>
-          <button className="px-12 py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-sm tracking-widest hover:bg-brand-950 transition-all shadow-2xl shadow-brand-600/20">
+
+          <motion.button 
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            className="px-16 py-6 bg-brand-600 text-white rounded-xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-950 transition-all shadow-xl shadow-brand-600/20"
+          >
             Join INFINITIUM Today
-          </button>
+          </motion.button>
         </div>
       </div>
     </div>
