@@ -63,7 +63,7 @@ export default function Contact_Page() {
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-zinc-900 mb-8 leading-tight italic uppercase">
+            <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-zinc-900 mb-8 leading-tight uppercase">
               Let's build <br />
               <span className="text-brand-600 font-sans not-italic tracking-widest">the future</span> <br />
               together.
@@ -78,7 +78,7 @@ export default function Contact_Page() {
                   <Mail className="w-6 h-6" />
                 </div>
                 <div>
-                   <h4 className="font-black text-xs uppercase tracking-widest mb-1 italic">Email Us</h4>
+                   <h4 className="font-black text-xs uppercase tracking-widest mb-1">Email Us</h4>
                    <a href={`mailto:${data.email}`} className="text-zinc-900 text-sm font-bold hover:text-brand-600 transition-colors">{data.email}</a>
                 </div>
               </div>
@@ -88,7 +88,7 @@ export default function Contact_Page() {
                   <Instagram className="w-6 h-6" />
                 </div>
                 <div>
-                   <h4 className="font-black text-xs uppercase tracking-widest mb-1 italic">Instagram</h4>
+                   <h4 className="font-black text-xs uppercase tracking-widest mb-1">Instagram</h4>
                    <a href="https://www.instagram.com/infinitium_arsd/" target="_blank" rel="noopener noreferrer" className="text-zinc-900 text-sm font-bold hover:text-rose-600 transition-colors">{data.instagram}</a>
                 </div>
               </div>
@@ -98,7 +98,7 @@ export default function Contact_Page() {
                   <Linkedin className="w-6 h-6" />
                 </div>
                 <div>
-                   <h4 className="font-black text-xs uppercase tracking-widest mb-1 italic">LinkedIn</h4>
+                   <h4 className="font-black text-xs uppercase tracking-widest mb-1">LinkedIn</h4>
                    <a href="https://www.linkedin.com/company/infinitium-arsd/" target="_blank" rel="noopener noreferrer" className="text-zinc-900 text-sm font-bold hover:text-blue-700 transition-colors">{data.linkedin}</a>
                 </div>
               </div>
@@ -108,7 +108,7 @@ export default function Contact_Page() {
                   <MapPin className="w-6 h-6" />
                 </div>
                 <div>
-                   <h4 className="font-black text-xs uppercase tracking-widest mb-1 italic">Our Location</h4>
+                   <h4 className="font-black text-xs uppercase tracking-widest mb-1">Our Location</h4>
                    <p className="text-zinc-500 text-sm font-medium whitespace-pre-line max-w-xs">{data.location}</p>
                 </div>
               </div>
@@ -134,7 +134,7 @@ export default function Contact_Page() {
                   <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-6">
                     <CheckCircle2 className="w-10 h-10" />
                   </div>
-                  <h3 className="text-2xl font-black uppercase italic tracking-tighter mb-4 text-zinc-900">Message Sent!</h3>
+                  <h3 className="text-2xl font-black uppercase tracking-tighter mb-4 text-zinc-900">Message Sent!</h3>
                   <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest max-w-xs transition-colors">
                     Thank you for reaching out. We've received your message and will get back to you shortly.
                   </p>

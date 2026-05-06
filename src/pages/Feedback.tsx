@@ -87,7 +87,7 @@ export default function Feedback_Page() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24">
         {/* Feedback Area */}
         <div>
-           <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 italic uppercase text-left">
+           <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 uppercase text-left">
              Feedback & <br /> <span className="text-brand-600">Ideas</span>
            </h1>
            <p className="text-zinc-500 text-lg mb-12 font-medium text-left">Your feedback helps INFINITIUM grow better and serve the student community better.</p>
@@ -142,7 +142,7 @@ export default function Feedback_Page() {
               <div className="bg-brand-50 w-16 h-16 rounded-2xl flex items-center justify-center text-brand-600 mb-8 border border-brand-100">
                 <Award className="w-8 h-8" />
               </div>
-              <h2 className="text-5xl font-black mb-6 tracking-tighter uppercase italic leading-none">Claim Your <br /><span className="text-brand-600">Certificate</span></h2>
+              <h2 className="text-5xl font-black mb-6 tracking-tighter uppercase leading-none">Claim Your <br /><span className="text-brand-600">Certificate</span></h2>
               <p className="text-slate-500 text-sm mb-10 leading-relaxed font-bold uppercase tracking-widest">
                 If you attended our recent event and your attendance was marked by the admin team, your certificate is ready.
               </p>
@@ -172,7 +172,7 @@ export default function Feedback_Page() {
                       >
                          <div className="flex justify-between items-center">
                            <div>
-                              <p className="font-black text-2xl uppercase italic tracking-tighter text-brand-600">{certResult.name}</p>
+                              <p className="font-black text-2xl uppercase tracking-tighter text-brand-600">{certResult.name}</p>
                               <p className="text-brand-900/40 text-[10px] font-black uppercase tracking-widest">{certResult.event}</p>
                            </div>
                            <CheckCircle className="text-emerald-500 w-10 h-10" />

@@ -31,7 +31,7 @@ export default function Gallery_Page() {
       <div className="max-w-7xl mx-auto">
         <header className="mb-24 flex flex-col md:flex-row justify-between items-end gap-6">
           <div className="max-w-2xl">
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 italic uppercase text-left">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 uppercase text-left">
               Moments <br /> <span className="text-brand-600">Captured</span>
             </h1>
           </div>
@@ -66,7 +66,7 @@ export default function Gallery_Page() {
               </div>
               <div className="mt-6 px-2">
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter italic leading-none">{item.title}</h3>
+                  <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter leading-none">{item.title}</h3>
                   <div className="flex flex-col items-end gap-1">
                     <span className="text-[10px] font-black text-brand-600 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">{item.category}</span>
                     {item.eventDate && (

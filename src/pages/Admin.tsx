@@ -542,7 +542,7 @@ export default function Admin_Page() {
         <div className="max-w-md w-full bg-white rounded-2xl p-12 border border-slate-100 shadow-2xl shadow-brand-950/10 text-center space-y-8">
           <Logo className="w-24 h-24 mx-auto" />
           <div>
-            <h1 className="text-3xl font-black text-slate-900 italic uppercase tracking-tighter mb-4">Admin Login</h1>
+            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-4">Admin Login</h1>
             <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-2 leading-relaxed">
               This area is restricted to INFINITIUM core administrators. Please authenticate with your authorized Google account.
             </p>
@@ -580,7 +580,10 @@ export default function Admin_Page() {
       <div className="md:hidden bg-white border-b border-zinc-200 p-4 flex items-center justify-between sticky top-0 z-[60]">
         <Link to="/" className="flex items-center gap-3">
           <Logo className="w-10 h-10" />
-          <h2 className="font-black text-sm uppercase tracking-tighter text-zinc-900 italic">INFINITIUM</h2>
+          <div>
+            <h2 className="font-black text-sm uppercase tracking-tighter text-zinc-900 leading-none">INFINITIUM</h2>
+            <p className="text-[6px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1">Society of Physical Sciences, ARSD College</p>
+          </div>
         </Link>
         <button 
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -610,7 +613,10 @@ export default function Admin_Page() {
       )}>
         <Link to="/" className="hidden md:flex items-center gap-3 hover:opacity-80 transition-opacity">
           <Logo className="w-10 h-10" />
-          <h2 className="font-black text-sm uppercase tracking-tighter italic">INFINITIUM</h2>
+          <div>
+            <h2 className="font-black text-sm uppercase tracking-tighter leading-none">INFINITIUM</h2>
+            <p className="text-[7px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1">Society of Physical Sciences, ARSD College</p>
+          </div>
         </Link>
 
         <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100 mb-4">
@@ -955,7 +961,7 @@ export default function Admin_Page() {
             {achievements.map((a: any) => (
               <div key={a.id} className="bg-white p-8 rounded-2xl border border-zinc-100 shadow-sm flex justify-between items-center group">
                 <div>
-                  <h3 className="text-xl font-black text-zinc-900 uppercase italic tracking-tighter mb-1">{a.title}</h3>
+                  <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-1">{a.title}</h3>
                   <p className="text-xs text-brand-600 font-bold uppercase tracking-widest mb-4">{a.date}</p>
                   <p className="text-sm text-zinc-500 font-medium max-w-xl">{a.description}</p>
                 </div>
@@ -1075,7 +1081,7 @@ export default function Admin_Page() {
         {activeTab === 'about' && aboutData && (
           <div className="space-y-12">
             <div className="bento-card p-10 bg-white">
-              <h3 className="text-xl font-bold mb-6 italic uppercase tracking-tight">Hero Section</h3>
+              <h3 className="text-xl font-bold mb-6 uppercase tracking-tight">Hero Section</h3>
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
@@ -1107,7 +1113,7 @@ export default function Admin_Page() {
             </div>
 
             <div className="bento-card p-10 bg-white">
-              <h3 className="text-xl font-bold mb-6 italic uppercase tracking-tight">Objectives</h3>
+              <h3 className="text-xl font-bold mb-6 uppercase tracking-tight">Objectives</h3>
               <div className="space-y-8">
                 {aboutData.objectives.map((obj: any, idx: number) => (
                   <div key={obj.id} className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
@@ -1137,7 +1143,7 @@ export default function Admin_Page() {
             </div>
             
             <div className="bento-card p-10 bg-white">
-              <h3 className="text-xl font-bold mb-6 italic uppercase tracking-tight text-brand-600">Pro-Tip</h3>
+              <h3 className="text-xl font-bold mb-6 uppercase tracking-tight text-brand-600">Pro-Tip</h3>
               <p className="text-sm text-slate-500 leading-relaxed font-medium">
                 Editing the Departments and Impacts listed here will instantly reflect across the public About page. 
                 Ensure all URLs are accessible and images are high quality.
@@ -1227,7 +1233,7 @@ export default function Admin_Page() {
                   <div className="w-24 h-24 bg-white/5 text-brand-400 rounded-[2rem] flex items-center justify-center mb-8 border border-white/10">
                     <Scan className="w-10 h-10" />
                   </div>
-                  <h3 className="text-2xl font-black mb-4 text-white italic tracking-tighter uppercase">Attendance Core</h3>
+                  <h3 className="text-2xl font-black mb-4 text-white tracking-tighter uppercase">Attendance Core</h3>
                   <p className="text-brand-100/60 mb-8 leading-relaxed text-sm font-bold uppercase tracking-widest">
                      Select an upcoming event to start marking attendance.
                    </p>
@@ -1301,7 +1307,7 @@ export default function Admin_Page() {
                           <h3 className="text-2xl font-bold text-zinc-900 mb-2">
                             {scanResult.alreadyMarked ? "Already Marked" : "Success!"}
                           </h3>
-                          <p className="text-lg font-bold text-brand-600 mb-4 uppercase italic tracking-tight">{scanResult.student?.studentName}</p>
+                          <p className="text-lg font-bold text-brand-600 mb-4 uppercase tracking-tight">{scanResult.student?.studentName}</p>
                           <p className="text-zinc-500 text-sm mb-10">Attendance marked for {scanResult.student?.rollNo}</p>
                         </>
                       ) : (
@@ -1492,7 +1498,7 @@ export default function Admin_Page() {
                          />
                        </label>
                      </div>
-                     <p className="text-[9px] text-zinc-400 font-medium italic">Photos uploaded here will appear in the event page and the society gallery.</p>
+                     <p className="text-[9px] text-zinc-400 font-medium">Photos uploaded here will appear in the event page and the society gallery.</p>
                    </div>
 
                    <button 

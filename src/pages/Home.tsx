@@ -168,7 +168,7 @@ export default function Home_Page() {
         <div id="events-section" className="md:col-span-12 py-12">
           <div className="flex flex-col md:flex-row justify-between items-end mb-8 gap-4">
             <div>
-              <h3 className="text-3xl font-black italic tracking-tighter uppercase mb-2">Ongoing & Recent</h3>
+              <h3 className="text-3xl font-black tracking-tighter uppercase mb-2">Ongoing & Recent</h3>
               <p className="text-sm text-slate-500 font-bold uppercase tracking-widest">The latest from INFINITIUM society</p>
             </div>
           </div>
@@ -200,7 +200,7 @@ export default function Home_Page() {
                         {event.type}
                       </span>
                     </div>
-                    <h4 className="text-xl font-black text-zinc-900 mb-3 tracking-tighter leading-tight group-hover:text-brand-600 transition-colors uppercase italic">
+                    <h4 className="text-xl font-black text-zinc-900 mb-3 tracking-tighter leading-tight group-hover:text-brand-600 transition-colors uppercase">
                       {event.title}
                     </h4>
                     <p className="text-sm text-zinc-500 font-medium leading-relaxed mb-8 line-clamp-2">
@@ -237,7 +237,7 @@ export default function Home_Page() {
         >
           <h3 className="text-xs font-bold uppercase text-slate-400 mb-6 flex items-center justify-between">
             Gallery Preview 
-            <Link to="/gallery" className="text-brand-600 hover:underline transition-colors uppercase italic font-black">View All</Link>
+            <Link to="/gallery" className="text-brand-600 hover:underline transition-colors uppercase font-black">View All</Link>
           </h3>
           <div className="grid grid-cols-2 gap-3 flex-1">
             {galleryImages.length > 0 ? (
@@ -274,7 +274,7 @@ export default function Home_Page() {
           </div>
           <div className="mt-8 text-center sm:text-left">
             <Trophy className="w-16 h-16 text-brand-600 mb-6 mx-auto sm:mx-0" />
-            <h4 className="text-2xl font-black mb-2 italic tracking-tighter uppercase">{latestAchievement?.title || "Recent Win"}</h4>
+            <h4 className="text-2xl font-black mb-2 tracking-tighter uppercase">{latestAchievement?.title || "Recent Win"}</h4>
             <p className="text-xs text-slate-400 mb-8 leading-relaxed uppercase font-bold tracking-widest">
               {latestAchievement?.description || "Empowering the next generation of scientific leaders."}
             </p>
@@ -294,18 +294,18 @@ export default function Home_Page() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-brand-50 blur-[100px] -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10 text-center max-w-3xl mx-auto">
           <SectionHeader title="Recruitment Process" />
-          <h3 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase mb-10 leading-none">
+          <h3 className="text-3xl md:text-5xl font-black tracking-tighter uppercase mb-10 leading-none">
             Become a part of <span className="text-brand-600">The Future</span>
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 text-left">
             <div className="bg-slate-50 border border-slate-100 p-8 rounded-xl">
               <div className="w-10 h-10 bg-brand-600 text-white rounded-lg flex items-center justify-center mb-4 font-black">1</div>
-              <h4 className="text-xl font-bold mb-2 uppercase tracking-tight italic">Google Forms</h4>
+              <h4 className="text-xl font-bold mb-2 uppercase tracking-tight">Google Forms</h4>
               <p className="text-sm text-slate-500 font-medium">Apply via our online form. Simple questions to know more about your passion and skills.</p>
             </div>
             <div className="bg-slate-50 border border-slate-100 p-8 rounded-xl">
               <div className="w-10 h-10 bg-brand-600 text-white rounded-lg flex items-center justify-center mb-4 font-black">2</div>
-              <h4 className="text-xl font-bold mb-2 uppercase tracking-tight italic">Interview Round</h4>
+              <h4 className="text-xl font-bold mb-2 uppercase tracking-tight">Interview Round</h4>
               <p className="text-sm text-slate-500 font-medium">A personal interaction with our core team to understand your vision and fit within INFINITIUM.</p>
             </div>
           </div>

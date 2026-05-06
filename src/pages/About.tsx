@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 
 const SectionTitle = ({ children, subtitle }: { children: React.ReactNode, subtitle?: string }) => (
   <div className="mb-16">
-    <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 italic">{children}</h2>
+    <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2">{children}</h2>
     {subtitle && <p className="text-sm font-bold text-brand-600 uppercase tracking-[0.3em] font-sans">{subtitle}</p>}
   </div>
 );
@@ -28,7 +28,7 @@ const Card = ({ icon: Icon, title, text, delay }: any) => (
     <div className="w-14 h-14 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
       <Icon className="w-7 h-7" />
     </div>
-    <h3 className="text-xl font-black text-zinc-900 mb-3 tracking-tight uppercase italic">{title}</h3>
+    <h3 className="text-xl font-black text-zinc-900 mb-3 tracking-tight uppercase">{title}</h3>
     <p className="text-sm text-zinc-500 leading-relaxed font-medium">{text}</p>
   </motion.div>
 );
@@ -45,10 +45,10 @@ const DepartmentCard = ({ icon: Icon, title, aim, tasks, delay }: any) => (
       <Icon className="w-32 h-32 text-brand-600" />
     </div>
     <div className="relative z-10">
-      <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center mb-6 border border-brand-100 italic font-black">
+      <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center mb-6 border border-brand-100 font-black">
         <Icon className="w-6 h-6" />
       </div>
-      <h3 className="text-2xl font-black mb-4 tracking-tighter uppercase italic text-slate-900">{title} Department</h3>
+      <h3 className="text-2xl font-black mb-4 tracking-tighter uppercase text-slate-900">{title} Department</h3>
       <p className="text-[10px] text-brand-600 font-black uppercase tracking-[0.2em] mb-6 border-b border-brand-100 pb-2 inline-block">Aim: {aim}</p>
       <ul className="space-y-3">
         {tasks.map((task: string, i: number) => (
@@ -102,7 +102,7 @@ export default function About_Page() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white text-center p-6">
         <div>
-          <h2 className="text-2xl font-bold text-zinc-900 mb-4 uppercase italic tracking-tight">Data coming soon!</h2>
+          <h2 className="text-2xl font-bold text-zinc-900 mb-4 uppercase tracking-tight">Data coming soon!</h2>
           <p className="text-zinc-500 font-medium">The about page is currently being updated by our team.</p>
         </div>
       </div>
@@ -121,7 +121,7 @@ export default function About_Page() {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
               <Users className="w-3 h-3" /> About INFINITIUM
             </div>
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] italic uppercase mb-8 md:mb-12 text-left">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] uppercase mb-8 md:mb-12 text-left">
               {data.hero.title === "IGNITING CURIOSITY & FOSTERING EXCELLENCE" ? (
                 <>IGNITING <br /> <span className="text-brand-600">CURIOSITY</span> <br /> & FOSTERING <br /> EXCELLENCE</>
               ) : data.hero.title}
@@ -177,7 +177,7 @@ export default function About_Page() {
                       {React.createElement(icons[i] || TrendingUp, { className: "w-6 h-6" })}
                     </div>
                     <div>
-                      <h4 className="text-xl font-bold mb-2 uppercase italic tracking-tight text-slate-900">{imp.title}</h4>
+                      <h4 className="text-xl font-bold mb-2 uppercase tracking-tight text-slate-900">{imp.title}</h4>
                       <p className="text-slate-500 text-sm leading-relaxed font-medium">{imp.text}</p>
                     </div>
                   </div>
@@ -212,7 +212,7 @@ export default function About_Page() {
           <div className="absolute top-0 left-0 p-8">
              <span className="text-[10px] font-black uppercase text-brand-400 tracking-[0.4em]">Join the movement</span>
           </div>
-          <h2 className="text-3xl md:text-5xl font-black mb-8 italic uppercase text-slate-900 tracking-tighter">
+          <h2 className="text-3xl md:text-5xl font-black mb-8 uppercase text-slate-900 tracking-tighter">
             Unlock the wonders of <span className="text-brand-600">Physical Sciences</span>
           </h2>
           <p className="text-slate-500 max-w-2xl mx-auto mb-10 font-medium leading-relaxed uppercase tracking-wide text-sm px-4">

@@ -181,7 +181,7 @@ export default function Events_Page() {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
               <Calendar className="w-3 h-3" /> Schedule
             </div>
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 italic uppercase text-left">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 uppercase text-left">
               Events & <br /> <span className="text-brand-600">Archive</span>
             </h1>
           </div>
@@ -236,7 +236,7 @@ export default function Events_Page() {
                      <span className="text-[9px] bento-tag bg-brand-950 text-brand-300 font-black uppercase tracking-widest">{event.type}</span>
                   </div>
                 </div>
-                <h3 className="text-xl font-black text-slate-900 mb-3 tracking-tighter uppercase leading-tight group-hover:text-brand-600 transition-colors italic">{event.title}</h3>
+                <h3 className="text-xl font-black text-slate-900 mb-3 tracking-tighter uppercase leading-tight group-hover:text-brand-600 transition-colors">{event.title}</h3>
                 <p className="text-xs text-slate-500 mb-8 leading-relaxed line-clamp-3 font-medium flex-1">
                   {event.description}
                 </p>
@@ -281,7 +281,7 @@ export default function Events_Page() {
               {!registrationSuccess ? (
                 <div className="p-8 md:p-10">
                    <div className="flex justify-between items-center mb-6">
-                     <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Register</h2>
+                     <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Register</h2>
                      <button onClick={() => setIsRegistering(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
                        <X className="w-5 h-5" />
                      </button>
@@ -289,7 +289,7 @@ export default function Events_Page() {
                    
                    <div className="bg-brand-50 p-8 rounded-2xl mb-10 text-slate-900 relative overflow-hidden border border-brand-100">
                      <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mb-2">EVENT CONFIRMATION</p>
-                     <p className="text-xl font-bold italic text-slate-700">{selectedEvent?.title}</p>
+                     <p className="text-xl font-bold text-slate-700">{selectedEvent?.title}</p>
                      <div className="absolute top-0 right-0 w-32 h-32 bg-brand-200/20 blur-2xl rotate-45 transform translate-x-12 -translate-y-12"></div>
                    </div>
 
@@ -343,9 +343,9 @@ export default function Events_Page() {
                   <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-emerald-100">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase italic">Success</h2>
+                  <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase">Success</h2>
                   <p className="text-[10px] text-slate-500 mb-8 font-bold uppercase tracking-widest leading-loose">
-                    Registration confirmed for <span className="text-brand-600 italic">{selectedEvent?.title}</span>. 
+                    Registration confirmed for <span className="text-brand-600">{selectedEvent?.title}</span>. 
                     <br />Save the ticket below.
                   </p>
                   

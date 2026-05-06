@@ -33,7 +33,7 @@ export default function Achievements_Page() {
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
               <Trophy className="w-3 h-3" /> Hall of Fame
             </div>
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 italic uppercase text-left">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 uppercase text-left">
               Our Success <br /> <span className="text-brand-600">Stories</span>
             </h1>
           </div>
@@ -57,7 +57,7 @@ export default function Achievements_Page() {
                 </div>
                 <span className="text-[10px] bento-tag bg-slate-100 text-slate-500 font-black">{item.date}</span>
               </div>
-              <h3 className="text-xl font-black text-slate-900 group-hover:text-brand-600 transition-colors uppercase tracking-tighter italic">{item.title}</h3>
+              <h3 className="text-xl font-black text-slate-900 group-hover:text-brand-600 transition-colors uppercase tracking-tighter">{item.title}</h3>
               <p className="mt-4 text-xs text-slate-500 font-medium leading-relaxed">{item.description}</p>
             </motion.div>
           ))}

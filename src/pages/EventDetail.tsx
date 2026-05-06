@@ -202,7 +202,7 @@ export default function EventDetail_Page() {
                   {event.status}
                 </span>
              </div>
-             <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none italic uppercase mb-8">
+             <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none uppercase mb-8">
                {event.title}
              </h1>
           </div>
@@ -213,7 +213,7 @@ export default function EventDetail_Page() {
       <div className="max-w-4xl mx-auto px-8 py-20">
         <div className="space-y-12">
             <div>
-               <h2 className="text-2xl font-black italic tracking-tighter uppercase text-slate-900 mb-2">
+               <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900 mb-2">
                  {event.subtitle || "Exploring the Frontiers of Physics"}
                </h2>
                <div className="flex flex-wrap gap-8 items-center mt-6 py-6 border-y border-slate-100">
@@ -266,7 +266,7 @@ export default function EventDetail_Page() {
               <div className="pt-20 border-t border-slate-100">
                 <div className="flex items-end justify-between mb-12">
                   <div>
-                    <h2 className="text-3xl font-black italic tracking-tighter uppercase text-slate-900 leading-none">Event Highlights</h2>
+                    <h2 className="text-3xl font-black tracking-tighter uppercase text-slate-900 leading-none">Event Highlights</h2>
                     <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mt-3">Moments in Motion</p>
                   </div>
                 </div>
@@ -346,7 +346,7 @@ export default function EventDetail_Page() {
               {!registrationSuccess ? (
                 <div className="p-8 md:p-10">
                    <div className="flex justify-between items-center mb-6">
-                     <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase italic">Register</h2>
+                     <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Register</h2>
                      <button onClick={() => setIsRegistering(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
                        <X className="w-5 h-5" />
                      </button>
@@ -354,7 +354,7 @@ export default function EventDetail_Page() {
                    
                    <div className="bg-brand-50 p-6 rounded-2xl mb-6 text-slate-900 relative overflow-hidden border border-brand-100">
                      <p className="text-[9px] font-black text-brand-600 uppercase tracking-[0.3em] mb-1">EVENT CONFIRMATION</p>
-                     <p className="text-lg font-bold italic text-slate-700">{event?.title}</p>
+                     <p className="text-lg font-bold text-slate-700">{event?.title}</p>
                      <div className="absolute top-0 right-0 w-24 h-24 bg-brand-200/20 blur-2xl rotate-45 transform translate-x-8 -translate-y-8"></div>
                    </div>
 
@@ -408,9 +408,9 @@ export default function EventDetail_Page() {
                   <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-emerald-100">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase italic">Success</h2>
+                  <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase">Success</h2>
                   <p className="text-[10px] text-slate-500 mb-8 font-bold uppercase tracking-widest leading-loose">
-                    Registration confirmed for <span className="text-brand-600 italic">{event?.title}</span>. 
+                    Registration confirmed for <span className="text-brand-600">{event?.title}</span>. 
                     <br />Save the ticket below.
                   </p>
                   

@@ -28,7 +28,7 @@ export const Logo = ({ className = "" }: { className?: string }) => (
       </g>
 
       {/* Text Branding */}
-      <text x="50" y="73" textAnchor="middle" fontSize="12" fontWeight="900" fill="#22d3ee" className="font-sans italic" style={{ letterSpacing: '-0.02em' }}>INFINITIUM</text>
+      <text x="50" y="73" textAnchor="middle" fontSize="12" fontWeight="900" fill="#22d3ee" className="font-sans" style={{ letterSpacing: '-0.02em' }}>INFINITIUM</text>
       <text x="50" y="83" textAnchor="middle" fontSize="5" fontWeight="700" fill="#22d3ee" className="font-sans uppercase" style={{ letterSpacing: '0.15em', opacity: 0.9 }}>Inspiring Innovation</text>
     </svg>
   </div>
@@ -54,8 +54,8 @@ const Navigation = () => {
           <Link to="/" className="flex items-center gap-3 group">
             <Logo />
             <div>
-              <h1 className="text-xl font-black leading-none tracking-tight text-brand-950 uppercase italic">INFINITIUM</h1>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 hidden sm:block">Society of Physical Sciences, ARSD</p>
+              <h1 className="text-xl font-black leading-none tracking-tight text-brand-950 uppercase">INFINITIUM</h1>
+              <p className="text-[7px] sm:text-[9px] text-slate-400 font-black uppercase tracking-[0.15em] mt-1">Society of Physical Sciences, ARSD College</p>
             </div>
           </Link>
 
@@ -140,7 +140,7 @@ const Footer = () => (
         <div className="col-span-1 md:col-span-2">
           <div className="flex items-center gap-3 mb-6">
             <Logo />
-            <h1 className="text-2xl font-black italic tracking-tighter uppercase">INFINITIUM</h1>
+            <h1 className="text-2xl font-black tracking-tighter uppercase">INFINITIUM</h1>
           </div>
           <p className="text-slate-400 text-xs font-medium uppercase tracking-widest leading-relaxed max-w-sm">
             The premier society of Physical Sciences at Atma Ram Sanatan Dharma College, 
@@ -154,8 +154,6 @@ const Footer = () => (
             <li><Link to="/about" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">About Us</Link></li>
             <li><Link to="/events" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Our Events</Link></li>
             <li><Link to="/members" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Members</Link></li>
-            <li><Link to="/achievements" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Success</Link></li>
-            <li><Link to="/feedback" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Feedback</Link></li>
             <li><Link to="/admin" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Admin Login</Link></li>
           </ul>
         </div>

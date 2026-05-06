@@ -47,7 +47,7 @@ export default function Members_Page() {
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
                     <Users className="w-3 h-3" /> Core Team
                   </div>
-                  <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-[0.85] italic uppercase mb-6 text-left">
+                  <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-[0.85] uppercase mb-6 text-left">
                     The Minds Behind <br /> <span className="text-brand-600">INFINITIUM</span>
                   </h1>
                   <p className="text-slate-500 font-medium text-xs leading-relaxed uppercase tracking-widest">
@@ -83,7 +83,7 @@ export default function Members_Page() {
           {/* Members Grid */}
           <div className="flex-1">
              <div className="mb-8 flex items-center justify-between">
-                <h2 className="text-xl font-black text-slate-900 uppercase italic tracking-tighter">
+                <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">
                    {tenure === tenures[0] ? 'Current Tenure' : `Tenure ${tenure}`}
                 </h2>
                 <span className="text-[10px] font-black text-brand-600 uppercase tracking-widest bg-brand-50 px-3 py-1 rounded-full border border-brand-100">
@@ -122,7 +122,7 @@ export default function Members_Page() {
                      </div>
                    </div>
                    <div className="px-1 text-center">
-                     <h3 className="text-sm font-black text-slate-900 group-hover:text-brand-600 transition-all uppercase tracking-tighter italic leading-tight truncate">
+                     <h3 className="text-sm font-black text-slate-900 group-hover:text-brand-600 transition-all uppercase tracking-tighter leading-tight truncate">
                        {member.name}
                      </h3>
                      <p className="text-[8px] text-brand-600 font-black uppercase tracking-[0.2em] mt-1 bg-brand-50 inline-block px-2 py-0.5 rounded-full">
@@ -136,7 +136,7 @@ export default function Members_Page() {
              {filteredMembers.length === 0 && (
                <div className="py-20 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-100 text-center flex flex-col items-center">
                   <Users className="w-12 h-12 text-zinc-200 mb-4" />
-                  <p className="text-slate-400 font-black italic uppercase text-xs tracking-widest">No members found for this tenure.</p>
+                  <p className="text-slate-400 font-black uppercase text-xs tracking-widest">No members found for this tenure.</p>
                </div>
              )}
           </div>
