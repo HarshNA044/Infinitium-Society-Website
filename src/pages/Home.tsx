@@ -21,7 +21,17 @@ export default function Home_Page() {
   const [events, setEvents] = useState<any[]>([]);
   const [achievements, setAchievements] = useState<any[]>([]);
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (galleryImages.length > 0) {
+      const timer = setInterval(() => {
+        setCurrentSlide(prev => (prev + 1) % galleryImages.length);
+      }, 5000);
+      return () => clearInterval(timer);
+    }
+  }, [galleryImages.length]);
 
   useEffect(() => {
     const loadHomeData = async () => {
@@ -228,46 +238,84 @@ export default function Home_Page() {
           </div>
         </div>
 
-        {/* Gallery Preview (Span 6x4) */}
+        {/* Gallery Slideshow (Span 8x4) */}
         <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="md:col-span-6 md:row-span-4 bento-card"
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="md:col-span-8 md:row-span-4 bg-zinc-950 rounded-2xl relative overflow-hidden group shadow-2xl shadow-brand-500/10 border border-white/5"
         >
-          <h3 className="text-xs font-bold uppercase text-slate-400 mb-6 flex items-center justify-between">
-            Gallery Preview 
-            <Link to="/gallery" className="text-brand-600 hover:underline transition-colors uppercase font-black">View All</Link>
-          </h3>
-          <div className="grid grid-cols-2 gap-3 flex-1">
+          <div className="absolute inset-0 z-0">
             {galleryImages.length > 0 ? (
-              <>
-                {galleryImages.slice(0, 3).map((img, idx) => (
-                  <div key={img.id || idx} className="bg-slate-200 rounded-2xl h-full overflow-hidden">
-                    <img src={img.src} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt={img.title || `Preview ${idx + 1}`} />
-                  </div>
-                ))}
-                <div className="bg-slate-100 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xl">
-                  {galleryImages.length > 3 ? `+${galleryImages.length - 3}` : '+0'}
-                </div>
-              </>
+              <motion.div
+                key={currentSlide}
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.05 }}
+                transition={{ duration: 1.2, ease: "easeOut" }}
+                className="w-full h-full"
+              >
+                <img 
+                  src={galleryImages[currentSlide].src} 
+                  className="w-full h-full object-cover opacity-60" 
+                  referrerPolicy="no-referrer" 
+                  alt={galleryImages[currentSlide].title} 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent"></div>
+              </motion.div>
             ) : (
-              <>
-                <div className="bg-slate-200 rounded-2xl h-full overflow-hidden animate-pulse"></div>
-                <div className="bg-slate-200 rounded-2xl h-full overflow-hidden animate-pulse"></div>
-                <div className="bg-slate-200 rounded-2xl h-full overflow-hidden animate-pulse"></div>
-                <div className="bg-slate-100 rounded-2xl animate-pulse"></div>
-              </>
+              <div className="w-full h-full bg-zinc-900 animate-pulse"></div>
             )}
+          </div>
+
+          <div className="relative z-10 p-8 h-full flex flex-col justify-between">
+            <div className="flex justify-between items-start">
+              <span className="text-[10px] font-black uppercase text-brand-400 tracking-[0.4em] bg-brand-950/50 backdrop-blur-md px-3 py-1 rounded-full border border-brand-500/20">
+                Gallery Reel
+              </span>
+              <Link to="/gallery" className="p-2 bg-white/5 hover:bg-white/10 rounded-full text-white transition-colors">
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <div>
+              {galleryImages[currentSlide] && (
+                <motion.div
+                  key={`text-${currentSlide}`}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <h4 className="text-2xl font-black text-white uppercase tracking-tighter mb-2">
+                    {galleryImages[currentSlide].title}
+                  </h4>
+                  <p className="text-[10px] text-brand-400 font-bold uppercase tracking-widest flex items-center gap-2">
+                    <Calendar className="w-3 h-3" /> {galleryImages[currentSlide].eventDate || 'Recent Moment'}
+                  </p>
+                </motion.div>
+              )}
+              
+              <div className="flex gap-1.5 mt-6">
+                {galleryImages.map((_, idx) => (
+                  <button 
+                    key={idx}
+                    onClick={() => setCurrentSlide(idx)}
+                    className={`h-1 rounded-full transition-all duration-500 ${idx === currentSlide ? 'w-8 bg-brand-500' : 'w-2 bg-white/20'}`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </motion.div>
 
-        {/* Featured Achievements (Span 6x4) */}
+        {/* Featured Achievements (Span 4x4) */}
         <motion.div 
           initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.5 }}
-          className="md:col-span-6 md:row-span-4 bg-white rounded-2xl p-8 text-slate-950 flex flex-col justify-between relative overflow-hidden border border-slate-100 shadow-sm"
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2 }}
+          className="md:col-span-4 md:row-span-4 bg-white rounded-2xl p-8 text-slate-950 flex flex-col justify-between relative overflow-hidden border border-slate-100 shadow-sm"
         >
           <div className="absolute top-6 left-6">
              <span className="text-[9px] font-black uppercase text-slate-400 tracking-[0.3em]">Our Legacy</span>
@@ -298,16 +346,37 @@ export default function Home_Page() {
             Become a part of <span className="text-brand-600">The Future</span>
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12 text-left">
-            <div className="bg-slate-50 border border-slate-100 p-8 rounded-xl">
-              <div className="w-10 h-10 bg-brand-600 text-white rounded-lg flex items-center justify-center mb-4 font-black">1</div>
-              <h4 className="text-xl font-bold mb-2 uppercase tracking-tight">Google Forms</h4>
-              <p className="text-sm text-slate-500 font-medium">Apply via our online form. Simple questions to know more about your passion and skills.</p>
-            </div>
-            <div className="bg-slate-50 border border-slate-100 p-8 rounded-xl">
-              <div className="w-10 h-10 bg-brand-600 text-white rounded-lg flex items-center justify-center mb-4 font-black">2</div>
-              <h4 className="text-xl font-bold mb-2 uppercase tracking-tight">Interview Round</h4>
-              <p className="text-sm text-slate-500 font-medium">A personal interaction with our core team to understand your vision and fit within INFINITIUM.</p>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -10, scale: 1.02 }}
+              transition={{ duration: 0.5 }}
+              className="bg-slate-50 border border-slate-100 p-10 rounded-2xl relative overflow-hidden group transition-all hover:border-brand-200 hover:shadow-2xl hover:shadow-brand-500/5 font-sans"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full blur-3xl transform translate-x-16 -translate-y-16 group-hover:bg-brand-500/10 transition-colors" />
+              <div className="w-14 h-14 bg-brand-600 text-white rounded-2xl flex items-center justify-center mb-8 font-black text-xl shadow-lg shadow-brand-600/20 group-hover:rotate-6 transition-transform">1</div>
+              <h4 className="text-2xl font-black mb-4 uppercase tracking-tighter text-slate-900 leading-none">Google Forms</h4>
+              <p className="text-sm text-slate-500 font-medium leading-relaxed uppercase tracking-wide">
+                Apply via our online form. Simple questions to know more about your passion, skills, and vision for the society.
+              </p>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              whileHover={{ y: -10, scale: 1.02 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="bg-slate-50 border border-slate-100 p-10 rounded-2xl relative overflow-hidden group transition-all hover:border-brand-200 hover:shadow-2xl hover:shadow-brand-500/5 font-sans"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-brand-500/5 rounded-full blur-3xl transform translate-x-16 -translate-y-16 group-hover:bg-brand-500/10 transition-colors" />
+              <div className="w-14 h-14 bg-brand-600 text-white rounded-2xl flex items-center justify-center mb-8 font-black text-xl shadow-lg shadow-brand-600/20 group-hover:-rotate-6 transition-transform">2</div>
+              <h4 className="text-2xl font-black mb-4 uppercase tracking-tighter text-slate-900 leading-none">Interview Round</h4>
+              <p className="text-sm text-slate-500 font-medium leading-relaxed uppercase tracking-wide">
+                A personal interaction with our core team to understand your unique frequency and how you fit within INFINITIUM.
+              </p>
+            </motion.div>
           </div>
           <button className="px-12 py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-sm tracking-widest hover:bg-brand-950 transition-all shadow-2xl shadow-brand-600/20">
             Join INFINITIUM Today

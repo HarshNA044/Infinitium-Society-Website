@@ -55,7 +55,7 @@ const Navigation = () => {
             <Logo />
             <div>
               <h1 className="text-xl font-black leading-none tracking-tight text-brand-950 uppercase">INFINITIUM</h1>
-              <p className="text-[7px] sm:text-[9px] text-slate-400 font-black uppercase tracking-[0.15em] mt-1">Society of Physical Sciences, ARSD College</p>
+              <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.15em] mt-1 hidden sm:block">Society of Physical Sciences, ARSD College</p>
             </div>
           </Link>
 
@@ -75,12 +75,6 @@ const Navigation = () => {
                 {item.name}
               </Link>
             ))}
-            <Link
-              to="/admin"
-              className="ml-4 px-4 py-2 bg-brand-950 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-brand-900 transition-all flex items-center gap-2"
-            >
-              Admin Login
-            </Link>
           </div>
 
           {/* Mobile Menu Toggle */}
@@ -118,13 +112,6 @@ const Navigation = () => {
                    {item.name}
                 </Link>
               ))}
-              <Link
-                to="/admin"
-                onClick={() => setIsOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-bold uppercase tracking-wider text-white bg-brand-950 mt-4"
-              >
-                Admin Login
-              </Link>
             </div>
           </motion.div>
         )}
@@ -154,7 +141,6 @@ const Footer = () => (
             <li><Link to="/about" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">About Us</Link></li>
             <li><Link to="/events" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Our Events</Link></li>
             <li><Link to="/members" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Members</Link></li>
-            <li><Link to="/admin" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Admin Login</Link></li>
           </ul>
         </div>
 

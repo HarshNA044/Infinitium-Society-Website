@@ -582,7 +582,7 @@ export default function Admin_Page() {
           <Logo className="w-10 h-10" />
           <div>
             <h2 className="font-black text-sm uppercase tracking-tighter text-zinc-900 leading-none">INFINITIUM</h2>
-            <p className="text-[6px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1">Society of Physical Sciences, ARSD College</p>
+            <p className="text-[6px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1 hidden sm:block">Society of Physical Sciences, ARSD College</p>
           </div>
         </Link>
         <button 
@@ -615,7 +615,7 @@ export default function Admin_Page() {
           <Logo className="w-10 h-10" />
           <div>
             <h2 className="font-black text-sm uppercase tracking-tighter leading-none">INFINITIUM</h2>
-            <p className="text-[7px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1">Society of Physical Sciences, ARSD College</p>
+            <p className="text-[7px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1 hidden sm:block">Society of Physical Sciences, ARSD College</p>
           </div>
         </Link>
 
