@@ -130,10 +130,7 @@
       "type": "object",
       "properties": {
         "src": { "type": "string", "description": "Image URL" },
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "sharedToGallery": { "type": "boolean" }
+        "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["src", "createdAt"]
     }

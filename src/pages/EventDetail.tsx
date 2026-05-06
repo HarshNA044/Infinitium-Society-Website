@@ -8,7 +8,7 @@ import {
 import { QRCodeCanvas } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { doc, getDoc, collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 
 export default function EventDetail_Page() {
@@ -17,9 +17,9 @@ export default function EventDetail_Page() {
   const [loading, setLoading] = useState(false);
   const [event, setEvent] = useState<any>(null);
   const [photos, setPhotos] = useState<any[]>([]);
+  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState<any>(null);
-  const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     studentName: '',
     rollNo: '',
@@ -27,37 +27,31 @@ export default function EventDetail_Page() {
   });
 
   useEffect(() => {
-    const fetchEvent = async () => {
+    const fetchEventData = async () => {
       if (!id) return;
       setLoading(true);
-      const path = `events/${id}`;
+      const eventRef = doc(db, 'events', id);
       try {
-        const docRef = doc(db, 'events', id);
-        const docSnap = await getDoc(docRef);
+        const docSnap = await getDoc(eventRef);
         if (docSnap.exists()) {
           setEvent({ id: docSnap.id, ...docSnap.data() });
+          
+          // Fetch photos subcollection
+          const photosRef = collection(db, 'events', id, 'photos');
+          const q = query(photosRef, orderBy('createdAt', 'desc'));
+          const photosSnap = await getDocs(q);
+          setPhotos(photosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         } else {
           navigate('/events');
         }
       } catch (error) {
-        handleFirestoreError(error, OperationType.GET, path);
+        handleFirestoreError(error, OperationType.GET, `events/${id}`);
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchPhotos = async () => {
-      if (!id) return;
-      try {
-        const photosSnap = await getDocs(query(collection(db, 'events', id, 'photos'), orderBy('createdAt', 'desc')));
-        setPhotos(photosSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch (err) {
-        console.error("Photos load failed", err);
-      }
-    };
-
-    fetchEvent();
-    fetchPhotos();
+    fetchEventData();
   }, [id, navigate]);
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -272,8 +266,8 @@ export default function EventDetail_Page() {
               <div className="pt-20 border-t border-slate-100">
                 <div className="flex items-end justify-between mb-12">
                   <div>
-                    <h2 className="text-3xl font-black italic tracking-tighter uppercase text-slate-900 leading-none">Event Gallery</h2>
-                    <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mt-3">Captured Moments</p>
+                    <h2 className="text-3xl font-black italic tracking-tighter uppercase text-slate-900 leading-none">Event Highlights</h2>
+                    <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mt-3">Moments in Motion</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -288,7 +282,7 @@ export default function EventDetail_Page() {
                     >
                       <img 
                         src={photo.src} 
-                        alt="Event Moment" 
+                        alt="Event Highlight" 
                         className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
                         referrerPolicy="no-referrer"
                       />

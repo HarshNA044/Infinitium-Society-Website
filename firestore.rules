@@ -58,18 +58,20 @@ service cloud.firestore {
     match /gallery/{itemId} {
       function isValidGalleryItem(data) {
         return data.keys().hasAll(['src', 'title', 'category', 'description'])
-          && data.keys().size() >= 4 && data.keys().size() <= 5
-          && data.src is string && data.src.size() <= 1048000
+          && data.keys().size() >= 4 && data.keys().size() <= 9
+          && data.src is string && data.src.size() <= 1048576
           && data.title is string && data.title.size() <= 200
           && data.category is string && data.category.size() <= 50
           && data.description is string && data.description.size() <= 1000
-          && (!data.keys().hasAll(['createdAt']) || data.createdAt is timestamp);
+          && (!data.keys().hasAll(['createdAt']) || data.createdAt is timestamp)
+          && (!data.keys().hasAll(['eventId']) || data.eventId is string)
+          && (!data.keys().hasAll(['eventDate']) || data.eventDate is string);
       }
 
       allow read: if true;
       allow create: if isAdmin() && isValidId(itemId) && isValidGalleryItem(incoming()) && incoming().createdAt == request.time;
       allow update: if isAdmin() && isValidId(itemId) && isValidGalleryItem(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['src', 'title', 'category', 'description', 'createdAt'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['src', 'title', 'category', 'description', 'createdAt', 'eventId', 'eventDate'])
       );
       allow delete: if isAdmin();
     }
@@ -118,13 +120,15 @@ service cloud.firestore {
     match /events/{eventId} {
       function isValidEvent(data) {
         return data.keys().hasAll(['title', 'description', 'date', 'type'])
-          && data.keys().size() >= 4 && data.keys().size() <= 13
+          && data.keys().size() >= 4 && data.keys().size() <= 16
           && data.title is string && data.title.size() <= 200
           && data.description is string && data.description.size() <= 2000
+          && data.date is string
+          && data.type is string
           && (!data.keys().hasAll(['sheetId']) || (data.sheetId is string && data.sheetId.size() <= 100))
           && (!data.keys().hasAll(['subtitle']) || data.subtitle is string)
           && (!data.keys().hasAll(['location']) || data.location is string)
-          && (!data.keys().hasAll(['image']) || (data.image is string && data.image.size() <= 1000000))
+          && (!data.keys().hasAll(['image']) || (data.image is string && data.image.size() <= 1048576))
           && (!data.keys().hasAll(['status']) || data.status is string)
           && (!data.keys().hasAll(['stats']) || data.stats is map)
           && (!data.keys().hasAll(['createdAt']) || data.createdAt is timestamp);
@@ -140,19 +144,13 @@ service cloud.firestore {
       match /photos/{photoId} {
         function isValidPhoto(data) {
           return data.keys().hasAll(['src', 'createdAt'])
-            && data.keys().size() >= 2 && data.keys().size() <= 5
+            && data.keys().size() == 2
             && data.src is string && data.src.size() <= 1048000
-            && (!data.keys().hasAll(['title']) || data.title is string)
-            && (!data.keys().hasAll(['description']) || data.description is string)
-            && (!data.keys().hasAll(['sharedToGallery']) || data.sharedToGallery is bool)
             && data.createdAt is timestamp;
         }
 
         allow read: if true;
         allow create: if isAdmin() && isValidId(photoId) && isValidPhoto(incoming());
-        allow update: if isAdmin() && isValidId(photoId) && isValidPhoto(incoming()) && (
-          incoming().diff(existing()).affectedKeys().hasOnly(['title', 'description', 'sharedToGallery'])
-        );
         allow delete: if isAdmin();
       }
     }

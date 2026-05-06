@@ -67,7 +67,12 @@ export default function Gallery_Page() {
               <div className="mt-6 px-2">
                 <div className="flex justify-between items-start mb-2">
                   <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter italic leading-none">{item.title}</h3>
-                  <span className="text-[10px] font-black text-brand-600 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">{item.category}</span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-black text-brand-600 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">{item.category}</span>
+                    {item.eventDate && (
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{item.eventDate}</span>
+                    )}
+                  </div>
                 </div>
                 <p className="text-xs text-slate-500 font-medium leading-relaxed line-clamp-2">{item.description}</p>
               </div>

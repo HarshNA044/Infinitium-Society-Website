@@ -200,27 +200,36 @@ import Feedback_Page from './pages/Feedback';
 import Admin_Page from './pages/Admin';
 import EventDetail_Page from './pages/EventDetail';
 
+function AppContent() {
+  const location = useLocation();
+  const isAdminPath = location.pathname.startsWith('/admin');
+
+  return (
+    <div className="min-h-screen bg-white font-sans text-brand-950 selection:bg-brand-100 selection:text-brand-900">
+      {!isAdminPath && <Navigation />}
+      <main className={cn(!isAdminPath && "pt-20")}>
+        <Routes>
+          <Route path="/" element={<Home_Page />} />
+          <Route path="/about" element={<About_Page />} />
+          <Route path="/events" element={<Events_Page />} />
+          <Route path="/events/:id" element={<EventDetail_Page />} />
+          <Route path="/gallery" element={<Gallery_Page />} />
+          <Route path="/achievements" element={<Achievements_Page />} />
+          <Route path="/members" element={<Members_Page />} />
+          <Route path="/contact" element={<Contact_Page />} />
+          <Route path="/feedback" element={<Feedback_Page />} />
+          <Route path="/admin/*" element={<Admin_Page />} />
+        </Routes>
+      </main>
+      {!isAdminPath && <Footer />}
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-white font-sans text-brand-950 selection:bg-brand-100 selection:text-brand-900">
-        <Navigation />
-        <main className="pt-20">
-          <Routes>
-            <Route path="/" element={<Home_Page />} />
-            <Route path="/about" element={<About_Page />} />
-            <Route path="/events" element={<Events_Page />} />
-            <Route path="/events/:id" element={<EventDetail_Page />} />
-            <Route path="/gallery" element={<Gallery_Page />} />
-            <Route path="/achievements" element={<Achievements_Page />} />
-            <Route path="/members" element={<Members_Page />} />
-            <Route path="/contact" element={<Contact_Page />} />
-            <Route path="/feedback" element={<Feedback_Page />} />
-            <Route path="/admin/*" element={<Admin_Page />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <AppContent />
     </Router>
   );
 }
