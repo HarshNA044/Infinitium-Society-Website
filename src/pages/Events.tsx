@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Calendar, MapPin, Search, Filter, ArrowRight, X, 
-  CheckCircle2, Download, QrCode as QrIcon
+  CheckCircle2, Download, QrCode as QrIcon, Share2
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
@@ -182,6 +182,27 @@ export default function Events_Page() {
     return `${displayH}:${formattedMinutes} ${ampm}`;
   };
 
+  const handleShare = async (e: React.MouseEvent, event: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const shareData = {
+      title: event.title,
+      url: `https://infinitium-arsd.vercel.app/events/${event.id}`,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(`https://infinitium-arsd.vercel.app/events/${event.id}`);
+        alert('Link copied to clipboard!');
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      console.error('Error sharing:', err);
+    }
+  };
+
   const filteredEvents = events.filter((e: any) => filter === 'All' || e.type === filter);
 
   return (
@@ -242,6 +263,13 @@ export default function Events_Page() {
                   </div>
                   <div className="flex flex-col items-end gap-2">
                      <span className="text-[9px] bento-tag bg-brand-950 text-brand-300 font-black uppercase tracking-widest">{event.type}</span>
+                     <button 
+                      onClick={(e) => handleShare(e, event)}
+                      className="p-2 bg-slate-50 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all active:scale-90 border border-slate-100"
+                      title="Share Event"
+                     >
+                       <Share2 className="w-4 h-4" />
+                     </button>
                   </div>
                 </div>
                 <h3 className="text-xl font-black text-slate-900 mb-3 tracking-tighter uppercase leading-tight group-hover:text-brand-600 transition-colors">{event.title}</h3>

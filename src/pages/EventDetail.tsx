@@ -248,15 +248,14 @@ export default function EventDetail_Page() {
   const handleShare = async () => {
     const shareData = {
       title: event.title,
-      text: event.description,
-      url: window.location.href,
+      url: `https://infinitium-arsd.vercel.app/events/${event.id}`,
     };
 
     try {
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(`https://infinitium-arsd.vercel.app/events/${event.id}`);
         alert('Link copied to clipboard!');
       }
     } catch (err) {

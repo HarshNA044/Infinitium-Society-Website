@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { 
   ArrowRight, Calendar, Users, Trophy, ChevronRight, Zap, Star, 
   Plus, QrCode as QrIcon, Lightbulb, Book, MessageSquare, Globe2,
-  Cpu, TestTube2, Monitor, MapPin
+  Cpu, TestTube2, Monitor, MapPin, Share2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
@@ -33,6 +33,27 @@ export default function Home_Page() {
     const displayH = h % 12 || 12;
     const formattedMinutes = minutes.padStart(2, '0');
     return `${displayH}:${formattedMinutes} ${ampm}`;
+  };
+
+  const handleShare = async (e: React.MouseEvent, event: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const shareData = {
+      title: event.title,
+      url: `https://infinitium-arsd.vercel.app/events/${event.id}`,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(`https://infinitium-arsd.vercel.app/events/${event.id}`);
+        alert('Link copied to clipboard!');
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      console.error('Error sharing:', err);
+    }
   };
 
   useEffect(() => {
@@ -217,6 +238,13 @@ export default function Home_Page() {
                       <span className="px-4 py-1.5 bg-brand-50 text-brand-600 text-[9px] font-black uppercase tracking-widest rounded-full border border-brand-100">
                         {event.type}
                       </span>
+                      <button 
+                        onClick={(e) => handleShare(e, event)}
+                        className="p-2 bg-slate-50 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all active:scale-90 border border-slate-100"
+                        title="Share Event"
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                     <h4 className="text-xl font-black text-zinc-900 mb-3 tracking-tighter leading-tight group-hover:text-brand-600 transition-colors uppercase">
                       {event.title}
