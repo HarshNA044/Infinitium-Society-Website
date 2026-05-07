@@ -150,6 +150,7 @@
         "eventId": { "type": "string" },
         "eventTitle": { "type": "string" },
         "ticketId": { "type": "string" },
+        "sheetId": { "type": "string" },
         "attended": { "type": "boolean" },
         "createdAt": { "type": "string", "format": "date-time" }
       },

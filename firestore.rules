@@ -158,7 +158,7 @@ service cloud.firestore {
       match /registrations/{regId} {
         function isValidRegistration(data) {
           return data.keys().hasAll(['studentName', 'rollNo', 'email', 'ticketId', 'eventId', 'createdAt'])
-            && data.keys().size() >= 6 && data.keys().size() <= 12
+            && data.keys().size() >= 6 && data.keys().size() <= 15
             && data.studentName is string && data.studentName.size() <= 200
             && data.rollNo is string && data.rollNo.size() <= 100
             && data.email is string && data.email.size() <= 200
@@ -170,6 +170,7 @@ service cloud.firestore {
             && (!data.keys().hasAll(['year']) || data.year is string)
             && (!data.keys().hasAll(['collegeName']) || data.collegeName is string)
             && (!data.keys().hasAll(['eventTitle']) || data.eventTitle is string)
+            && (!data.keys().hasAll(['sheetId']) || (data.sheetId is string || data.sheetId == null))
             && (!data.keys().hasAll(['attended']) || data.attended is bool);
         }
 
