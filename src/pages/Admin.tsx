@@ -429,7 +429,8 @@ export default function Admin_Page() {
       src: galleryImagePreview || formData.get('src') as string,
       title: formData.get('title') as string,
       description: formData.get('description') as string,
-      category: formData.get('category') as string
+      category: formData.get('category') as string,
+      eventDate: formData.get('eventDate') as string || ''
     };
 
     const path = 'gallery';
@@ -1051,7 +1052,18 @@ export default function Admin_Page() {
                 <div className="p-5 flex flex-col gap-3">
                   <div>
                     <h4 className="text-zinc-900 font-bold text-sm line-clamp-1">{item.title}</h4>
-                    <p className="text-brand-600 text-[10px] font-black uppercase tracking-widest">{item.category}</p>
+                    <div className="flex gap-2 mt-1">
+                      {item.category && (
+                        <span className="text-brand-600 text-[8px] font-black uppercase tracking-widest bg-brand-50 px-1.5 py-0.5 rounded border border-brand-100">
+                          {item.category}
+                        </span>
+                      )}
+                      {item.eventDate && (
+                        <span className="text-zinc-400 text-[8px] font-bold uppercase tracking-widest bg-zinc-50 px-1.5 py-0.5 rounded border border-zinc-100">
+                          {item.eventDate}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex gap-2">
                     <button 
@@ -1665,14 +1677,31 @@ export default function Admin_Page() {
                     className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 font-bold" 
                     placeholder="Image Title" 
                    />
-                   <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                      <input 
-                        name="category" 
-                        defaultValue={editingGallery?.category || 'Events'}
-                        required
-                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100" 
-                        placeholder="Category (e.g. Events, Academic)"
-                      />
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Category</label>
+                        <select 
+                          name="category" 
+                          defaultValue={editingGallery?.category || 'Events'}
+                          required
+                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-sm outline-none focus:border-brand-600 appearance-none" 
+                        >
+                          <option value="Events">Events</option>
+                          <option value="Academic">Academic</option>
+                          <option value="Team">Team</option>
+                          <option value="Moments">Moments</option>
+                          <option value="Trips">Trips</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Capture Date (Optional)</label>
+                        <input 
+                         name="eventDate" 
+                         type="date"
+                         defaultValue={editingGallery?.eventDate}
+                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-sm" 
+                        />
+                      </div>
                    </div>
                    <div className="space-y-2">
                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Or Image URL</label>
