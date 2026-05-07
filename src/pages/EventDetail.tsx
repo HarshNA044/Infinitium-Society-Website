@@ -8,8 +8,9 @@ import {
 import { QRCodeCanvas } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { doc, getDoc, collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, orderBy, query, setDoc, serverTimestamp } from 'firebase/firestore';
 import { cn } from '../lib/utils';
+import QRCode from 'qrcode';
 
 export default function EventDetail_Page() {
   const { id } = useParams();
@@ -23,8 +24,14 @@ export default function EventDetail_Page() {
   const [formData, setFormData] = useState({
     studentName: '',
     rollNo: '',
-    email: ''
+    email: '',
+    phoneNo: '',
+    course: '',
+    year: '',
+    collegeName: 'ARSD College'
   });
+
+  const [errors, setErrors] = useState<any>({});
 
   useEffect(() => {
     const fetchEventData = async () => {
@@ -54,118 +61,177 @@ export default function EventDetail_Page() {
     fetchEventData();
   }, [id, navigate]);
 
+  useEffect(() => {
+    if (event && !event.isInterCollege) {
+      setFormData(prev => ({ ...prev, collegeName: 'ARSD College' }));
+    }
+  }, [event]);
+
+  const validate = () => {
+    const newErrors: any = {};
+    if (!formData.studentName.trim()) newErrors.studentName = "Name is required";
+    if (!formData.rollNo.trim()) newErrors.rollNo = "Roll Number is required";
+    if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) newErrors.email = "Invalid email format";
+    if (!formData.phoneNo.match(/^[0-9]{10}$/)) newErrors.phoneNo = "10-digit phone number required";
+    if (!formData.course.trim()) newErrors.course = "Course is required";
+    if (!formData.year) newErrors.year = "Year is required";
+    if (event?.isInterCollege && !formData.collegeName.trim()) newErrors.collegeName = "College Name is required";
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validate()) return;
     setLoading(true);
     try {
       const ticketId = `INF-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      const timestamp = serverTimestamp();
+      
       const regData = {
         ...formData,
         eventId: event.id,
         eventTitle: event.title,
         ticketId: ticketId,
-        sheetId: event.sheetId
+        sheetId: event.sheetId,
+        attended: false,
+        createdAt: timestamp
       };
 
+      // 1. Save to Google Sheet (Legacy logic)
       const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
-      if (!appsScriptUrl) {
-        throw new Error("Google Sheets Integration is not configured. Please add 'VITE_APPS_SCRIPT_URL' to your App Secrets in Settings.");
+      if (appsScriptUrl) {
+        try {
+          await fetch(appsScriptUrl, {
+            method: 'POST',
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...regData, createdAt: new Date().toISOString() })
+          });
+        } catch (sErr) {
+          console.error("Sheet error:", sErr);
+        }
       }
 
-      await fetch(appsScriptUrl, {
-        method: 'POST',
-        mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(regData)
-      });
+      // 2. Save to Firestore (Required for local scanner validation)
+      const regRef = doc(db, 'events', event.id, 'registrations', ticketId);
+      await setDoc(regRef, regData);
 
       setRegistrationSuccess(regData);
     } catch (err) {
       console.error(err);
-      alert(err instanceof Error ? err.message : String(err));
+      handleFirestoreError(err, OperationType.WRITE, `events/${event.id}/registrations`);
     } finally {
       setLoading(false);
     }
   };
 
-  const downloadTicket = () => {
-    const doc = new jsPDF();
+  const downloadTicket = async () => {
+    const doc = new jsPDF({
+      orientation: 'p',
+      unit: 'mm',
+      format: 'a4'
+    });
+    
     const ticketId = registrationSuccess.ticketId;
     
-    // Design matching INFINITIUM aesthetic
-    doc.setFillColor(20, 184, 166);
-    doc.rect(0, 0, 210, 40, 'F');
+    // Generate QR Code Data URL
+    const qrDataUrl = await QRCode.toDataURL(ticketId, {
+      margin: 1,
+      color: {
+        dark: '#1e293b',
+        light: '#ffffff'
+      }
+    });
+    
+    // Aesthetic Backdrop
+    doc.setFillColor(15, 12, 41); // Deep Navy
+    doc.rect(0, 0, 210, 297, 'F');
+    
+    // Brand Header
+    doc.setFillColor(20, 184, 166); // Brand Green
+    doc.rect(0, 0, 210, 45, 'F');
     
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(28);
+    doc.setFontSize(32);
     doc.setFont('helvetica', 'bold');
-    doc.text('INFINITIUM SOCIETY', 20, 25);
+    doc.text('INFINITIUM', 105, 22, { align: 'center' });
     
     doc.setFontSize(10);
     doc.setFont('helvetica', 'normal');
-    doc.text('THE PREMIER SOCIETY OF PHYSICAL SCIENCES - ARSD', 20, 32);
-
+    const subtitleText = 'ATMA RAM SANATAN DHARMA COLLEGE | UNIVERSITY OF DELHI';
+    doc.text(subtitleText, 105, 30, { align: 'center' });
+    
+    // Ticket Container
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(15, 55, 180, 200, 8, 8, 'F');
+    
+    // Event Details Header
     doc.setTextColor(30, 41, 59);
-    doc.setFontSize(22);
+    doc.setFontSize(18);
     doc.setFont('helvetica', 'bold');
-    doc.text('OFFICIAL ENTRY TICKET', 20, 60);
+    doc.text('OFFICIAL ENTRY PASS', 25, 75);
     
-    doc.setDrawColor(226, 232, 240);
-    doc.setFillColor(248, 250, 252);
-    doc.roundedRect(15, 70, 180, 50, 5, 5, 'FD');
+    doc.setDrawColor(241, 245, 249);
+    doc.line(25, 82, 185, 82);
     
-    doc.setTextColor(100, 116, 139);
-    doc.setFontSize(10);
-    doc.text('EVENT NAME', 25, 80);
-    doc.setTextColor(30, 41, 59);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(event.title.toUpperCase(), 25, 88);
-    
-    doc.setTextColor(100, 116, 139);
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.text('LOCATION', 25, 100);
-    doc.setTextColor(30, 41, 59);
-    doc.text(event.location, 25, 108);
-    
-    doc.setTextColor(100, 116, 139);
-    doc.text('WHEN', 120, 100);
-    doc.setTextColor(30, 41, 59);
-    doc.text(event.date, 120, 108);
-
-    doc.setDrawColor(226, 232, 240);
-    doc.line(20, 135, 190, 135);
-    
-    doc.setTextColor(100, 116, 139);
-    doc.text('STUDENT NAME', 20, 145);
+    // Main Content Grid
+    doc.setFontSize(9);
+    doc.setTextColor(148, 163, 184);
+    doc.text('EVENT NAME', 25, 95);
     doc.setTextColor(30, 41, 59);
     doc.setFontSize(12);
-    doc.text(registrationSuccess.studentName, 20, 153);
-    
-    doc.setTextColor(100, 116, 139);
-    doc.setFontSize(10);
-    doc.text('ROLL NUMBER', 120, 145);
-    doc.setTextColor(30, 41, 59);
-    doc.text(registrationSuccess.rollNo, 120, 153);
-
-    const canvas = document.querySelector('canvas') as HTMLCanvasElement;
-    if (canvas) {
-      const qrImage = canvas.toDataURL('image/png');
-      doc.addImage(qrImage, 'PNG', 75, 170, 60, 60);
-    }
-    
-    doc.setFontSize(12);
     doc.setFont('helvetica', 'bold');
-    doc.text(ticketId, 105, 238, { align: 'center' });
+    doc.text(event.title.toUpperCase(), 25, 102, { maxWidth: 100 });
+    
+    doc.setFontSize(9);
+    doc.setTextColor(148, 163, 184);
+    doc.text('DATE & TIME', 130, 95);
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(10);
+    doc.text(event.date, 130, 102);
     
     doc.setTextColor(148, 163, 184);
     doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text('This is an electronically generated ticket. Please present this QR code at the registration desk.', 105, 260, { align: 'center' });
-    doc.text('Verification: teaminfinitium.arsd@gmail.com', 105, 265, { align: 'center' });
+    doc.text('ATTENDEE NAME', 25, 120);
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(11);
+    doc.text(registrationSuccess.studentName.toUpperCase(), 25, 127);
+    
+    doc.setTextColor(148, 163, 184);
+    doc.text('INSTITUTION', 130, 120);
+    doc.setTextColor(30, 41, 59);
+    doc.text(registrationSuccess.collegeName, 130, 127, { maxWidth: 55 });
+    
+    doc.setTextColor(148, 163, 184);
+    doc.text('ROLL NUMBER', 25, 145);
+    doc.setTextColor(30, 41, 59);
+    doc.text(registrationSuccess.rollNo, 25, 152);
+    
+    doc.setTextColor(148, 163, 184);
+    doc.text('DEPARTMENT/COURSE', 130, 145);
+    doc.setTextColor(30, 41, 59);
+    doc.text(registrationSuccess.course, 130, 152);
 
-    doc.save(`Infinitium_Ticket_${ticketId}.pdf`);
+    // QR Code Section
+    doc.setFillColor(248, 250, 252);
+    doc.roundedRect(65, 175, 80, 80, 5, 5, 'F');
+    doc.addImage(qrDataUrl, 'PNG', 75, 185, 60, 60);
+    
+    doc.setTextColor(30, 41, 59);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(ticketId, 105, 253, { align: 'center', charSpace: 2 });
+    
+    // Footer / Terms
+    doc.setTextColor(148, 163, 184);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'italic');
+    doc.text('* Please present this QR Code at the registration desk on the event day.', 105, 270, { align: 'center' });
+    doc.text('Unauthorized duplication or resale of this ticket is strictly prohibited.', 105, 275, { align: 'center' });
+    
+    doc.save(`INFINITIUM_${event.title.replace(/\s+/g, '_')}_Ticket.pdf`);
   };
 
   if (!event) return (
@@ -358,7 +424,7 @@ export default function EventDetail_Page() {
                      <div className="absolute top-0 right-0 w-24 h-24 bg-brand-200/20 blur-2xl rotate-45 transform translate-x-8 -translate-y-8"></div>
                    </div>
 
-                   <form onSubmit={handleRegister} className="space-y-6">
+                   <form onSubmit={handleRegister} className="space-y-4">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Full Name</label>
@@ -367,9 +433,13 @@ export default function EventDetail_Page() {
                             type="text" 
                             value={formData.studentName}
                             onChange={(e) => setFormData({...formData, studentName: e.target.value})}
-                            className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
-                            placeholder="John Doe"
+                            className={cn(
+                              "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                              errors.studentName ? "border-red-500" : "border-slate-200"
+                            )}
+                            placeholder="Harsh"
                           />
+                          {errors.studentName && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.studentName}</p>}
                         </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">College Roll No</label>
@@ -378,26 +448,106 @@ export default function EventDetail_Page() {
                             type="text" 
                             value={formData.rollNo}
                             onChange={(e) => setFormData({...formData, rollNo: e.target.value})}
-                            className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
-                            placeholder="22/CS/001"
+                            className={cn(
+                              "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                              errors.rollNo ? "border-red-500" : "border-slate-200"
+                            )}
+                            placeholder="23/34288"
                           />
+                          {errors.rollNo && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.rollNo}</p>}
                         </div>
                      </div>
-                     <div className="space-y-2">
-                       <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">University Email</label>
-                       <input 
-                         required
-                         type="email" 
-                         value={formData.email}
-                         onChange={(e) => setFormData({...formData, email: e.target.value})}
-                         className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
-                         placeholder="name@arsd.du.ac.in"
-                       />
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Email Address</label>
+                         <input 
+                           required
+                           type="email" 
+                           value={formData.email}
+                           onChange={(e) => setFormData({...formData, email: e.target.value})}
+                           className={cn(
+                             "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                             errors.email ? "border-red-500" : "border-slate-200"
+                           )}
+                           placeholder="harsh@example.com"
+                         />
+                         {errors.email && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.email}</p>}
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Phone Number</label>
+                         <input 
+                           required
+                           type="tel" 
+                           value={formData.phoneNo}
+                           onChange={(e) => setFormData({...formData, phoneNo: e.target.value})}
+                           className={cn(
+                             "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                             errors.phoneNo ? "border-red-500" : "border-slate-200"
+                           )}
+                           placeholder="9876543210"
+                         />
+                         {errors.phoneNo && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.phoneNo}</p>}
+                       </div>
                      </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Course</label>
+                         <input 
+                           required
+                           type="text" 
+                           value={formData.course}
+                           onChange={(e) => setFormData({...formData, course: e.target.value})}
+                           className={cn(
+                             "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                             errors.course ? "border-red-500" : "border-slate-200"
+                           )}
+                           placeholder="B.Sc (H) Physics"
+                         />
+                         {errors.course && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.course}</p>}
+                       </div>
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Year</label>
+                         <select 
+                           required
+                           value={formData.year}
+                           onChange={(e) => setFormData({...formData, year: e.target.value})}
+                           className={cn(
+                             "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                             errors.year ? "border-red-500" : "border-slate-200"
+                           )}
+                         >
+                           <option value="">Select Year</option>
+                           <option value="1">1st Year</option>
+                           <option value="2">2nd Year</option>
+                           <option value="3">3rd Year</option>
+                           <option value="4">4th Year</option>
+                         </select>
+                         {errors.year && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.year}</p>}
+                       </div>
+                     </div>
+                     
+                     {event?.isInterCollege && (
+                       <div className="space-y-2">
+                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">College Name</label>
+                         <input 
+                           required
+                           type="text" 
+                           value={formData.collegeName}
+                           onChange={(e) => setFormData({...formData, collegeName: e.target.value})}
+                           className={cn(
+                             "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                             errors.collegeName ? "border-red-500" : "border-slate-200"
+                           )}
+                           placeholder="Atma Ram Sanatan Dharma College"
+                         />
+                         {errors.collegeName && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.collegeName}</p>}
+                       </div>
+                     )}
+
                      <button 
                        disabled={loading}
                        type="submit"
-                       className="w-full py-4.5 bg-brand-600 text-white rounded-xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-brand-600/10"
+                       className="w-full py-4 bg-brand-600 text-white rounded-xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-brand-600/10"
                      >
                        {loading ? 'Processing...' : 'Confirm Registration'}
                      </button>

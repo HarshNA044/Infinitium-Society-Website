@@ -153,7 +153,7 @@ export default function Feedback_Page() {
                        value={searchRoll}
                        onChange={(e) => setSearchRoll(e.target.value)}
                        className="w-full px-8 py-5 bg-slate-50 rounded-2xl border border-slate-100 outline-none focus:border-brand-600 transition-all pr-32 font-bold text-sm tracking-widest uppercase placeholder:text-zinc-400" 
-                       placeholder="Roll No (e.g. 22/CS/001)" 
+                       placeholder="Roll No (e.g. 23/34288)" 
                     />
                     <button 
                        onClick={checkCertificate}

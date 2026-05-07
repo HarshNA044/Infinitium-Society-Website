@@ -322,6 +322,7 @@ export default function Admin_Page() {
       image: eventImagePreview || formData.get('image') as string,
       description: formData.get('description') as string,
       status: editingEvent?.status || 'Upcoming',
+      isInterCollege: !!formData.get('isInterCollege'),
       stats: {
         registrations: parseInt(formData.get('registrations') as string) || 0,
         attendance: parseInt(formData.get('attendance') as string) || 0
@@ -475,19 +476,67 @@ export default function Admin_Page() {
         try {
           setScanResult({ loading: true });
           
-          const result = await request('/api/mark-attendance', {
-            method: 'POST',
-            body: JSON.stringify({ ticketId: decodedText })
-          });
+          // 1. Find registration in Firestore
+          // Note: registrations are subcollections of events
+          const regRef = doc(db, 'events', selectedScanEventId, 'registrations', decodedText);
+          const regSnap = await getDoc(regRef);
           
-          setScanResult({ 
-            success: true, 
-            student: result.registration,
-            alreadyMarked: result.message === 'Already marked',
-            ticketId: decodedText
-          });
+          if (!regSnap.exists()) {
+            throw new Error('Invalid ticket or wrong event');
+          }
+          
+          const regData = regSnap.data();
+          if (regData.attended) {
+            setScanResult({ 
+              success: true, 
+              student: regData,
+              alreadyMarked: true,
+              ticketId: decodedText
+            });
+          } else {
+            // 2. Mark as attended in Firestore
+            await updateDoc(regRef, { attended: true });
+            
+            // 3. Update event stats
+            const eventRef = doc(db, 'events', selectedScanEventId);
+            const eventSnap = await getDoc(eventRef);
+            if (eventSnap.exists()) {
+              const currentAttendance = eventSnap.data().stats.attendance || 0;
+              await updateDoc(eventRef, {
+                'stats.attendance': currentAttendance + 1
+              });
+            }
+
+            // 4. Update Google Sheet (Optional but good)
+            const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+            if (appsScriptUrl) {
+              try {
+                await fetch(appsScriptUrl, {
+                  method: 'POST',
+                  mode: 'no-cors',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                    action: 'markAttendance',
+                    ticketId: decodedText,
+                    sheetId: regData.sheetId || targetEvent.sheetId
+                  })
+                });
+              } catch (sheetErr) {
+                console.error("Sheet update failed", sheetErr);
+              }
+            }
+            
+            setScanResult({ 
+              success: true, 
+              student: regData,
+              alreadyMarked: false,
+              ticketId: decodedText
+            });
+          }
+          
           loadFirebaseData();
         } catch (err: any) {
+          console.error("Scan error:", err);
           setScanResult({ success: false, error: err.message });
         }
         stopScanner();
@@ -1452,6 +1501,23 @@ export default function Admin_Page() {
                         />
                       </div>
                    </div>
+                   <div className="flex items-center justify-between p-5 bg-zinc-50 rounded-2xl border-2 border-zinc-100">
+                     <div className="space-y-0.5">
+                       <label className="text-[10px] font-black text-zinc-900 uppercase tracking-widest pl-1">Inter-College Event</label>
+                       <p className="text-[9px] text-zinc-400 font-medium uppercase tracking-tight pl-1">Allow students from other colleges to register</p>
+                     </div>
+                     <label className="relative inline-flex items-center cursor-pointer">
+                       <input 
+                         type="checkbox" 
+                         name="isInterCollege" 
+                         value="true"
+                         defaultChecked={editingEvent?.isInterCollege}
+                         className="sr-only peer" 
+                       />
+                       <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                     </label>
+                   </div>
+
                    <textarea 
                     name="description" 
                     defaultValue={editingEvent?.description}

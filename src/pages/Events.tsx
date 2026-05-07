@@ -303,7 +303,7 @@ export default function Events_Page() {
                             value={formData.studentName}
                             onChange={(e) => setFormData({...formData, studentName: e.target.value})}
                             className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
-                            placeholder="John Doe"
+                            placeholder="Harsh"
                           />
                         </div>
                         <div className="space-y-2">
@@ -314,7 +314,7 @@ export default function Events_Page() {
                             value={formData.rollNo}
                             onChange={(e) => setFormData({...formData, rollNo: e.target.value})}
                             className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
-                            placeholder="22/CS/001"
+                            placeholder="23/34288"
                           />
                         </div>
                      </div>

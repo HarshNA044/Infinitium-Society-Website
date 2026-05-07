@@ -106,6 +106,7 @@
         "image": { "type": "string" },
         "type": { "type": "string", "enum": ["Seminar", "Fest", "Workshop"] },
         "status": { "type": "string", "enum": ["Upcoming", "Ongoing", "Past"] },
+        "isInterCollege": { "type": "boolean", "description": "Whether students from other colleges can attend" },
         "sheetId": { "type": "string", "description": "The ID of the Google Sheet for registrations" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
@@ -133,6 +134,26 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["src", "createdAt"]
+    },
+    "EventRegistration": {
+      "title": "Event Registration",
+      "description": "A student registration for an event",
+      "type": "object",
+      "properties": {
+        "studentName": { "type": "string" },
+        "rollNo": { "type": "string" },
+        "email": { "type": "string" },
+        "phoneNo": { "type": "string" },
+        "course": { "type": "string" },
+        "year": { "type": "string" },
+        "collegeName": { "type": "string" },
+        "eventId": { "type": "string" },
+        "eventTitle": { "type": "string" },
+        "ticketId": { "type": "string" },
+        "attended": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["studentName", "rollNo", "email", "ticketId", "eventId", "createdAt"]
     }
   },
   "firestore": {
@@ -159,6 +180,10 @@
     "/events/{eventId}/photos": {
       "schema": "EventPhoto",
       "description": "Photos related to a specific event"
+    },
+    "/events/{eventId}/registrations": {
+      "schema": "EventRegistration",
+      "description": "Registrations for a specific event"
     },
     "/contact_messages": {
       "schema": "ContactMessage",

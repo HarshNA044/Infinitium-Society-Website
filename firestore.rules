@@ -120,11 +120,12 @@ service cloud.firestore {
     match /events/{eventId} {
       function isValidEvent(data) {
         return data.keys().hasAll(['title', 'description', 'date', 'type'])
-          && data.keys().size() >= 4 && data.keys().size() <= 16
+          && data.keys().size() >= 4 && data.keys().size() <= 17
           && data.title is string && data.title.size() <= 200
           && data.description is string && data.description.size() <= 2000
           && data.date is string
           && data.type is string
+          && (!data.keys().hasAll(['isInterCollege']) || data.isInterCollege is bool)
           && (!data.keys().hasAll(['sheetId']) || (data.sheetId is string && data.sheetId.size() <= 100))
           && (!data.keys().hasAll(['subtitle']) || data.subtitle is string)
           && (!data.keys().hasAll(['location']) || data.location is string)
@@ -137,7 +138,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAdmin() && isValidId(eventId) && isValidEvent(incoming()) && incoming().createdAt == request.time;
       allow update: if isAdmin() && isValidId(eventId) && isValidEvent(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'subtitle', 'description', 'date', 'location', 'image', 'type', 'status', 'sheetId', 'stats', 'createdAt'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'subtitle', 'description', 'date', 'location', 'image', 'type', 'status', 'sheetId', 'stats', 'createdAt', 'isInterCollege'])
       );
       allow delete: if isAdmin();
 
@@ -151,6 +152,32 @@ service cloud.firestore {
 
         allow read: if true;
         allow create: if isAdmin() && isValidId(photoId) && isValidPhoto(incoming());
+        allow delete: if isAdmin();
+      }
+
+      match /registrations/{regId} {
+        function isValidRegistration(data) {
+          return data.keys().hasAll(['studentName', 'rollNo', 'email', 'ticketId', 'eventId', 'createdAt'])
+            && data.keys().size() >= 6 && data.keys().size() <= 12
+            && data.studentName is string && data.studentName.size() <= 200
+            && data.rollNo is string && data.rollNo.size() <= 100
+            && data.email is string && data.email.size() <= 200
+            && data.ticketId is string && data.ticketId.size() <= 50
+            && data.eventId == eventId
+            && data.createdAt is timestamp
+            && (!data.keys().hasAll(['phoneNo']) || data.phoneNo is string)
+            && (!data.keys().hasAll(['course']) || data.course is string)
+            && (!data.keys().hasAll(['year']) || data.year is string)
+            && (!data.keys().hasAll(['collegeName']) || data.collegeName is string)
+            && (!data.keys().hasAll(['eventTitle']) || data.eventTitle is string)
+            && (!data.keys().hasAll(['attended']) || data.attended is bool);
+        }
+
+        allow read: if isAdmin();
+        allow create: if isValidId(regId) && isValidRegistration(incoming()) && incoming().createdAt == request.time && (!incoming().keys().hasAll(['attended']) || incoming().attended == false);
+        allow update: if isAdmin() && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['attended'])
+        );
         allow delete: if isAdmin();
       }
     }
