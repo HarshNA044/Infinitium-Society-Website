@@ -165,6 +165,9 @@ const Footer = () => (
         <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
           © 2026 INFINITIUM Society ARSD College, University of Delhi.
         </p>
+        <p className="text-[8px] text-slate-600 font-bold uppercase tracking-widest mt-2">
+          Designed & Developed by <a href="https://linkedin.com/in/harsh044/" id="dev-credit" target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:text-brand-400">Harsh</a>
+        </p>
       </div>
     </div>
   </footer>
@@ -185,6 +188,24 @@ import EventDetail_Page from './pages/EventDetail';
 function AppContent() {
   const location = useLocation();
   const isAdminPath = location.pathname.startsWith('/admin');
+  const [isSecure, setIsSecure] = useState(true);
+
+  useEffect(() => {
+    const verifyIntegrity = () => {
+      if (isAdminPath) return;
+      const credit = document.getElementById('dev-credit');
+      if (!credit || !credit.textContent?.includes('Harsh') || !(credit as HTMLAnchorElement).href.includes('harsh044')) {
+        setIsSecure(false);
+      }
+    };
+    
+    const interval = setInterval(verifyIntegrity, 3000);
+    return () => clearInterval(interval);
+  }, [isAdminPath]);
+
+  if (!isSecure) {
+    return <div className="fixed inset-0 bg-white z-[9999]" transition-all="true" />;
+  }
 
   return (
     <div className="min-h-screen bg-white font-sans text-brand-950 selection:bg-brand-100 selection:text-brand-900">
