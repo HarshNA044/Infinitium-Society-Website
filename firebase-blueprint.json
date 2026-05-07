@@ -108,6 +108,7 @@
         "status": { "type": "string", "enum": ["Upcoming", "Ongoing", "Past"] },
         "isInterCollege": { "type": "boolean", "description": "Whether students from other colleges can attend" },
         "sheetId": { "type": "string", "description": "The ID of the Google Sheet for registrations" },
+        "startTime": { "type": "string", "description": "Display time e.g. 10:00 AM" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "description", "date", "type", "sheetId"]

@@ -171,6 +171,17 @@ export default function Events_Page() {
     doc.save(`Infinitium_Ticket_${ticketId}.pdf`);
   };
 
+  const formatTime = (timeStr: string) => {
+    if (!timeStr) return '';
+    if (!timeStr.includes(':')) return timeStr;
+    const [hours, minutes] = timeStr.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayH = h % 12 || 12;
+    const formattedMinutes = minutes.padStart(2, '0');
+    return `${displayH}:${formattedMinutes} ${ampm}`;
+  };
+
   const filteredEvents = events.filter((e: any) => filter === 'All' || e.type === filter);
 
   return (
@@ -214,7 +225,7 @@ export default function Events_Page() {
             <motion.div
               layout
               key={event.id}
-              className="bento-card group flex flex-col p-0 overflow-hidden"
+              className="bento-card group flex flex-col p-0 overflow-hidden shadow-md shadow-slate-200/50"
             >
               <div className="aspect-[16/9] w-full relative overflow-hidden bg-slate-100">
                 <img 
@@ -223,9 +234,6 @@ export default function Events_Page() {
                   alt={event.title}
                   referrerPolicy="no-referrer"
                 />
-                <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[9px] font-black uppercase text-slate-900 tracking-widest border border-white/20">
-                  {event.date}
-                </div>
               </div>
               <div className="p-8 flex flex-col flex-1">
                 <div className="mb-6 flex justify-between items-start">
@@ -237,18 +245,25 @@ export default function Events_Page() {
                   </div>
                 </div>
                 <h3 className="text-xl font-black text-slate-900 mb-3 tracking-tighter uppercase leading-tight group-hover:text-brand-600 transition-colors">{event.title}</h3>
+                
+                <div className="flex flex-col gap-1 mb-6">
+                  <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                    <Calendar className="w-3 h-3 text-brand-600" />
+                    {event.date} {event.startTime && `@ ${formatTime(event.startTime)}`}
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                    <MapPin className="w-3 h-3 text-brand-600" />
+                    {event.location}
+                  </div>
+                </div>
+
                 <p className="text-xs text-slate-500 mb-8 leading-relaxed line-clamp-3 font-medium flex-1">
                   {event.description}
                 </p>
-                
-                <div className="flex items-center gap-2 text-slate-400 mb-8 text-[10px] font-bold uppercase tracking-widest">
-                  <MapPin className="w-3 h-3 text-brand-600" />
-                  {event.location}
-                </div>
 
                 <Link
                   to={`/events/${event.id}`}
-                  className="w-full py-4 bg-brand-950 text-white rounded-xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all flex items-center justify-center gap-2 group-hover:shadow-lg group-hover:shadow-brand-600/20 active:scale-95 border border-brand-900"
+                  className="w-full py-4 bg-gradient-to-r from-brand-600 via-brand-500 to-emerald-600 bg-[length:200%_auto] hover:bg-right text-white rounded-xl font-black uppercase text-xs tracking-widest hover:shadow-xl hover:shadow-brand-600/30 active:scale-95 transition-all duration-500 flex items-center justify-center gap-2 border border-white/20 shadow-lg shadow-brand-600/10"
                 >
                   Explore Event <ArrowRight className="w-4 h-4" />
                 </Link>

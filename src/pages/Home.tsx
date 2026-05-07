@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { 
   ArrowRight, Calendar, Users, Trophy, ChevronRight, Zap, Star, 
   Plus, QrCode as QrIcon, Lightbulb, Book, MessageSquare, Globe2,
-  Cpu, TestTube2, Monitor
+  Cpu, TestTube2, Monitor, MapPin
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
@@ -23,6 +23,17 @@ export default function Home_Page() {
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const formatTime = (timeStr: string) => {
+    if (!timeStr) return '';
+    if (!timeStr.includes(':')) return timeStr;
+    const [hours, minutes] = timeStr.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayH = h % 12 || 12;
+    const formattedMinutes = minutes.padStart(2, '0');
+    return `${displayH}:${formattedMinutes} ${ampm}`;
+  };
 
   useEffect(() => {
     if (galleryImages.length > 0) {
@@ -190,7 +201,7 @@ export default function Home_Page() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="group bg-white border border-zinc-100 rounded-2xl hover:shadow-2xl hover:shadow-brand-600/5 transition-all flex flex-col overflow-hidden"
+                className="group bg-white border border-zinc-100 rounded-2xl shadow-md shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-600/5 transition-all flex flex-col overflow-hidden"
               >
                 <div className="aspect-[21/9] w-full relative overflow-hidden bg-slate-100">
                   <img 
@@ -199,9 +210,6 @@ export default function Home_Page() {
                     alt={event.title}
                     referrerPolicy="no-referrer"
                   />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-[8px] font-black uppercase text-slate-900 tracking-widest border border-white/20">
-                    {event.date}
-                  </div>
                 </div>
                 <div className="p-8 flex flex-col justify-between flex-1">
                   <div>
@@ -213,13 +221,23 @@ export default function Home_Page() {
                     <h4 className="text-xl font-black text-zinc-900 mb-3 tracking-tighter leading-tight group-hover:text-brand-600 transition-colors uppercase">
                       {event.title}
                     </h4>
+                    <div className="flex flex-col gap-1 mb-6">
+                      <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                        <Calendar className="w-3 h-3 text-brand-600" />
+                        {event.date} {event.startTime && `@ ${formatTime(event.startTime)}`}
+                      </div>
+                      <div className="flex items-center gap-2 text-slate-500 text-[10px] font-black uppercase tracking-widest">
+                        <MapPin className="w-3 h-3 text-brand-600" />
+                        {event.location}
+                      </div>
+                    </div>
                     <p className="text-sm text-zinc-500 font-medium leading-relaxed mb-8 line-clamp-2">
                       {event.description}
                     </p>
                   </div>
                   <Link 
                     to={`/events/${event.id}`}
-                    className="w-full py-4 border-2 border-zinc-100 rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 group-hover:border-brand-500 group-hover:bg-brand-500 group-hover:text-white transition-all shadow-sm"
+                    className="w-full py-4 bg-gradient-to-r from-brand-600 via-brand-500 to-emerald-600 bg-[length:200%_auto] hover:bg-right text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:shadow-xl hover:shadow-brand-600/30 active:scale-95 transition-all duration-500 border border-white/20 shadow-lg shadow-brand-600/10"
                   >
                     Explore Event
                   </Link>

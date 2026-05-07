@@ -81,6 +81,17 @@ export default function EventDetail_Page() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const formatTime = (timeStr: string) => {
+    if (!timeStr) return '';
+    if (!timeStr.includes(':')) return timeStr; // Fallback if already formatted
+    const [hours, minutes] = timeStr.split(':');
+    const h = parseInt(hours);
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const displayH = h % 12 || 12;
+    const formattedMinutes = minutes.padStart(2, '0');
+    return `${displayH}:${formattedMinutes} ${ampm}`;
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -190,7 +201,7 @@ export default function EventDetail_Page() {
     doc.text('DATE & TIME', 130, 95);
     doc.setTextColor(30, 41, 59);
     doc.setFontSize(10);
-    doc.text(event.date, 130, 102);
+    doc.text(`${event.date}${event.startTime ? ' | ' + formatTime(event.startTime) : ''}`, 130, 102);
     
     doc.setTextColor(148, 163, 184);
     doc.setFontSize(9);
@@ -285,7 +296,7 @@ export default function EventDetail_Page() {
                <div className="flex flex-wrap gap-8 items-center mt-6 py-6 border-y border-slate-100">
                   <div className="flex items-center gap-2 text-slate-500">
                      <Calendar className="w-4 h-4 text-brand-600" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">When: {event.date}</span>
+                     <span className="text-[10px] font-black uppercase tracking-widest">When: {event.date} {event.startTime && `@ ${formatTime(event.startTime)}`}</span>
                   </div>
                   <div className="flex items-center gap-2 text-slate-500">
                      <MapPin className="w-4 h-4 text-brand-600" />

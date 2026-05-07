@@ -321,6 +321,7 @@ export default function Admin_Page() {
       location: formData.get('location') as string,
       image: eventImagePreview || formData.get('image') as string,
       description: formData.get('description') as string,
+      startTime: formData.get('startTime') as string || '',
       status: editingEvent?.status || 'Upcoming',
       isInterCollege: !!formData.get('isInterCollege'),
       stats: {
@@ -1442,32 +1443,52 @@ export default function Admin_Page() {
                     placeholder="Event Subtitle (e.g. A Journey through Quantum Mechanics)" 
                    />
                    <div className="grid grid-cols-2 gap-4">
-                      <select 
-                        name="type" 
-                        defaultValue={editingEvent?.type || 'Seminar'}
-                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100"
-                      >
-                        <option>Seminar</option>
-                        <option>Fest</option>
-                        <option>Workshop</option>
-                        <option>Field Trip</option>
-                      </select>
-                      <input 
-                        name="date" 
-                        type="date" 
-                        defaultValue={editingEvent?.date}
-                        onChange={(e) => setSelectedEventDate(e.target.value)}
-                        required 
-                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100" 
-                      />
+                       <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Event Type</label>
+                        <select 
+                          name="type" 
+                          defaultValue={editingEvent?.type || 'Seminar'}
+                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold"
+                        >
+                          <option>Seminar</option>
+                          <option>Fest</option>
+                          <option>Workshop</option>
+                          <option>Field Trip</option>
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Event Date</label>
+                        <input 
+                          name="date" 
+                          type="date" 
+                          defaultValue={editingEvent?.date}
+                          onChange={(e) => setSelectedEventDate(e.target.value)}
+                          required 
+                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold" 
+                        />
+                      </div>
                    </div>
-                   <input 
-                    name="location" 
-                    defaultValue={editingEvent?.location}
-                    required 
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300" 
-                    placeholder="Event Location (e.g. Auditorium)" 
-                   />
+                   <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Start Time</label>
+                        <input 
+                          name="startTime" 
+                          type="time"
+                          defaultValue={editingEvent?.startTime}
+                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-sm" 
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Location</label>
+                        <input 
+                          name="location" 
+                          defaultValue={editingEvent?.location}
+                          required 
+                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 font-bold" 
+                          placeholder="e.g. Auditorium" 
+                        />
+                      </div>
+                   </div>
                    {(!selectedEventDate || new Date(selectedEventDate) >= new Date(new Date().setHours(0,0,0,0))) && (
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Google Sheet ID</label>
