@@ -245,6 +245,28 @@ export default function EventDetail_Page() {
     doc.save(`INFINITIUM_${event.title.replace(/\s+/g, '_')}_Ticket.pdf`);
   };
 
+  const handleShare = async () => {
+    const shareData = {
+      title: event.title,
+      text: event.description,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Link copied to clipboard!');
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') {
+        return; // User cancelled, ignore
+      }
+      console.error('Error sharing:', err);
+    }
+  };
+
   if (!event) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-600"></div>
@@ -279,7 +301,7 @@ export default function EventDetail_Page() {
                   {event.status}
                 </span>
              </div>
-             <h1 className="text-5xl md:text-8xl font-black text-white tracking-tighter leading-none uppercase mb-8">
+             <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white tracking-tighter leading-none uppercase mb-8">
                {event.title}
              </h1>
           </div>
@@ -290,27 +312,27 @@ export default function EventDetail_Page() {
       <div className="max-w-4xl mx-auto px-8 py-20">
         <div className="space-y-12">
             <div>
-               <h2 className="text-2xl font-black tracking-tighter uppercase text-slate-900 mb-2">
+               <h2 className="text-xl md:text-2xl font-black tracking-tighter uppercase text-slate-900 mb-2">
                  {event.subtitle || "Exploring the Frontiers of Physics"}
                </h2>
-               <div className="flex flex-wrap gap-8 items-center mt-6 py-6 border-y border-slate-100">
-                  <div className="flex items-center gap-2 text-slate-500">
+               <div className="flex flex-wrap gap-4 md:gap-8 items-center mt-6 py-6 border-y border-slate-100">
+                  <div className="flex items-center gap-2 text-slate-900">
                      <Calendar className="w-4 h-4 text-brand-600" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">When: {event.date} {event.startTime && `@ ${formatTime(event.startTime)}`}</span>
+                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">When: {event.date} {event.startTime && `@ ${formatTime(event.startTime)}`}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-500">
+                  <div className="flex items-center gap-2 text-slate-900">
                      <MapPin className="w-4 h-4 text-brand-600" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">{event.location}</span>
+                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">{event.location}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-500">
+                  <div className="flex items-center gap-2 text-slate-900">
                      <Tag className="w-4 h-4 text-brand-600" />
-                     <span className="text-[10px] font-black uppercase tracking-widest">{event.type}</span>
+                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">{event.type}</span>
                   </div>
                </div>
             </div>
 
             <div className="prose prose-slate max-w-none">
-               <p className="text-xl text-slate-600 font-medium leading-relaxed">
+               <p className="text-lg md:text-xl text-slate-900 font-medium leading-relaxed">
                  {event.description}
                </p>
                
@@ -331,11 +353,11 @@ export default function EventDetail_Page() {
             </div>
 
             <div className="flex items-center gap-4 pt-10">
-               <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-all text-[10px] font-black uppercase tracking-widest">
+               <button 
+                onClick={handleShare}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-all text-[10px] font-black uppercase tracking-widest"
+               >
                   <Share2 className="w-4 h-4" /> Share
-               </button>
-               <button className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-all text-[10px] font-black uppercase tracking-widest">
-                  <Info className="w-4 h-4" /> Policy
                </button>
             </div>
 
@@ -343,8 +365,8 @@ export default function EventDetail_Page() {
               <div className="pt-20 border-t border-slate-100">
                 <div className="flex items-end justify-between mb-12">
                   <div>
-                    <h2 className="text-3xl font-black tracking-tighter uppercase text-slate-900 leading-none">Event Highlights</h2>
-                    <p className="text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mt-3">Moments in Motion</p>
+                    <h2 className="text-2xl md:text-3xl font-black tracking-tighter uppercase text-slate-900 leading-none">Event Highlights</h2>
+                    <p className="text-[9px] md:text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mt-3">Moments in Motion</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -423,7 +445,7 @@ export default function EventDetail_Page() {
               {!registrationSuccess ? (
                 <div className="p-8 md:p-10">
                    <div className="flex justify-between items-center mb-6">
-                     <h2 className="text-2xl font-black text-slate-900 tracking-tighter uppercase">Register</h2>
+                     <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase">Register</h2>
                      <button onClick={() => setIsRegistering(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
                        <X className="w-5 h-5" />
                      </button>
@@ -431,7 +453,7 @@ export default function EventDetail_Page() {
                    
                    <div className="bg-brand-50 p-6 rounded-2xl mb-6 text-slate-900 relative overflow-hidden border border-brand-100">
                      <p className="text-[9px] font-black text-brand-600 uppercase tracking-[0.3em] mb-1">EVENT CONFIRMATION</p>
-                     <p className="text-lg font-bold text-slate-700">{event?.title}</p>
+                     <p className="text-lg font-bold text-slate-900">{event?.title}</p>
                      <div className="absolute top-0 right-0 w-24 h-24 bg-brand-200/20 blur-2xl rotate-45 transform translate-x-8 -translate-y-8"></div>
                    </div>
 
@@ -569,8 +591,8 @@ export default function EventDetail_Page() {
                   <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-emerald-100">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <h2 className="text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase">Success</h2>
-                  <p className="text-[10px] text-slate-500 mb-8 font-bold uppercase tracking-widest leading-loose">
+                  <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase">Success</h2>
+                  <p className="text-[10px] text-slate-900 mb-8 font-bold uppercase tracking-widest leading-loose">
                     Registration confirmed for <span className="text-brand-600">{event?.title}</span>. 
                     <br />Save the ticket below.
                   </p>
