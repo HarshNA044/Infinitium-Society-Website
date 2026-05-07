@@ -165,7 +165,7 @@ const Footer = () => (
         <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
           © 2026 INFINITIUM Society ARSD College, University of Delhi.
         </p>
-        <p className="text-[8px] text-slate-600 font-bold uppercase tracking-widest mt-2">
+        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-2">
           Designed & Developed by <a href="https://linkedin.com/in/harsh044/" id="dev-credit" target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:text-brand-400">Harsh</a>
         </p>
       </div>
