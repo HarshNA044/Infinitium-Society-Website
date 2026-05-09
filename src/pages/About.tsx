@@ -254,37 +254,28 @@ export default function About_Page() {
         <section className="mb-20 md:mb-32">
           <SectionTitle subtitle="Our specialized wings">Departments</SectionTitle>
           
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 md:gap-12 items-stretch">
-            {/* Main Departments (Dynamic) - Left side on Desktop */}
-            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 order-1">
-              {data.departments.map((dept: any, i: number) => {
-                const icons = [BookOpen, Edit3, Monitor, Calendar, Megaphone, Handshake, Shield, Heart, Zap];
-                return (
-                  <DepartmentCard 
-                    key={dept.id}
-                    icon={icons[i % icons.length] || BookOpen} 
-                    title={dept.title}
-                    aim={dept.aim}
-                    tasks={dept.tasks}
-                    delay={0.1 * (i + 1)}
-                  />
-                );
-              })}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
+            {data.departments.map((dept: any, i: number) => {
+              const icons = [BookOpen, Edit3, Monitor, Calendar, Megaphone, Handshake, Shield, Heart, Zap];
+              return (
+                <DepartmentCard 
+                  key={dept.id}
+                  icon={icons[i % icons.length] || BookOpen} 
+                  title={dept.title}
+                  aim={dept.aim}
+                  tasks={dept.tasks}
+                  delay={0.1 * (i + 1)}
+                />
+              );
+            })}
+          </div>
 
-            {/* Other Departments (Statics) - Right side on Desktop */}
-            <div className="lg:col-span-1 order-2">
-              <div className="bg-zinc-50/50 p-6 md:p-8 rounded-3xl border border-zinc-100 relative overflow-hidden h-full flex flex-col">
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
-                <div className="mb-8">
-                  <h4 className="text-[10px] md:text-xs font-black uppercase text-slate-400 tracking-[0.3em]">Other Departments</h4>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 flex-1">
-                  {STATIC_DEPARTMENTS.map((dept, i) => (
-                    <MinorDepartmentCard key={i} {...dept} delay={0.1 * (i + 1)} />
-                  ))}
-                </div>
-              </div>
+          <div className="bg-zinc-50/50 p-6 md:p-12 rounded-3xl border border-zinc-100 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {STATIC_DEPARTMENTS.map((dept, i) => (
+                <MinorDepartmentCard key={i} {...dept} delay={0.1 * (i + 1)} />
+              ))}
             </div>
           </div>
         </section>
