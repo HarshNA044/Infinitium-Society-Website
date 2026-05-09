@@ -113,36 +113,63 @@ export default function About_Page() {
     <div className="py-24 px-4 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Hero Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-16 items-center mb-20 md:mb-32">
+        <div className="max-w-5xl mb-20 md:mb-32">
           <motion.div
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex flex-col"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100 self-start">
               <Users className="w-3 h-3" /> About INFINITIUM
             </div>
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] uppercase mb-8 md:mb-12 text-left">
+            
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] uppercase mb-12 text-left">
               {data.hero.title === "IGNITING CURIOSITY & FOSTERING EXCELLENCE" ? (
                 <>IGNITING <br /> <span className="text-brand-600">CURIOSITY</span> <br /> & FOSTERING <br /> EXCELLENCE</>
               ) : data.hero.title}
             </h1>
-            <p className="text-base md:text-lg text-slate-600 font-medium leading-relaxed max-w-xl">
-              {data.hero.subtitle}
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.2 }}
+              className="aspect-[21/9] w-full bg-slate-100 rounded-2xl md:rounded-3xl overflow-hidden relative mb-12 shadow-2xl shadow-brand-600/10"
+            >
+              <img 
+                src={data.hero.image} 
+                className="w-full h-full object-cover" 
+                alt="Science Exploration"
+              />
+              <div className="absolute inset-0 bg-brand-600/10 mix-blend-multiply" />
+            </motion.div>
+
+            <p className="text-lg md:text-xl text-slate-700 font-medium leading-relaxed max-w-4xl text-justify">
+              {data.hero.paragraph}
             </p>
           </motion.div>
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="aspect-square bg-slate-100 rounded-2xl md:rounded-2xl overflow-hidden relative"
-          >
-            <img 
-              src={data.hero.image} 
-              className="w-full h-full object-cover brightness-100" 
-              alt="Science Exploration"
-            />
-            <div className="absolute inset-0 bg-brand-600/20 mix-blend-multiply" />
-          </motion.div>
         </div>
+
+        {/* Scientific Domains Section */}
+        <section className="mb-32">
+          <SectionTitle subtitle="Our core domains">Explore Our Scientific Domains</SectionTitle>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+            {[
+              { title: 'Physics', text: 'Understanding the fundamental laws governing the universe.', icon: Microscope },
+              { title: 'Chemistry', text: 'Exploring matter, materials, reactions, and modern applications.', icon: Search },
+              { title: 'Computer Science', text: 'Bridging logic, computation, AI, and data-driven technologies.', icon: Monitor },
+              { title: 'Electronics', text: 'Innovating with circuits, embedded systems, and smart technologies.', icon: Target },
+              { title: 'Interdisciplinary Sciences', text: 'Connecting multiple scientific domains to solve real-world problems.', icon: Handshake }
+            ].map((domain, i) => (
+              <Card 
+                key={i}
+                icon={domain.icon} 
+                title={domain.title} 
+                text={domain.text}
+                delay={0.1 * (i + 1)}
+              />
+            ))}
+          </div>
+        </section>
 
         {/* Objectives Section */}
         <section className="mb-32">

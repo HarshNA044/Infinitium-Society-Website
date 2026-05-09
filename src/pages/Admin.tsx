@@ -145,12 +145,12 @@ export default function Admin_Page() {
           setAboutData(aboutDoc.data());
         } else {
           // Initialize with default structure
-          setAboutData({
-            hero: { 
-              title: "INFINITIUM SOCIETY", 
-              subtitle: "The Premier Society of Physical Sciences at ARSD College, University of Delhi.", 
-              image: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=2070&auto=format&fit=crop" 
-            },
+            setAboutData({
+              hero: { 
+                title: "INFINITIUM SOCIETY", 
+                paragraph: "The Premier Society of Physical Sciences at ARSD College, University of Delhi.", 
+                image: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=2070&auto=format&fit=crop" 
+              },
             objectives: [
               { id: 'obj1', title: 'Scientific Temper', text: 'Cultivating a curious and analytical mindset.' },
               { id: 'obj2', title: 'Innovation', text: 'Providing a platform for creative solutions.' },
@@ -1164,11 +1164,11 @@ export default function Admin_Page() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Subtitle</label>
+                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Paragraph</label>
                   <textarea 
-                    value={aboutData.hero.subtitle}
-                    onChange={(e) => setAboutData({ ...aboutData, hero: { ...aboutData.hero, subtitle: e.target.value } })}
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-32" 
+                    value={aboutData.hero.paragraph}
+                    onChange={(e) => setAboutData({ ...aboutData, hero: { ...aboutData.hero, paragraph: e.target.value } })}
+                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-48" 
                   />
                 </div>
               </div>

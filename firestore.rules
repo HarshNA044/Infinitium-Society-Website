@@ -39,7 +39,7 @@ service cloud.firestore {
           && data.keys().size() == 4
           && data.hero is map
           && data.hero.title is string && data.hero.title.size() <= 200
-          && data.hero.subtitle is string && data.hero.subtitle.size() <= 1000
+          && data.hero.paragraph is string && data.hero.paragraph.size() <= 4000
           && data.hero.image is string && data.hero.image.size() <= 1000000
           && data.objectives is list
           && data.impacts is list

@@ -9,10 +9,10 @@
           "type": "object",
           "properties": {
             "title": { "type": "string" },
-            "subtitle": { "type": "string" },
+            "paragraph": { "type": "string" },
             "image": { "type": "string" }
           },
-          "required": ["title", "subtitle", "image"]
+          "required": ["title", "paragraph", "image"]
         },
         "objectives": {
           "type": "array",

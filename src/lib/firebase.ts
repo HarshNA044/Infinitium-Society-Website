@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import { initializeFirestore, doc, getDocFromServer } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
 
 const env = (import.meta as any).env;
@@ -15,7 +15,12 @@ const config = {
 };
 
 const app = initializeApp(config);
-export const db = getFirestore(app, env.VITE_FIREBASE_DATABASE_ID || firebaseConfig.firestoreDatabaseId);
+
+// Use initializeFirestore to enable long polling as a fallback for connection issues
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, env.VITE_FIREBASE_DATABASE_ID || firebaseConfig.firestoreDatabaseId);
+
 export const auth = getAuth();
 
 export enum OperationType {
