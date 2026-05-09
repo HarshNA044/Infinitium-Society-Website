@@ -72,7 +72,7 @@ async function startServer() {
     { eventId: '4', eventTitle: 'Quantum Leap: Physics Tech Expo', studentName: 'Sneha Verma', rollNo: '24/PH/102', email: 'sneha.v@arsd.du.ac.in', ticketId: 'INF-SNEHA02', attended: false, timestamp: new Date() }
   ];
   let feedback = [];
-  let members = [
+  let team = [
     { id: '1', name: 'Saksham Raj', role: 'President', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop', linkedin: '#', tenure: '2024-25' },
     { id: '2', name: 'Ritik', role: 'Vice-President', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop', linkedin: '#', tenure: '2024-25' },
     { id: '3', name: 'Vaishanvi Shukla', role: 'Vice-President', image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&h=400&fit=crop', linkedin: '#', tenure: '2024-25' },
@@ -88,7 +88,7 @@ async function startServer() {
     { id: '13', name: 'Vikas Yadav', role: 'PR Head', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop', linkedin: '#', tenure: '2024-25' },
     { id: '14', name: 'Keshav Agrawal', role: 'PR Sub-head', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop', linkedin: '#', tenure: '2024-25' },
     { id: '15', name: 'Shrishti Singh', role: 'Sponsorship Head', image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop', linkedin: '#', tenure: '2024-25' },
-    // Past Members
+    // Past Team
     { id: '16', name: 'Former Pres', role: 'President', image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop', linkedin: '#', tenure: '2023-24' },
     { id: '17', name: 'Former VP', role: 'Vice-President', image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop', linkedin: '#', tenure: '2023-24' },
   ];
@@ -110,12 +110,12 @@ async function startServer() {
       { id: '1', title: 'Promote Scientific Enquiry', text: 'Inspire students to think beyond the curriculum, encouraging them to ask questions and seek answers.' },
       { id: '2', title: 'Foster Collaboration', text: 'Providing a conducive environment for students to work together and learn from each other\'s strengths.' },
       { id: '3', title: 'Develop Research Skills', text: 'Support students in conducting experiments, collecting data, and preparing for future endeavors.' },
-      { id: '4', title: 'Enhance Communication', text: 'Enabling members to articulate complex scientific concepts effectively through seminars and discussions.' }
+      { id: '4', title: 'Enhance Communication', text: 'Enabling team members to articulate complex scientific concepts effectively through seminars and discussions.' }
     ],
     impacts: [
       { id: '1', title: 'Scientific Literacy', text: 'Enhances understanding of scientific principles and their applications in real-world scenarios.' },
       { id: '2', title: 'Leadership & Collaboration', text: 'Prepares students for leadership roles in communities, industries, and various work fields.' },
-      { id: '3', title: 'Builds Confidence', text: 'Empowers members to express their ideas, present research, and engage confidently in discussions.' },
+      { id: '3', title: 'Builds Confidence', text: 'Empowers team members to express their ideas, present research, and engage confidently in discussions.' },
       { id: '4', title: 'Skill Development', text: 'Improves public speaking, event organization, and teamwork skills for career and personal growth.' }
     ],
     departments: [
@@ -284,33 +284,33 @@ async function startServer() {
     res.json({ totalRegistrations, totalAttendance, eventsCount: events.length });
   });
 
-  app.get('/api/members', (req, res) => res.json(members));
+  app.get('/api/team', (req, res) => res.json(team));
 
-  app.post('/api/members', (req, res) => {
+  app.post('/api/team', (req, res) => {
     const newMember = { ...req.body, id: Date.now().toString() };
-    members.push(newMember);
+    team.push(newMember);
     res.json(newMember);
   });
 
-  app.put('/api/members/:id', (req, res) => {
+  app.put('/api/team/:id', (req, res) => {
     const { id } = req.params;
-    const index = members.findIndex(m => m.id === id);
+    const index = team.findIndex(m => m.id === id);
     if (index !== -1) {
-      members[index] = { ...members[index], ...req.body };
-      res.json(members[index]);
+      team[index] = { ...team[index], ...req.body };
+      res.json(team[index]);
     } else {
-      res.status(404).json({ error: 'Member not found' });
+      res.status(404).json({ error: 'Team member not found' });
     }
   });
 
-  app.delete('/api/members/:id', (req, res) => {
+  app.delete('/api/team/:id', (req, res) => {
     const { id } = req.params;
-    const index = members.findIndex(m => m.id === id);
+    const index = team.findIndex(m => m.id === id);
     if (index !== -1) {
-      members.splice(index, 1);
+      team.splice(index, 1);
       res.json({ success: true });
     } else {
-      res.status(404).json({ error: 'Member not found' });
+      res.status(404).json({ error: 'Team member not found' });
     }
   });
 

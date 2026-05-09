@@ -689,7 +689,7 @@ export default function Admin_Page() {
           {[
             { id: 'overview', icon: BarChart3, label: 'Overview' },
             { id: 'events', icon: ListOrdered, label: 'Events' },
-            { id: 'members', icon: Users, label: 'Members' },
+            { id: 'members', icon: Users, label: 'Team' },
             { id: 'achievements', icon: Trophy, label: 'Achievements' },
             { id: 'gallery', icon: Camera, label: 'Gallery' },
             { id: 'messages', icon: MessageSquare, label: 'Messages' },
@@ -718,7 +718,7 @@ export default function Admin_Page() {
       <main className="flex-1 p-6 md:p-12 overflow-y-auto">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-zinc-900 mb-2 capitalize">{activeTab} Panel</h1>
+            <h1 className="text-3xl font-bold text-zinc-900 mb-2 capitalize">{activeTab === 'members' ? 'Team' : activeTab} Panel</h1>
             <p className="text-zinc-500 font-medium">Manage INFINITIUM's backend operations.</p>
           </div>
           <div className="flex gap-4">
@@ -744,7 +744,7 @@ export default function Admin_Page() {
               }}
               className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
             >
-              <Plus className="w-5 h-5" /> Add Member
+              <Plus className="w-5 h-5" /> Add Team Member
             </button>
           )}
           {activeTab === 'achievements' && (
@@ -1777,7 +1777,7 @@ export default function Admin_Page() {
                   <Trash2 className="w-8 h-8" />
                 </div>
                 <h3 className="text-xl font-bold text-zinc-900 mb-4 tracking-tight">Confirm Deletion</h3>
-                <p className="text-sm text-zinc-500 mb-8 font-medium">Are you sure you want to delete this {deleteConfirm.type}? This action cannot be undone.</p>
+                <p className="text-sm text-zinc-500 mb-8 font-medium">Are you sure you want to delete this {deleteConfirm.type === 'member' ? 'team member' : deleteConfirm.type}? This action cannot be undone.</p>
                 
                 <div className="flex gap-4">
                    <button 
@@ -1820,7 +1820,7 @@ export default function Admin_Page() {
                className="relative bg-white w-full max-w-lg rounded-[3.5rem] p-10 shadow-2xl max-h-[90vh] overflow-y-auto"
              >
                 <h2 className="text-3xl font-bold mb-8">
-                  {editingMember ? 'Edit Member' : 'Add New Member'}
+                  {editingMember ? 'Edit Team Member' : 'Add New Team Member'}
                 </h2>
                 <form onSubmit={handleMemberSubmit} className="space-y-6">
                    <div className="flex flex-col items-center gap-4 mb-8">

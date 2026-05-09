@@ -44,7 +44,7 @@ const Navigation = () => {
     { name: 'Events', path: '/events', icon: Calendar },
     { name: 'Gallery', path: '/gallery', icon: ImageIcon },
     { name: 'Achievements', path: '/achievements', icon: Trophy },
-    { name: 'Members', path: '/members', icon: Users },
+    { name: 'Team', path: '/team', icon: Users },
   ];
 
   return (
@@ -140,7 +140,7 @@ const Footer = () => (
           <ul className="space-y-4">
             <li><Link to="/about" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">About Us</Link></li>
             <li><Link to="/events" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Our Events</Link></li>
-            <li><Link to="/members" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Members</Link></li>
+            <li><Link to="/team" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Team</Link></li>
             <li><Link to="/admin" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Admin Login</Link></li>
           </ul>
         </div>
@@ -179,7 +179,7 @@ import About_Page from './pages/About';
 import Events_Page from './pages/Events';
 import Gallery_Page from './pages/Gallery';
 import Achievements_Page from './pages/Achievements';
-import Members_Page from './pages/Members';
+import Team_Page from './pages/Team';
 import Contact_Page from './pages/Contact';
 import Feedback_Page from './pages/Feedback';
 import Admin_Page from './pages/Admin';
@@ -218,7 +218,7 @@ function AppContent() {
           <Route path="/events/:id" element={<EventDetail_Page />} />
           <Route path="/gallery" element={<Gallery_Page />} />
           <Route path="/achievements" element={<Achievements_Page />} />
-          <Route path="/members" element={<Members_Page />} />
+          <Route path="/team" element={<Team_Page />} />
           <Route path="/contact" element={<Contact_Page />} />
           <Route path="/feedback" element={<Feedback_Page />} />
           <Route path="/admin/*" element={<Admin_Page />} />

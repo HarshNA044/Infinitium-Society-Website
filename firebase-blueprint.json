@@ -80,7 +80,7 @@
       "required": ["title", "description", "date"]
     },
     "Member": {
-      "title": "Member",
+      "title": "Team Member",
       "description": "A core team member of the society",
       "type": "object",
       "properties": {

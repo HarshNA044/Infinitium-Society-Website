@@ -95,7 +95,7 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
-    // --- Members Rules ---
+    // --- Team Rules ---
     match /members/{memberId} {
       function isValidMember(data) {
         return data.keys().hasAll(['name', 'role', 'tenure', 'image'])

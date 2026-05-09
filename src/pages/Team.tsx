@@ -4,12 +4,12 @@ import { Linkedin, Twitter, Github, Mail, Users } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 
-export default function Members_Page() {
+export default function Team_Page() {
   const [allMembers, setAllMembers] = useState<any[]>([]);
   const [tenure, setTenure] = useState('2024-25');
 
   useEffect(() => {
-    const fetchMembers = async () => {
+    const fetchTeam = async () => {
       const path = 'members';
       try {
         const q = query(collection(db, path), orderBy('tenure', 'desc'));
@@ -30,7 +30,7 @@ export default function Members_Page() {
         handleFirestoreError(error, OperationType.LIST, path);
       }
     };
-    fetchMembers();
+    fetchTeam();
   }, []);
 
   const tenures = Array.from(new Set(allMembers.map((m: any) => m.tenure))).sort().reverse() as string[];
@@ -87,7 +87,7 @@ export default function Members_Page() {
                    {tenure === tenures[0] ? 'Current Tenure' : `Tenure ${tenure}`}
                 </h2>
                 <span className="text-[10px] font-black text-brand-600 uppercase tracking-widest bg-brand-50 px-3 py-1 rounded-full border border-brand-100">
-                   {filteredMembers.length} Members
+                   {filteredMembers.length} Team Members
                 </span>
              </div>
 
@@ -136,7 +136,7 @@ export default function Members_Page() {
              {filteredMembers.length === 0 && (
                <div className="py-20 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-100 text-center flex flex-col items-center">
                   <Users className="w-12 h-12 text-zinc-200 mb-4" />
-                  <p className="text-slate-400 font-black uppercase text-xs tracking-widest">No members found for this tenure.</p>
+                  <p className="text-slate-400 font-black uppercase text-xs tracking-widest">No team members found for this tenure.</p>
                </div>
              )}
           </div>
