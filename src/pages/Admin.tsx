@@ -5,7 +5,8 @@ import {
   BarChart3, Plus, Scan, Users, Calendar, 
   Trash2, CheckCircle, XCircle, ChevronLeft,
   LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
-  Trophy, Download, LogIn, Github, Menu, X, MessageSquare
+  Trophy, Download, LogIn, Github, Menu, X, MessageSquare,
+  Globe, Award, Target, Handshake, Lightbulb
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -155,10 +156,10 @@ export default function Admin_Page() {
               { id: 'obj1', title: 'Scientific Temper', text: 'Cultivating a curious and analytical mindset.' },
               { id: 'obj2', title: 'Innovation', text: 'Providing a platform for creative solutions.' },
               { id: 'obj3', title: 'Leadership', text: 'Developing organizational skills.' },
-              { id: 'obj4', title: 'Teamwork', text: 'Fostering collaborative excellence and mutual support.' },
-              { id: 'obj5', title: 'Equal Opportunity', text: 'Ensuring 100% inclusivity and fair access for all.' },
-              { id: 'obj6', title: 'Networking', text: 'Connecting students with global scientific communities.' },
-              { id: 'obj7', title: 'Values', text: 'Upholding integrity and ethics in scientific pursuit.' }
+              { id: 'obj4', title: 'Teamwork', text: 'Fostering a collaborative environment where students work together across disciplines to achieve common scientific goals.' },
+              { id: 'obj5', title: 'Equal opportunity to all', text: 'Ensuring 100% inclusivity and a meritocratic platform where every student has fair access to resources and mentorship.' },
+              { id: 'obj6', title: 'Networking', text: 'Building professional bridges by connecting students with faculty, alumni, and global scientific communities.' },
+              { id: 'obj7', title: 'Value', text: 'Instilling core scientific ethics and integrity, creating long-term academic and professional value for our members.' }
             ],
             impacts: [
               { id: 'imp1', title: '1000 +', text: 'Students reached annually' },

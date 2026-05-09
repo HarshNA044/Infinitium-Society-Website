@@ -4,16 +4,17 @@ import {
   Target, Users, Lightbulb, GraduationCap, 
   Search, Handshake, Microscope, MessageSquare,
   BookOpen, Edit3, Monitor, Calendar, Megaphone, DollarSign,
-  TrendingUp, Award, UserPlus
+  TrendingUp, Award, UserPlus, Globe, Trophy,
+  Shield, Heart, Zap, Sparkles, Cpu, FileText
 } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 
 const SectionTitle = ({ children, subtitle }: { children: React.ReactNode, subtitle?: string }) => (
-  <div className="mb-16">
-    <h2 className="text-4xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2">{children}</h2>
-    {subtitle && <p className="text-sm font-bold text-brand-600 uppercase tracking-[0.3em] font-sans">{subtitle}</p>}
+  <div className="mb-10 md:mb-16">
+    <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 leading-[0.9]">{children}</h2>
+    {subtitle && <p className="text-[10px] md:text-sm font-bold text-brand-600 uppercase tracking-[0.3em] font-sans">{subtitle}</p>}
   </div>
 );
 
@@ -39,7 +40,7 @@ const DepartmentCard = ({ icon: Icon, title, aim, tasks, delay }: any) => (
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ delay }}
-    className="p-8 bg-white text-slate-950 rounded-2xl relative overflow-hidden border border-slate-100 shadow-sm"
+    className="p-8 bg-white text-slate-950 rounded-2xl relative overflow-hidden border border-slate-100 shadow-sm h-full flex flex-col"
   >
     <div className="absolute top-0 right-0 p-8 opacity-5">
       <Icon className="w-32 h-32 text-brand-600" />
@@ -60,6 +61,33 @@ const DepartmentCard = ({ icon: Icon, title, aim, tasks, delay }: any) => (
     </div>
   </motion.div>
 );
+
+const MinorDepartmentCard = ({ icon: Icon, title, delay }: any) => (
+  <motion.div
+    initial={{ opacity: 0, y: 10 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ delay }}
+    className="group relative p-4 bg-white border border-slate-100 rounded-2xl flex items-center gap-4 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-500/5 transition-all duration-300"
+  >
+    <div className="w-12 h-12 bg-slate-50 text-slate-400 rounded-xl flex items-center justify-center shrink-0 group-hover:bg-brand-50 group-hover:text-brand-600 transition-all duration-300">
+      <Icon className="w-6 h-6" />
+    </div>
+    
+    <div className="flex flex-col">
+      <h4 className="text-sm font-bold text-slate-900 tracking-tight">{title}</h4>
+    </div>
+  </motion.div>
+);
+
+const STATIC_DEPARTMENTS = [
+  { title: 'Academics', icon: GraduationCap },
+  { title: 'Content', icon: FileText },
+  { title: 'Digital', icon: Cpu },
+  { title: 'Event', icon: Calendar },
+  { title: 'Public Relations', icon: Users },
+  { title: 'Sponsorship', icon: Handshake },
+];
 
 const ICON_MAP: any = {
   Search, Handshake, Microscope, MessageSquare, BookOpen, Edit3, Monitor, Calendar, Megaphone, DollarSign
@@ -92,7 +120,7 @@ export default function About_Page() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="min-h-[80vh] flex items-center justify-center bg-white">
         <div className="w-16 h-16 border-4 border-brand-100 border-t-brand-600 rounded-full animate-spin"></div>
       </div>
     );
@@ -100,7 +128,7 @@ export default function About_Page() {
 
   if (!data) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white text-center p-6">
+      <div className="min-h-[80vh] flex items-center justify-center bg-white text-center p-6 mt-20">
         <div>
           <h2 className="text-2xl font-bold text-zinc-900 mb-4 uppercase tracking-tight">Data coming soon!</h2>
           <p className="text-zinc-500 font-medium">The about page is currently being updated by our team.</p>
@@ -110,7 +138,7 @@ export default function About_Page() {
   }
 
   return (
-    <div className="py-24 px-4 bg-white">
+    <div className="py-16 md:py-24 px-6 md:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Hero Section */}
         <div className="max-w-5xl mb-20 md:mb-32">
@@ -119,11 +147,11 @@ export default function About_Page() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100 self-start">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 md:mb-8 border border-brand-100 self-start">
               <Users className="w-3 h-3" /> About INFINITIUM
             </div>
             
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] uppercase mb-12 text-left">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] uppercase mb-8 md:mb-12 text-left">
               {data.hero.title === "IGNITING CURIOSITY & FOSTERING EXCELLENCE" ? (
                 <>IGNITING <br /> <span className="text-brand-600">CURIOSITY</span> <br /> & FOSTERING <br /> EXCELLENCE</>
               ) : data.hero.title}
@@ -133,7 +161,7 @@ export default function About_Page() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="aspect-[21/9] w-full bg-slate-100 rounded-2xl md:rounded-3xl overflow-hidden relative mb-12 shadow-2xl shadow-brand-600/10"
+              className="aspect-video md:aspect-[21/9] w-full bg-slate-100 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative mb-8 md:mb-12 shadow-2xl shadow-brand-600/10"
             >
               <img 
                 src={data.hero.image} 
@@ -143,16 +171,16 @@ export default function About_Page() {
               <div className="absolute inset-0 bg-brand-600/10 mix-blend-multiply" />
             </motion.div>
 
-            <p className="text-lg md:text-xl text-slate-700 font-medium leading-relaxed max-w-4xl text-justify">
+            <p className="text-base md:text-xl text-slate-700 font-medium leading-relaxed max-w-4xl text-left md:text-justify">
               {data.hero.paragraph}
             </p>
           </motion.div>
         </div>
 
         {/* Scientific Domains Section */}
-        <section className="mb-32">
+        <section className="mb-20 md:mb-32">
           <SectionTitle subtitle="Our core domains">Explore Our Scientific Domains</SectionTitle>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
             {[
               { title: 'Physics', text: 'Understanding the fundamental laws governing the universe.', icon: Microscope },
               { title: 'Chemistry', text: 'Exploring matter, materials, reactions, and modern applications.', icon: Search },
@@ -172,11 +200,11 @@ export default function About_Page() {
         </section>
 
         {/* Objectives Section */}
-        <section className="mb-32">
+        <section className="mb-20 md:mb-32">
           <SectionTitle subtitle="Vision for students">Objectives of INFINITIUM</SectionTitle>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {data.objectives.map((obj: any, i: number) => {
-              const icons = [Search, Handshake, Users, Award, Target, MessageSquare, Lightbulb, Microscope, UserPlus, GraduationCap];
+              const icons = [Search, Lightbulb, Users, Handshake, Target, Globe, Trophy, Microscope, GraduationCap, Award];
               return (
                 <Card 
                   key={obj.id}
@@ -191,23 +219,31 @@ export default function About_Page() {
         </section>
 
         {/* Impacts Section */}
-        <section className="mb-32 p-12 md:p-20 bg-white rounded-2xl text-slate-950 overflow-hidden relative border border-slate-100 shadow-xl shadow-brand-950/5">
+        <section className="mb-20 md:mb-32 p-6 md:p-20 bg-white rounded-3xl text-slate-950 overflow-hidden relative border border-slate-100 shadow-xl shadow-brand-950/5">
           <div className="absolute top-0 right-0 w-96 h-96 bg-brand-50 blur-[100px] -translate-y-1/2 translate-x-1/2" />
           <SectionTitle subtitle="Transforming Lives">Impacts on Students</SectionTitle>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:col-span-2">
+          <div className="relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
                {data.impacts.map((imp: any, i: number) => {
                  const icons = [Users, Calendar, Award, UserPlus, TrendingUp];
                  return (
-                  <div key={imp.id} className="flex gap-6">
-                    <div className="w-12 h-12 bg-brand-50 border border-brand-100 rounded-xl flex items-center justify-center shrink-0 text-brand-600">
-                      {React.createElement(icons[i % icons.length], { className: "w-6 h-6" })}
+                  <motion.div 
+                    key={imp.id} 
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.1 * i }}
+                    className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-4 md:gap-6 p-6 md:p-0 bg-zinc-50/50 md:bg-transparent rounded-2xl md:rounded-none border border-zinc-100 md:border-none"
+                  >
+                    <div className="w-14 h-14 bg-white md:bg-brand-50 border border-brand-100 rounded-2xl flex items-center justify-center shrink-0 text-brand-600 shadow-sm md:shadow-none">
+                      {React.createElement(icons[i % icons.length], { className: "w-7 h-7" })}
                     </div>
                     <div>
-                      <h4 className="text-xl font-bold mb-2 uppercase tracking-tight text-slate-900">{imp.title}</h4>
-                      <p className="text-slate-500 text-sm leading-relaxed font-medium">{imp.text}</p>
+                      <h4 className="text-2xl md:text-3xl font-black mb-1 md:mb-2 uppercase tracking-tighter text-slate-900 leading-none">{imp.title}</h4>
+                      <p className="text-slate-500 text-[10px] md:text-sm font-black uppercase tracking-widest opacity-60 mb-2 leading-none">{imp.text.split(' ')[0]}</p>
+                      <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{imp.text}</p>
                     </div>
-                  </div>
+                  </motion.div>
                  );
                })}
             </div>
@@ -215,41 +251,60 @@ export default function About_Page() {
         </section>
 
         {/* Departments Section */}
-        <section className="mb-32">
+        <section className="mb-20 md:mb-32">
           <SectionTitle subtitle="Our specialized wings">Departments</SectionTitle>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.departments.map((dept: any, i: number) => {
-              const icons = [BookOpen, Edit3, Monitor, Calendar, Megaphone, Handshake];
-              return (
-                <DepartmentCard 
-                  key={dept.id}
-                  icon={icons[i] || BookOpen} 
-                  title={dept.title}
-                  aim={dept.aim}
-                  tasks={dept.tasks}
-                  delay={0.1 * (i + 1)}
-                />
-              );
-            })}
+          
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 md:gap-12 items-stretch">
+            {/* Main Departments (Dynamic) - Left side on Desktop */}
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 order-1">
+              {data.departments.map((dept: any, i: number) => {
+                const icons = [BookOpen, Edit3, Monitor, Calendar, Megaphone, Handshake, Shield, Heart, Zap];
+                return (
+                  <DepartmentCard 
+                    key={dept.id}
+                    icon={icons[i % icons.length] || BookOpen} 
+                    title={dept.title}
+                    aim={dept.aim}
+                    tasks={dept.tasks}
+                    delay={0.1 * (i + 1)}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Other Departments (Statics) - Right side on Desktop */}
+            <div className="lg:col-span-1 order-2">
+              <div className="bg-zinc-50/50 p-6 md:p-8 rounded-3xl border border-zinc-100 relative overflow-hidden h-full flex flex-col">
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
+                <div className="mb-8">
+                  <h4 className="text-[10px] md:text-xs font-black uppercase text-slate-400 tracking-[0.3em]">Other Departments</h4>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-4 flex-1">
+                  {STATIC_DEPARTMENTS.map((dept, i) => (
+                    <MinorDepartmentCard key={i} {...dept} delay={0.1 * (i + 1)} />
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
         {/* CTA Section */}
-        <section className="p-12 md:p-24 bg-brand-50 border border-brand-100 rounded-2xl text-center overflow-hidden relative">
-          <div className="absolute top-0 left-0 p-8">
-             <span className="text-[10px] font-black uppercase text-brand-400 tracking-[0.4em]">Join the movement</span>
+        <section className="p-8 md:p-24 bg-brand-50 border border-brand-100 rounded-3xl text-center overflow-hidden relative">
+          <div className="absolute top-4 md:top-8 left-1/2 -translate-x-1/2 w-full flex justify-center">
+             <span className="text-[9px] md:text-[10px] font-black uppercase text-brand-400 tracking-[0.4em]">Join the movement</span>
           </div>
-          <h2 className="text-3xl md:text-5xl font-black mb-8 uppercase text-slate-900 tracking-tighter">
-            Unlock the wonders of <span className="text-brand-600">Physical Sciences</span>
+          <h2 className="text-3xl md:text-5xl font-black mb-6 md:mb-8 uppercase text-slate-900 tracking-tighter leading-[0.9] pt-8 md:pt-0">
+            Unlock the wonders of <span className="text-brand-600">Multidisciplinary Sciences</span>
           </h2>
-          <p className="text-slate-500 max-w-2xl mx-auto mb-10 font-medium leading-relaxed uppercase tracking-wide text-sm px-4">
-            If you're a student at ARSD College with a thirst for knowledge and a passion for discovery, join INFINITIUM today! Together, let's shape a brighter future.
+          <p className="text-slate-500 max-w-2xl mx-auto mb-8 md:mb-10 font-medium leading-relaxed uppercase tracking-wide text-xs md:text-sm px-2 md:px-4 text-justify">
+            If you're a student at ARSD College with a curiosity for science, thirst for knowledge and a passion for discovery, join INFINITIUM! Together, let's shape a brighter future by B.Sc. (Prog.) students.
           </p>
-          <div className="flex flex-wrap justify-center gap-4">
-            <button className="px-10 py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-600/20 hover:bg-brand-950 transition-colors">
+          <div className="flex flex-col sm:flex-row justify-center gap-4">
+            <button className="w-full sm:w-auto px-10 py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-600/20 hover:bg-brand-950 transition-colors">
                Apply for Core Team
             </button>
-            <Link to="/events" className="px-10 py-5 bg-white border-2 border-brand-200 text-brand-800 rounded-xl flex items-center justify-center font-black uppercase text-xs tracking-widest hover:border-brand-600 transition-all">
+            <Link to="/events" className="w-full sm:w-auto px-10 py-5 bg-white border-2 border-brand-200 text-brand-800 rounded-xl flex items-center justify-center font-black uppercase text-xs tracking-widest hover:border-brand-600 transition-all">
                Explore Events
             </Link>
           </div>
