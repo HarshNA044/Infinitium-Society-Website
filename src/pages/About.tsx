@@ -219,29 +219,29 @@ export default function About_Page() {
         </section>
 
         {/* Impacts Section */}
-        <section className="mb-20 md:mb-32 p-6 md:p-20 bg-white rounded-3xl text-slate-950 overflow-hidden relative border border-slate-100 shadow-xl shadow-brand-950/5">
+        <section className="mb-20 md:mb-32 p-6 md:p-16 lg:p-24 bg-white rounded-3xl text-slate-950 overflow-hidden relative border border-slate-100 shadow-xl shadow-brand-950/5">
           <div className="absolute top-0 right-0 w-96 h-96 bg-brand-50 blur-[100px] -translate-y-1/2 translate-x-1/2" />
           <SectionTitle subtitle="Transforming Lives">Impacts on Students</SectionTitle>
           <div className="relative z-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                {data.impacts.map((imp: any, i: number) => {
                  const icons = [Users, Calendar, Award, UserPlus, TrendingUp];
                  return (
                   <motion.div 
                     key={imp.id} 
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: 0.1 * i }}
-                    className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-4 md:gap-6 p-6 md:p-0 bg-zinc-50/50 md:bg-transparent rounded-2xl md:rounded-none border border-zinc-100 md:border-none"
+                    className="flex flex-col items-start gap-4 p-6 bg-zinc-50/50 rounded-2xl border border-zinc-100 hover:border-brand-200 hover:bg-white hover:shadow-lg hover:shadow-brand-500/5 transition-all duration-300"
                   >
-                    <div className="w-14 h-14 bg-white md:bg-brand-50 border border-brand-100 rounded-2xl flex items-center justify-center shrink-0 text-brand-600 shadow-sm md:shadow-none">
-                      {React.createElement(icons[i % icons.length], { className: "w-7 h-7" })}
+                    <div className="w-12 h-12 bg-white border border-brand-100 rounded-xl flex items-center justify-center shrink-0 text-brand-600 shadow-sm">
+                      {React.createElement(icons[i % icons.length], { className: "w-6 h-6" })}
                     </div>
                     <div>
-                      <h4 className="text-2xl md:text-3xl font-black mb-1 md:mb-2 uppercase tracking-tighter text-slate-900 leading-none">{imp.title}</h4>
-                      <p className="text-slate-500 text-[10px] md:text-sm font-black uppercase tracking-widest opacity-60 mb-2 leading-none">{imp.text.split(' ')[0]}</p>
-                      <p className="text-slate-500 text-xs md:text-sm leading-relaxed font-medium">{imp.text}</p>
+                      <h4 className="text-xl md:text-2xl font-black mb-2 uppercase tracking-tighter text-slate-900 leading-tight">{imp.title}</h4>
+                      <p className="text-brand-600 text-[10px] md:text-xs font-black uppercase tracking-widest mb-3">{imp.text.split(' ')[0]} Impact</p>
+                      <p className="text-slate-500 text-sm leading-relaxed font-medium">{imp.text}</p>
                     </div>
                   </motion.div>
                  );
@@ -272,6 +272,9 @@ export default function About_Page() {
 
           <div className="bg-zinc-50/50 p-6 md:p-12 rounded-3xl border border-zinc-100 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-brand-500/20 to-transparent" />
+            <div className="mb-8">
+              <h4 className="text-[10px] md:text-xs font-black uppercase text-slate-400 tracking-[0.3em]">Other Departments</h4>
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {STATIC_DEPARTMENTS.map((dept, i) => (
                 <MinorDepartmentCard key={i} {...dept} delay={0.1 * (i + 1)} />
@@ -285,20 +288,27 @@ export default function About_Page() {
           <div className="absolute top-4 md:top-8 left-1/2 -translate-x-1/2 w-full flex justify-center">
              <span className="text-[9px] md:text-[10px] font-black uppercase text-brand-400 tracking-[0.4em]">Join the movement</span>
           </div>
-          <h2 className="text-3xl md:text-5xl font-black mb-6 md:mb-8 uppercase text-slate-900 tracking-tighter leading-[0.9] pt-8 md:pt-0">
-            Unlock the wonders of <span className="text-brand-600">Multidisciplinary Sciences</span>
-          </h2>
-          <p className="text-slate-500 max-w-2xl mx-auto mb-8 md:mb-10 font-medium leading-relaxed uppercase tracking-wide text-xs md:text-sm px-2 md:px-4 text-justify">
-            If you're a student at ARSD College with a curiosity for science, thirst for knowledge and a passion for discovery, join INFINITIUM! Together, let's shape a brighter future by B.Sc. (Prog.) students.
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <button className="w-full sm:w-auto px-10 py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-600/20 hover:bg-brand-950 transition-colors">
-               Apply for Core Team
-            </button>
-            <Link to="/events" className="w-full sm:w-auto px-10 py-5 bg-white border-2 border-brand-200 text-brand-800 rounded-xl flex items-center justify-center font-black uppercase text-xs tracking-widest hover:border-brand-600 transition-all">
-               Explore Events
-            </Link>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="relative z-10"
+          >
+            <h2 className="text-3xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8 uppercase text-slate-900 tracking-tighter leading-[0.9] pt-8 md:pt-0">
+              Unlock the wonders of <br className="hidden md:block" /> <span className="text-brand-600">Multidisciplinary Sciences</span>
+            </h2>
+            <p className="text-slate-600 max-w-3xl mx-auto mb-8 md:mb-12 font-medium leading-relaxed uppercase tracking-wide text-xs md:text-sm px-2 md:px-4">
+              If you're a student at ARSD College with a curiosity for science, thirst for knowledge and a passion for discovery, join INFINITIUM! Together, let's shape a brighter future by B.Sc. (Prog.) students.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+              <button className="w-full sm:w-auto px-10 py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-widest shadow-xl shadow-brand-600/20 hover:bg-brand-950 transition-all hover:-translate-y-1">
+                 Apply for Core Team
+              </button>
+              <Link to="/events" className="w-full sm:w-auto px-10 py-5 bg-white border-2 border-brand-200 text-brand-800 rounded-xl flex items-center justify-center font-black uppercase text-xs tracking-widest hover:border-brand-600 transition-all hover:-translate-y-1">
+                 Explore Events
+              </Link>
+            </div>
+          </motion.div>
         </section>
       </div>
     </div>
