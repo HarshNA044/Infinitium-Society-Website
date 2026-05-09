@@ -154,14 +154,20 @@ export default function Admin_Page() {
             objectives: [
               { id: 'obj1', title: 'Scientific Temper', text: 'Cultivating a curious and analytical mindset.' },
               { id: 'obj2', title: 'Innovation', text: 'Providing a platform for creative solutions.' },
-              { id: 'obj3', title: 'Leadership', text: 'Developing organizational skills.' }
+              { id: 'obj3', title: 'Leadership', text: 'Developing organizational skills.' },
+              { id: 'obj4', title: 'Teamwork', text: 'Fostering collaborative excellence and mutual support.' },
+              { id: 'obj5', title: 'Equal Opportunity', text: 'Ensuring 100% inclusivity and fair access for all.' },
+              { id: 'obj6', title: 'Networking', text: 'Connecting students with global scientific communities.' },
+              { id: 'obj7', title: 'Values', text: 'Upholding integrity and ethics in scientific pursuit.' }
             ],
             impacts: [
-              { id: 'imp1', title: '1500+', text: 'Students reached annually' },
-              { id: 'imp2', title: '50+', text: 'Technical events organized' }
+              { id: 'imp1', title: '1000 +', text: 'Students reached annually' },
+              { id: 'imp2', title: '10 +', text: 'Events organised annually' }
             ],
             departments: [
-              { id: 'dep1', title: 'Core Team', aim: 'Overall management', tasks: ['Operations', 'Strategy'] }
+              { id: 'dep1', title: 'Core Team', aim: 'Overall management', tasks: ['Operations', 'Strategy'] },
+              { id: 'dep2', title: 'Technical', aim: 'Research and Dev', tasks: ['Workshops', 'Coding'] },
+              { id: 'dep3', title: 'Content', aim: 'Knowledge Sharing', tasks: ['Blogs', 'Magazines'] }
             ]
           });
         }
@@ -1175,10 +1181,30 @@ export default function Admin_Page() {
             </div>
 
             <div className="bento-card p-10 bg-white">
-              <h3 className="text-xl font-bold mb-6 uppercase tracking-tight">Objectives</h3>
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold uppercase tracking-tight">Objectives</h3>
+                <button 
+                  onClick={() => {
+                    const newObjectives = [...aboutData.objectives, { id: Date.now().toString(), title: '', text: '' }];
+                    setAboutData({ ...aboutData, objectives: newObjectives });
+                  }}
+                  className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-brand-100 flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Objective
+                </button>
+              </div>
               <div className="space-y-8">
                 {aboutData.objectives.map((obj: any, idx: number) => (
-                  <div key={obj.id} className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4">
+                  <div key={obj.id} className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4 relative group">
+                    <button 
+                      onClick={() => {
+                        const newObjectives = aboutData.objectives.filter((_: any, i: number) => i !== idx);
+                        setAboutData({ ...aboutData, objectives: newObjectives });
+                      }}
+                      className="absolute top-4 right-4 p-2 text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                     <input 
                       value={obj.title}
                       onChange={(e) => {
@@ -1199,6 +1225,149 @@ export default function Admin_Page() {
                       className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 h-20 text-sm"
                       placeholder="Objective Text"
                     />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bento-card p-10 bg-white">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold uppercase tracking-tight">Impact Statistics</h3>
+                <button 
+                  onClick={() => {
+                    const newImpacts = [...aboutData.impacts, { id: Date.now().toString(), title: '', text: '' }];
+                    setAboutData({ ...aboutData, impacts: newImpacts });
+                  }}
+                  className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-brand-100 flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Impact
+                </button>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {aboutData.impacts.map((imp: any, idx: number) => (
+                  <div key={imp.id} className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4 relative group">
+                    <button 
+                      onClick={() => {
+                        const newImpacts = aboutData.impacts.filter((_: any, i: number) => i !== idx);
+                        setAboutData({ ...aboutData, impacts: newImpacts });
+                      }}
+                      className="absolute top-4 right-4 p-2 text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <input 
+                      value={imp.title}
+                      onChange={(e) => {
+                        const newImpacts = [...aboutData.impacts];
+                        newImpacts[idx].title = e.target.value;
+                        setAboutData({ ...aboutData, impacts: newImpacts });
+                      }}
+                      className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 font-bold uppercase text-xs tracking-widest text-brand-600"
+                      placeholder="e.g. 1000+"
+                    />
+                    <input 
+                      value={imp.text}
+                      onChange={(e) => {
+                        const newImpacts = [...aboutData.impacts];
+                        newImpacts[idx].text = e.target.value;
+                        setAboutData({ ...aboutData, impacts: newImpacts });
+                      }}
+                      className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 text-sm font-medium"
+                      placeholder="Impact description"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bento-card p-10 bg-white">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-xl font-bold uppercase tracking-tight">Departments</h3>
+                <button 
+                  onClick={() => {
+                    const newDepts = [...aboutData.departments, { id: Date.now().toString(), title: '', aim: '', tasks: [''] }];
+                    setAboutData({ ...aboutData, departments: newDepts });
+                  }}
+                  className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-brand-100 flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add Department
+                </button>
+              </div>
+              <div className="space-y-8">
+                {aboutData.departments.map((dept: any, idx: number) => (
+                  <div key={dept.id} className="p-8 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4 relative group">
+                    <button 
+                      onClick={() => {
+                        const newDepts = aboutData.departments.filter((_: any, i: number) => i !== idx);
+                        setAboutData({ ...aboutData, departments: newDepts });
+                      }}
+                      className="absolute top-4 right-4 p-2 text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition-all"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <input 
+                        value={dept.title}
+                        onChange={(e) => {
+                          const newDepts = [...aboutData.departments];
+                          newDepts[idx].title = e.target.value;
+                          setAboutData({ ...aboutData, departments: newDepts });
+                        }}
+                        className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 font-bold uppercase text-xs tracking-widest"
+                        placeholder="Department Title"
+                      />
+                      <input 
+                        value={dept.aim}
+                        onChange={(e) => {
+                          const newDepts = [...aboutData.departments];
+                          newDepts[idx].aim = e.target.value;
+                          setAboutData({ ...aboutData, departments: newDepts });
+                        }}
+                        className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 text-xs font-bold uppercase tracking-widest text-brand-600"
+                        placeholder="Aim"
+                      />
+                    </div>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Tasks</label>
+                        <button 
+                          onClick={() => {
+                            const newDepts = [...aboutData.departments];
+                            newDepts[idx].tasks = [...newDepts[idx].tasks, ''];
+                            setAboutData({ ...aboutData, departments: newDepts });
+                          }}
+                          className="text-[9px] font-bold text-brand-600 uppercase hover:underline"
+                        >
+                          + Add Task
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {dept.tasks.map((task: string, tIdx: number) => (
+                          <div key={tIdx} className="flex gap-2">
+                            <input 
+                              value={task}
+                              onChange={(e) => {
+                                const newDepts = [...aboutData.departments];
+                                newDepts[idx].tasks[tIdx] = e.target.value;
+                                setAboutData({ ...aboutData, departments: newDepts });
+                              }}
+                              className="flex-1 px-4 py-2 bg-white rounded-lg border border-zinc-100 text-xs font-medium"
+                              placeholder={`Task ${tIdx + 1}`}
+                            />
+                            <button 
+                              onClick={() => {
+                                const newDepts = [...aboutData.departments];
+                                newDepts[idx].tasks = newDepts[idx].tasks.filter((_: any, i: number) => i !== tIdx);
+                                setAboutData({ ...aboutData, departments: newDepts });
+                              }}
+                              className="text-red-400 hover:text-red-600"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 ))}
               </div>

@@ -174,13 +174,13 @@ export default function About_Page() {
         {/* Objectives Section */}
         <section className="mb-32">
           <SectionTitle subtitle="Vision for students">Objectives of INFINITIUM</SectionTitle>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {data.objectives.map((obj: any, i: number) => {
-              const icons = [Search, Handshake, Microscope, MessageSquare];
+              const icons = [Search, Handshake, Users, Award, Target, MessageSquare, Lightbulb, Microscope, UserPlus, GraduationCap];
               return (
                 <Card 
                   key={obj.id}
-                  icon={icons[i] || Search} 
+                  icon={icons[i % icons.length]} 
                   title={obj.title} 
                   text={obj.text}
                   delay={0.1 * (i + 1)}
@@ -195,13 +195,13 @@ export default function About_Page() {
           <div className="absolute top-0 right-0 w-96 h-96 bg-brand-50 blur-[100px] -translate-y-1/2 translate-x-1/2" />
           <SectionTitle subtitle="Transforming Lives">Impacts on Students</SectionTitle>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 relative z-10">
-            <div className="grid grid-cols-1 gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 lg:col-span-2">
                {data.impacts.map((imp: any, i: number) => {
-                 const icons = [TrendingUp, Handshake, Award, UserPlus];
+                 const icons = [Users, Calendar, Award, UserPlus, TrendingUp];
                  return (
                   <div key={imp.id} className="flex gap-6">
                     <div className="w-12 h-12 bg-brand-50 border border-brand-100 rounded-xl flex items-center justify-center shrink-0 text-brand-600">
-                      {React.createElement(icons[i] || TrendingUp, { className: "w-6 h-6" })}
+                      {React.createElement(icons[i % icons.length], { className: "w-6 h-6" })}
                     </div>
                     <div>
                       <h4 className="text-xl font-bold mb-2 uppercase tracking-tight text-slate-900">{imp.title}</h4>
