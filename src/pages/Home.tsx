@@ -35,6 +35,18 @@ export default function Home_Page() {
     return `${displayH}:${formattedMinutes} ${ampm}`;
   };
 
+  const isUpcoming = (dateStr: string) => {
+    try {
+      const eventDate = new Date(dateStr);
+      const now = new Date();
+      eventDate.setHours(0, 0, 0, 0);
+      now.setHours(0, 0, 0, 0);
+      return eventDate >= now;
+    } catch (e) {
+      return false;
+    }
+  };
+
   const handleShare = async (e: React.MouseEvent, event: any) => {
     e.preventDefault();
     e.stopPropagation();
@@ -222,9 +234,16 @@ export default function Home_Page() {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="group bg-white border border-zinc-100 rounded-2xl shadow-md shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-600/5 transition-all flex flex-col overflow-hidden"
+                className="group bg-white border border-zinc-100 rounded-2xl shadow-md shadow-slate-200/50 hover:shadow-2xl hover:shadow-brand-600/5 transition-all flex flex-col overflow-hidden relative"
               >
                 <div className="aspect-[21/9] w-full relative overflow-hidden bg-slate-100">
+                  {isUpcoming(event.date) && (
+                    <div className="absolute top-4 right-4 z-10">
+                      <span className="px-3 py-1 bg-brand-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg border border-brand-400 animate-wave">
+                        Upcoming
+                      </span>
+                    </div>
+                  )}
                   <img 
                     src={event.image} 
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 

@@ -181,6 +181,18 @@ export default function Events_Page() {
     const formattedMinutes = minutes.padStart(2, '0');
     return `${displayH}:${formattedMinutes} ${ampm}`;
   };
+  
+  const isUpcoming = (dateStr: string) => {
+    try {
+      const eventDate = new Date(dateStr);
+      const now = new Date();
+      eventDate.setHours(0, 0, 0, 0);
+      now.setHours(0, 0, 0, 0);
+      return eventDate >= now;
+    } catch (e) {
+      return false;
+    }
+  };
 
   const handleShare = async (e: React.MouseEvent, event: any) => {
     e.preventDefault();
@@ -246,9 +258,16 @@ export default function Events_Page() {
             <motion.div
               layout
               key={event.id}
-              className="bento-card group flex flex-col p-0 overflow-hidden shadow-md shadow-slate-200/50"
+              className="bento-card group flex flex-col p-0 overflow-hidden shadow-md shadow-slate-200/50 relative"
             >
               <div className="aspect-[16/9] w-full relative overflow-hidden bg-slate-100">
+                {isUpcoming(event.date) && (
+                  <div className="absolute top-4 right-4 z-10">
+                    <span className="px-3 py-1 bg-brand-500 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-full shadow-lg border border-brand-400 animate-wave">
+                      Upcoming
+                    </span>
+                  </div>
+                )}
                 <img 
                   src={event.image} 
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" 
