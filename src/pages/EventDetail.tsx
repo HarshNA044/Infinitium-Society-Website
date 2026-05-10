@@ -27,8 +27,12 @@ export default function EventDetail_Page() {
     email: '',
     phoneNo: '',
     course: '',
+    otherCourse: '',
     year: '',
-    collegeName: 'ARSD College'
+    collegeName: 'ARSD College',
+    isPartOfSociety: 'No',
+    societyDepartment: '',
+    availability: 'Yes sure'
   });
 
   const [errors, setErrors] = useState<any>({});
@@ -73,8 +77,11 @@ export default function EventDetail_Page() {
     if (!formData.rollNo.trim()) newErrors.rollNo = "Roll Number is required";
     if (!formData.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) newErrors.email = "Invalid email format";
     if (!formData.phoneNo.match(/^[0-9]{10}$/)) newErrors.phoneNo = "10-digit phone number required";
-    if (!formData.course.trim()) newErrors.course = "Course is required";
+    if (!formData.course) newErrors.course = "Course is required";
+    if (formData.course === 'Others' && !formData.otherCourse.trim()) newErrors.otherCourse = "Please specify your course";
     if (!formData.year) newErrors.year = "Year is required";
+    if (formData.isPartOfSociety === 'Yes' && !formData.societyDepartment) newErrors.societyDepartment = "Department is required";
+    if (!formData.availability) newErrors.availability = "Availability confirmation is required";
     if (event?.isInterCollege && !formData.collegeName.trim()) newErrors.collegeName = "College Name is required";
     
     setErrors(newErrors);
@@ -102,6 +109,7 @@ export default function EventDetail_Page() {
       
       const regData = {
         ...formData,
+        course: formData.course === 'Others' ? formData.otherCourse : formData.course,
         eventId: event.id,
         eventTitle: event.title,
         ticketId: ticketId,
@@ -439,25 +447,26 @@ export default function EventDetail_Page() {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden border border-slate-200"
+              className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-slate-200 mx-4 md:mx-0 max-h-[90vh] flex flex-col"
             >
               {!registrationSuccess ? (
-                <div className="p-8 md:p-10">
-                   <div className="flex justify-between items-center mb-6">
-                     <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase">Register</h2>
+                <>
+                  <div className="p-6 md:p-8 border-b border-slate-100 flex justify-between items-center bg-white z-10 shrink-0">
+                     <h2 className="text-xl md:text-2xl font-black text-slate-900 tracking-tighter uppercase">Registration</h2>
                      <button onClick={() => setIsRegistering(false)} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
                        <X className="w-5 h-5" />
                      </button>
-                   </div>
-                   
-                   <div className="bg-brand-50 p-6 rounded-2xl mb-6 text-slate-900 relative overflow-hidden border border-brand-100">
-                     <p className="text-[9px] font-black text-brand-600 uppercase tracking-[0.3em] mb-1">EVENT CONFIRMATION</p>
-                     <p className="text-lg font-bold text-slate-900">{event?.title}</p>
-                     <div className="absolute top-0 right-0 w-24 h-24 bg-brand-200/20 blur-2xl rotate-45 transform translate-x-8 -translate-y-8"></div>
-                   </div>
+                  </div>
+                  
+                  <div className="p-6 md:p-8 overflow-y-auto custom-scrollbar flex-1">
+                    <div className="bg-brand-50 p-5 rounded-2xl mb-6 text-slate-900 relative overflow-hidden border border-brand-100">
+                      <p className="text-[9px] font-black text-brand-600 uppercase tracking-[0.3em] mb-1">Confirming for</p>
+                      <p className="text-base md:text-lg font-bold text-slate-900">{event?.title}</p>
+                      <div className="absolute top-0 right-0 w-24 h-24 bg-brand-200/20 blur-2xl rotate-45 transform translate-x-8 -translate-y-8"></div>
+                    </div>
 
-                   <form onSubmit={handleRegister} className="space-y-4">
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <form onSubmit={handleRegister} className="space-y-5">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Full Name</label>
                           <input 
@@ -488,119 +497,203 @@ export default function EventDetail_Page() {
                           />
                           {errors.rollNo && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.rollNo}</p>}
                         </div>
-                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Email Address</label>
-                         <input 
-                           required
-                           type="email" 
-                           value={formData.email}
-                           onChange={(e) => setFormData({...formData, email: e.target.value})}
-                           className={cn(
-                             "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
-                             errors.email ? "border-red-500" : "border-slate-200"
-                           )}
-                           placeholder="harsh@example.com"
-                         />
-                         {errors.email && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.email}</p>}
-                       </div>
-                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Phone Number</label>
-                         <input 
-                           required
-                           type="tel" 
-                           value={formData.phoneNo}
-                           onChange={(e) => setFormData({...formData, phoneNo: e.target.value})}
-                           className={cn(
-                             "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
-                             errors.phoneNo ? "border-red-500" : "border-slate-200"
-                           )}
-                           placeholder="9876543210"
-                         />
-                         {errors.phoneNo && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.phoneNo}</p>}
-                       </div>
-                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Course</label>
-                         <input 
-                           required
-                           type="text" 
-                           value={formData.course}
-                           onChange={(e) => setFormData({...formData, course: e.target.value})}
-                           className={cn(
-                             "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
-                             errors.course ? "border-red-500" : "border-slate-200"
-                           )}
-                           placeholder="B.Sc (H) Physics"
-                         />
-                         {errors.course && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.course}</p>}
-                       </div>
-                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Year</label>
-                         <select 
-                           required
-                           value={formData.year}
-                           onChange={(e) => setFormData({...formData, year: e.target.value})}
-                           className={cn(
-                             "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
-                             errors.year ? "border-red-500" : "border-slate-200"
-                           )}
-                         >
-                           <option value="">Select Year</option>
-                           <option value="1">1st Year</option>
-                           <option value="2">2nd Year</option>
-                           <option value="3">3rd Year</option>
-                           <option value="4">4th Year</option>
-                         </select>
-                         {errors.year && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.year}</p>}
-                       </div>
-                     </div>
-                     
-                     {event?.isInterCollege && (
-                       <div className="space-y-2">
-                         <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">College Name</label>
-                         <input 
-                           required
-                           type="text" 
-                           value={formData.collegeName}
-                           onChange={(e) => setFormData({...formData, collegeName: e.target.value})}
-                           className={cn(
-                             "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
-                             errors.collegeName ? "border-red-500" : "border-slate-200"
-                           )}
-                           placeholder="Atma Ram Sanatan Dharma College"
-                         />
-                         {errors.collegeName && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.collegeName}</p>}
-                       </div>
-                     )}
+                      </div>
 
-                     <button 
-                       disabled={loading}
-                       type="submit"
-                       className="w-full py-4 bg-brand-600 text-white rounded-xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-brand-600/10"
-                     >
-                       {loading ? 'Processing...' : 'Confirm Registration'}
-                     </button>
-                   </form>
-                </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Email Address</label>
+                          <input 
+                            required
+                            type="email" 
+                            value={formData.email}
+                            onChange={(e) => setFormData({...formData, email: e.target.value})}
+                            className={cn(
+                              "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                              errors.email ? "border-red-500" : "border-slate-200"
+                            )}
+                            placeholder="harsh@example.com"
+                          />
+                          {errors.email && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.email}</p>}
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Phone Number</label>
+                          <input 
+                            required
+                            type="tel" 
+                            value={formData.phoneNo}
+                            onChange={(e) => setFormData({...formData, phoneNo: e.target.value})}
+                            className={cn(
+                              "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                              errors.phoneNo ? "border-red-500" : "border-slate-200"
+                            )}
+                            placeholder="9876543210"
+                          />
+                          {errors.phoneNo && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.phoneNo}</p>}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Course</label>
+                          <select 
+                            required
+                            value={formData.course}
+                            onChange={(e) => setFormData({...formData, course: e.target.value})}
+                            className={cn(
+                              "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                              errors.course ? "border-red-500" : "border-slate-200"
+                            )}
+                          >
+                            <option value="">Select Course</option>
+                            <option value="B.Sc. Physical Science with Computer Science">B.Sc. Physical Science with Computer Science</option>
+                            <option value="B.Sc. Physical Science with Chemistry">B.Sc. Physical Science with Chemistry</option>
+                            <option value="B.Sc. Physical Science with Electronics">B.Sc. Physical Science with Electronics</option>
+                            <option value="B.Sc. Applied Physical Science with Industrial Chemistry">B.Sc. Applied Physical Science with Industrial Chemistry</option>
+                            <option value="Others">Others</option>
+                          </select>
+                          {errors.course && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.course}</p>}
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Year</label>
+                          <select 
+                            required
+                            value={formData.year}
+                            onChange={(e) => setFormData({...formData, year: e.target.value})}
+                            className={cn(
+                              "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                              errors.year ? "border-red-500" : "border-slate-200"
+                            )}
+                          >
+                            <option value="">Select Year</option>
+                            <option value="1">1st Year</option>
+                            <option value="2">2nd Year</option>
+                            <option value="3">3rd Year</option>
+                            <option value="4">4th Year</option>
+                          </select>
+                          {errors.year && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.year}</p>}
+                        </div>
+                      </div>
+
+                      {formData.course === 'Others' && (
+                        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Specify Course</label>
+                          <input 
+                            required
+                            type="text" 
+                            value={formData.otherCourse}
+                            onChange={(e) => setFormData({...formData, otherCourse: e.target.value})}
+                            className={cn(
+                              "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                              errors.otherCourse ? "border-red-500" : "border-slate-200"
+                            )}
+                            placeholder="B.Sc. Physical Science"
+                          />
+                          {errors.otherCourse && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.otherCourse}</p>}
+                        </motion.div>
+                      )}
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Part of Society?</label>
+                          <select 
+                            required
+                            value={formData.isPartOfSociety}
+                            onChange={(e) => setFormData({...formData, isPartOfSociety: e.target.value})}
+                            className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm"
+                          >
+                            <option value="No">No</option>
+                            <option value="Yes">Yes</option>
+                          </select>
+                        </div>
+                        {formData.isPartOfSociety === 'Yes' && (
+                          <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="space-y-2">
+                            <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Department</label>
+                            <select 
+                              required
+                              value={formData.societyDepartment}
+                              onChange={(e) => setFormData({...formData, societyDepartment: e.target.value})}
+                              className={cn(
+                                "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                                errors.societyDepartment ? "border-red-500" : "border-slate-200"
+                              )}
+                            >
+                              <option value="">Select Dept</option>
+                              <option value="Core">Core</option>
+                              <option value="Academics">Academics</option>
+                              <option value="Content">Content</option>
+                              <option value="Digital">Digital</option>
+                              <option value="Event">Event</option>
+                              <option value="Public Relations">Public Relations</option>
+                              <option value="Sponsorship">Sponsorship</option>
+                            </select>
+                            {errors.societyDepartment && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.societyDepartment}</p>}
+                          </motion.div>
+                        )}
+                      </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">Confirm Availability?</label>
+                        <select 
+                          required
+                          value={formData.availability}
+                          onChange={(e) => setFormData({...formData, availability: e.target.value})}
+                          className={cn(
+                            "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                            errors.availability ? "border-red-500" : "border-slate-200"
+                          )}
+                        >
+                          <option value="Yes sure">Yes sure</option>
+                          <option value="Maybe">Maybe</option>
+                        </select>
+                        {errors.availability && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.availability}</p>}
+                      </div>
+                     
+                      {event?.isInterCollege && (
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-2">College Name</label>
+                          <input 
+                            required
+                            type="text" 
+                            value={formData.collegeName}
+                            onChange={(e) => setFormData({...formData, collegeName: e.target.value})}
+                            className={cn(
+                              "w-full px-5 py-3.5 bg-slate-50 border rounded-2xl focus:border-brand-600 focus:ring-4 focus:ring-brand-100 transition-all outline-none font-bold text-sm",
+                              errors.collegeName ? "border-red-500" : "border-slate-200"
+                            )}
+                            placeholder="College Name"
+                          />
+                          {errors.collegeName && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.collegeName}</p>}
+                        </div>
+                      )}
+
+                      <div className="pt-6 sticky bottom-0 bg-white border-t border-slate-100 -mx-6 md:-mx-8 px-6 md:px-8 pb-2 mt-4 shrink-0">
+                        <button 
+                          disabled={loading}
+                          type="submit"
+                          className="w-full py-4 bg-brand-600 text-white rounded-xl font-black uppercase text-sm tracking-[0.2em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-95 transition-all disabled:opacity-50 shadow-lg shadow-brand-600/10"
+                        >
+                          {loading ? 'Processing...' : 'Confirm Registration'}
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </>
               ) : (
-                <div className="p-8 md:p-10 text-center">
+                <div className="p-6 md:p-10 text-center overflow-y-auto custom-scrollbar flex-1">
                   <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm border border-emerald-100">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
                   <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-3 tracking-tighter uppercase">Success</h2>
-                  <p className="text-[10px] text-slate-900 mb-8 font-bold uppercase tracking-widest leading-loose">
+                  <p className="text-[10px] text-slate-900 mb-8 font-bold uppercase tracking-widest leading-loose max-w-xs mx-auto">
                     Registration confirmed for <span className="text-brand-600">{event?.title}</span>. 
                     <br />Save the ticket below.
                   </p>
                   
-                  <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 mb-8 flex flex-col items-center shadow-inner">
+                  <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 mb-8 flex flex-col items-center shadow-inner max-w-sm mx-auto">
                     <div className="bg-white p-3 rounded-2xl shadow-xl">
                       <QRCodeCanvas 
                         value={registrationSuccess.ticketId} 
-                        size={150}
+                        size={120}
                         level="H"
                         includeMargin={false}
                       />
@@ -619,7 +712,19 @@ export default function EventDetail_Page() {
                       onClick={() => {
                         setIsRegistering(false);
                         setRegistrationSuccess(null);
-                        setFormData({ studentName: '', rollNo: '', email: '' });
+                        setFormData({
+                          studentName: '',
+                          rollNo: '',
+                          email: '',
+                          phoneNo: '',
+                          course: '',
+                          otherCourse: '',
+                          year: '',
+                          collegeName: 'ARSD College',
+                          isPartOfSociety: 'No',
+                          societyDepartment: '',
+                          availability: 'Yes sure'
+                        });
                       }}
                       className="w-full py-3 text-slate-400 font-black uppercase text-[9px] tracking-widest hover:text-slate-900 transition-colors"
                     >
