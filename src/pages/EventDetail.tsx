@@ -666,7 +666,7 @@ export default function EventDetail_Page() {
                         </div>
                       )}
 
-                      <div className="pt-6 sticky bottom-0 bg-white border-t border-slate-100 -mx-6 md:-mx-8 px-6 md:px-8 pb-2 mt-4 shrink-0">
+                      <div className="pt-6 mt-4">
                         <button 
                           disabled={loading}
                           type="submit"
