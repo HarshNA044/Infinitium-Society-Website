@@ -171,7 +171,7 @@ export default function About_Page() {
               <div className="absolute inset-0 bg-brand-600/10 mix-blend-multiply" />
             </motion.div>
 
-            <p className="text-base md:text-xl text-slate-700 font-medium leading-relaxed max-w-4xl text-left md:text-justify">
+            <p className="text-base md:text-xl text-slate-700 font-medium leading-relaxed max-w-4xl text-justify">
               {data.hero.paragraph}
             </p>
           </motion.div>
@@ -294,7 +294,7 @@ export default function About_Page() {
             viewport={{ once: true }}
             className="relative z-10"
           >
-            <h2 className="text-3xl md:text-5xl lg:text-6xl font-black mb-6 md:mb-8 uppercase text-slate-900 tracking-tighter leading-[0.9] pt-8 md:pt-0">
+            <h2 className="text-2xl md:text-4xl lg:text-5xl font-black mb-6 md:mb-8 uppercase text-slate-900 tracking-tighter leading-[0.9] pt-8 md:pt-0">
               Unlock the wonders of <br className="hidden md:block" /> <span className="text-brand-600">Multidisciplinary Sciences</span>
             </h2>
             <p className="text-slate-600 max-w-3xl mx-auto mb-8 md:mb-12 font-medium leading-relaxed uppercase tracking-wide text-xs md:text-sm px-2 md:px-4">
