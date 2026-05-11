@@ -5,7 +5,7 @@ import {
   Calendar, MapPin, ArrowLeft, CheckCircle2, 
   Download, Clock, Tag, Share2, Info, ArrowRight, X
 } from 'lucide-react';
-import { QRCodeCanvas } from 'qrcode.react';
+import { QRCodeSVG } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, getDoc, collection, getDocs, orderBy, query, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -690,8 +690,8 @@ export default function EventDetail_Page() {
                   </p>
                   
                   <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 mb-8 flex flex-col items-center shadow-inner max-w-sm mx-auto">
-                    <div className="bg-white p-3 rounded-2xl shadow-xl">
-                      <QRCodeCanvas 
+                    <div className="bg-white p-3 rounded-2xl shadow-xl w-36 h-36 flex items-center justify-center">
+                      <QRCodeSVG 
                         value={registrationSuccess.ticketId} 
                         size={120}
                         level="H"

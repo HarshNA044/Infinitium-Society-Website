@@ -52,7 +52,12 @@ function doPost(e) {
       ]);
       
       // Send Email
-      sendRegistrationEmail(data);
+      try {
+        sendRegistrationEmail(data);
+      } catch (emailErr) {
+        // Log the error (it won't be visible to client due to no-cors, but it might help in cloud logs)
+        console.error("Email error: " + emailErr.toString());
+      }
       
       return ContentService.createTextOutput("Success");
     }
@@ -62,18 +67,24 @@ function doPost(e) {
 }
 
 function sendRegistrationEmail(data) {
-  var qrCodeUrl = "https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=" + encodeURIComponent(data.ticketId);
-  var htmlBody = "<h1>Registration Confirmed</h1>" +
-    "<p>Hello " + data.studentName + ",</p>" +
-    "<p>You have successfully registered for <strong>" + data.eventTitle + "</strong>.</p>" +
-    "<p><strong>Ticket ID:</strong> " + data.ticketId + "</p>" +
-    "<p>Please show the QR code below at the event:</p>" +
-    "<img src='" + qrCodeUrl + "' />" +
-    "<p>Thank you!</p>";
-    
-  MailApp.sendEmail({
-    to: data.email,
-    subject: "Registration Success - " + data.eventTitle,
-    htmlBody: htmlBody
-  });
+  try {
+    var qrCodeUrl = "https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=" + encodeURIComponent(data.ticketId);
+    var htmlBody = "<h1>Registration Confirmed</h1>" +
+      "<p>Hello " + data.studentName + ",</p>" +
+      "<p>You have successfully registered for <strong>" + data.eventTitle + "</strong>.</p>" +
+      "<p><strong>Ticket ID:</strong> " + data.ticketId + "</p>" +
+      "<p>Please show the QR code below at the event:</p>" +
+      "<img src='" + qrCodeUrl + "' />" +
+      "<p>Thank you!</p>";
+      
+    MailApp.sendEmail({
+      to: data.email,
+      subject: "Registration Success - " + data.eventTitle,
+      htmlBody: htmlBody
+    });
+    console.log("Email sent successfully to " + data.email);
+  } catch (e) {
+    console.error("Failed to send email to " + data.email + ": " + e.toString());
+    throw e; // Rethrow to catch it in doPost
+  }
 }
