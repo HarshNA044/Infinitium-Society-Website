@@ -42,6 +42,16 @@ function doPost(e) {
     } else {
       // Registration flow
       var timestamp = new Date();
+
+      // Ensure headers exist
+      if (sheet.getLastRow() === 0) {
+        sheet.appendRow([
+          "Timestamp", "Student Name", "Roll No", "Email", "Phone No", "Course", "Year", 
+          "College Name", "Is Part of Society", "Society Department", "Availability", 
+          "Event ID", "Event Title", "Ticket ID", "Attended", "Created At", "Attendance"
+        ]);
+        sheet.getRange(1, 1, 1, 17).setFontWeight("bold");
+      }
       
       // Columns: Timestamp, studentName, rollNo, email, phoneNo, course, year, collegeName, isPartOfSociety, societyDepartment, availability, eventId, eventTitle, ticketId, attended, createdAt, attnd
       sheet.appendRow([
