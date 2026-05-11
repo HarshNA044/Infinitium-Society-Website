@@ -285,7 +285,7 @@ export default function EventDetail_Page() {
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
-      <div className="relative h-[60vh] md:h-[70vh] bg-zinc-950 overflow-hidden">
+      <div className="relative h-[40vh] md:h-[50vh] bg-zinc-950 overflow-hidden">
         <img 
           src={event.image} 
           alt={event.title}
