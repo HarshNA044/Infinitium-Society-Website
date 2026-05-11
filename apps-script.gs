@@ -34,37 +34,55 @@ function doPost(e) {
     } else {
       // Registration flow
       var timestamp = new Date();
+      
+      // Better header detection: check if first row is actually headers
+      var lastRow = sheet.getLastRow();
+      var firstRowValues = lastRow > 0 ? sheet.getRange(1, 1, 1, 17).getValues()[0] : [];
+      var hasHeaders = firstRowValues[0] === "Timestamp" || firstRowValues[0] === "timestamp";
 
-      // Ensure headers exist if sheet is empty
-      if (sheet.getLastRow() === 0) {
-        sheet.appendRow([
-          "Timestamp", "Student Name", "Roll No", "Email", "Phone No", "Course", "Year", 
-          "College Name", "Is Part of Society", "Society Department", "Availability", 
-          "Event ID", "Event Title", "Ticket ID", "Attended", "Created At", "Attendance Status"
-        ]);
+      if (!hasHeaders) {
+        // If sheet has content but no headers, insert at top or just append if empty
+        if (lastRow === 0) {
+          sheet.appendRow([
+            "Timestamp", "Student Name", "Roll No", "Email", "Phone No", "Course", "Year", 
+            "College Name", "Is Part of Society", "Society Department", "Availability", 
+            "Event ID", "Event Title", "Ticket ID", "Attended", "Created At", "Attendance Status"
+          ]);
+        } else {
+          sheet.insertRowBefore(1);
+          sheet.getRange(1, 1, 1, 17).setValues([[
+            "Timestamp", "Student Name", "Roll No", "Email", "Phone No", "Course", "Year", 
+            "College Name", "Is Part of Society", "Society Department", "Availability", 
+            "Event ID", "Event Title", "Ticket ID", "Attended", "Created At", "Attendance Status"
+          ]]);
+        }
         sheet.getRange(1, 1, 1, 17).setFontWeight("bold").setBackground("#f3f3f3");
       }
       
-      // Map fields from data to columns
-      sheet.appendRow([
-        timestamp,            // A: Timestamp
-        data.studentName,      // B: studentName
-        data.rollNo,           // C: rollNo
-        data.email,            // D: email
-        data.phoneNo,          // E: phoneNo
-        data.course,           // F: course
-        data.year,             // G: year
-        data.collegeName,      // H: collegeName
-        data.isPartOfSociety,  // I: isPartOfSociety
-        data.societyDepartment,// J: societyDepartment
-        data.availability,     // K: availability
-        data.eventId,          // L: eventId
-        data.eventTitle,       // M: eventTitle
-        data.ticketId,         // N: ticketId
-        data.attended,         // O: attended (bool)
-        data.createdAt,        // P: createdAt (ISO string)
-        "No"                   // Q: Attendance Status (Check-in status)
-      ]);
+      console.log("Appending registration data for: " + (data.studentName || "Unknown"));
+      
+      // Explicit mapping to ensure even if some fields are missing in data, we maintain column structure
+      var rowData = [
+        timestamp,                          // A: Timestamp
+        data.studentName || "",             // B
+        data.rollNo || "",                  // C
+        data.email || "",                   // D
+        data.phoneNo || data.phone || "",    // E (Support both keys just in case)
+        data.course || "",                  // F
+        data.year || "",                    // G
+        data.collegeName || data.college || "", // H
+        data.isPartOfSociety || "",         // I
+        data.societyDepartment || "",       // J
+        data.availability || "",            // K
+        data.eventId || "",                 // L
+        data.eventTitle || "",              // M
+        data.ticketId || "",                // N
+        data.attended || false,             // O
+        data.createdAt || "",               // P
+        "No"                                // Q: Attendance Status
+      ];
+      
+      sheet.appendRow(rowData);
       
       // Trigger Email
       try {
