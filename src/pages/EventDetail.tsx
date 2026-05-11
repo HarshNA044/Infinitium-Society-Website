@@ -118,16 +118,22 @@ export default function EventDetail_Page() {
         createdAt: timestamp
       };
 
-      // 1. Save to Google Sheet (Legacy logic)
+      // 1. Save to Google Sheet
       const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
       if (appsScriptUrl) {
         try {
-          await fetch(appsScriptUrl, {
+          const response = await fetch(appsScriptUrl, {
             method: 'POST',
-            mode: 'no-cors',
+            mode: 'cors', // Changed to cors
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...regData, createdAt: new Date().toISOString() })
           });
+          if (!response.ok) {
+            const textResponse = await response.text();
+            console.error("Sheet update failed:", textResponse);
+          } else {
+            console.log("Sheet update successful:", await response.text());
+          }
         } catch (sErr) {
           console.error("Sheet error:", sErr);
         }

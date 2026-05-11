@@ -523,9 +523,9 @@ export default function Admin_Page() {
               const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
               if (appsScriptUrl) {
                 try {
-                  await fetch(appsScriptUrl, {
+                  const response = await fetch(appsScriptUrl, {
                     method: 'POST',
-                    mode: 'no-cors',
+                    mode: 'cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
                       type: 'attendance',
@@ -533,6 +533,12 @@ export default function Admin_Page() {
                       sheetId: regData.sheetId || events.find((e:any)=>e.id===selectedScanEventId)?.sheetId
                     })
                   });
+                  if (!response.ok) {
+                    const textResponse = await response.text();
+                    console.error("Sheet update failed:", textResponse);
+                  } else {
+                    console.log("Sheet update successful:", await response.text());
+                  }
                 } catch (sheetErr) {
                   console.error("Sheet update failed", sheetErr);
                 }

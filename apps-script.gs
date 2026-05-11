@@ -2,11 +2,22 @@
  * Webhook script for Google Sheet registration and attendance.
  */
 function doPost(e) {
+  // CORS Preflight
+  if (e.parameter && e.parameter.method === 'OPTIONS') {
+    return ContentService.createTextOutput("OK")
+      .setMimeType(ContentService.MimeType.TEXT)
+      .setHeader("Access-Control-Allow-Origin", "*")
+      .setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
+      .setHeader("Access-Control-Allow-Headers", "Content-Type");
+  }
+
   try {
     var data = JSON.parse(e.postData.contents);
+    console.log("Received data: " + JSON.stringify(data));
     var sheetId = data.sheetId;
     if (!sheetId) {
-      return ContentService.createTextOutput("Error: Missing sheetId");
+      return ContentService.createTextOutput("Error: Missing sheetId")
+        .setHeader("Access-Control-Allow-Origin", "*");
     }
     
     var sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
@@ -22,10 +33,12 @@ function doPost(e) {
       for (var i = 1; i < values.length; i++) {
         if (values[i][ticketIdIndex] === ticketId) {
           sheet.getRange(i + 1, attndIndex + 1).setValue("Yes");
-          return ContentService.createTextOutput("Attendance Marked");
+          return ContentService.createTextOutput("Attendance Marked")
+            .setHeader("Access-Control-Allow-Origin", "*");
         }
       }
-      return ContentService.createTextOutput("Error: Ticket not found");
+      return ContentService.createTextOutput("Error: Ticket not found")
+        .setHeader("Access-Control-Allow-Origin", "*");
     } else {
       // Registration flow
       var timestamp = new Date();
@@ -55,14 +68,15 @@ function doPost(e) {
       try {
         sendRegistrationEmail(data);
       } catch (emailErr) {
-        // Log the error (it won't be visible to client due to no-cors, but it might help in cloud logs)
         console.error("Email error: " + emailErr.toString());
       }
       
-      return ContentService.createTextOutput("Success");
+      return ContentService.createTextOutput("Success")
+        .setHeader("Access-Control-Allow-Origin", "*");
     }
   } catch (err) {
-    return ContentService.createTextOutput("Error: " + err.toString());
+    return ContentService.createTextOutput("Error: " + err.toString())
+      .setHeader("Access-Control-Allow-Origin", "*");
   }
 }
 
