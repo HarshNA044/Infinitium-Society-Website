@@ -12,7 +12,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, ResponsiveContainer, Cell, PieChart, Pie 
 } from 'recharts';
-import { Html5QrcodeScanner } from 'html5-qrcode';
+import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
 import { useApi } from '../hooks/useApi';
 import { Logo } from '../App';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
@@ -56,97 +56,6 @@ export default function Admin_Page() {
   
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const ScannerTimeout = useRef<NodeJS.Timeout | null>(null);
-
-  const startScanner = (eventId: string) => {
-      if (isScanning || !eventId) return;
-      setIsScanning(true);
-      
-      ScannerTimeout.current = setTimeout(() => {
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        scannerRef.current = new Html5QrcodeScanner(
-          "reader", 
-          { 
-            fps: 10, 
-            qrbox: { width: 250, height: 250 },
-            facingMode: isMobile ? { exact: "environment" } : "user"
-          }, 
-          false
-        );
-        
-        scannerRef.current.render(async (decodedText) => {
-          try {
-            setScanResult({ loading: true });
-            
-            // 1. Find registration in Firestore
-            const regRef = doc(db, 'events', eventId, 'registrations', decodedText);
-            const regSnap = await getDoc(regRef);
-            
-            if (!regSnap.exists()) {
-              throw new Error('Invalid ticket or wrong event');
-            }
-            
-            const regData = regSnap.data();
-            if (regData.attended) {
-              setScanResult({ 
-                success: true, 
-                student: regData,
-                alreadyMarked: true,
-                ticketId: decodedText
-              });
-            } else {
-              // 2. Mark as attended in Firestore
-              await updateDoc(regRef, { attended: true });
-              
-              // 3. Update event stats
-              const eventRef = doc(db, 'events', eventId);
-              const eventSnap = await getDoc(eventRef);
-              if (eventSnap.exists()) {
-                const currentAttendance = eventSnap.data().stats.attendance || 0;
-                await updateDoc(eventRef, {
-                  'stats.attendance': currentAttendance + 1
-                });
-              }
-
-              // 4. Update Google Sheet
-              const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
-              if (appsScriptUrl) {
-                try {
-                  await fetch(appsScriptUrl, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                      action: 'markAttendance',
-                      ticketId: decodedText,
-                      sheetId: regData.sheetId || events.find((e:any)=>e.id===eventId)?.sheetId
-                    })
-                  });
-                } catch (sheetErr) {
-                  console.error("Sheet update failed", sheetErr);
-                }
-              }
-              
-              setScanResult({ 
-                success: true, 
-                student: regData,
-                alreadyMarked: false,
-                ticketId: decodedText
-              });
-            }
-            
-            loadFirebaseData();
-          } catch (err: any) {
-            console.error("Scan error:", err);
-            setScanResult({ success: false, error: err.message });
-          }
-          stopScanner();
-          setIsScanning(false);
-        }, (err) => {
-          // ignore errors
-        });
-      }, 300);
-  };
-
 
   // New states for expanded control
   const [achievements, setAchievements] = useState<any[]>([]);
@@ -570,7 +479,8 @@ export default function Admin_Page() {
           { 
             fps: 10, 
             qrbox: { width: 250, height: 250 },
-            facingMode: isMobile ? { exact: "environment" } : "user"
+            facingMode: isMobile ? { exact: "environment" } : "user",
+            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
           }, 
           false
         );
@@ -618,7 +528,7 @@ export default function Admin_Page() {
                     mode: 'no-cors',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ 
-                      action: 'markAttendance',
+                      type: 'attendance',
                       ticketId: decodedText,
                       sheetId: regData.sheetId || events.find((e:any)=>e.id===selectedScanEventId)?.sheetId
                     })
