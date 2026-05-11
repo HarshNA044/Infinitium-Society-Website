@@ -2,94 +2,82 @@
  * Webhook script for Google Sheet registration and attendance.
  */
 function doPost(e) {
-  if (!e) {
-    return ContentService.createTextOutput("Error: No event provided").setMimeType(ContentService.MimeType.TEXT);
-  }
-  // CORS Preflight
-  if (e.parameter && e.parameter.method === 'OPTIONS') {
-    return ContentService.createTextOutput("OK")
-      .setMimeType(ContentService.MimeType.TEXT)
-      .setHeader("Access-Control-Allow-Origin", "*")
-      .setHeader("Access-Control-Allow-Methods", "POST, OPTIONS")
-      .setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (!e || !e.postData) {
+    return ContentService.createTextOutput("Error: No data received").setMimeType(ContentService.MimeType.TEXT);
   }
 
   try {
     var data = JSON.parse(e.postData.contents);
-    console.log("Received data: " + JSON.stringify(data));
+    console.log("Processing request: " + JSON.stringify(data));
     var sheetId = data.sheetId;
     if (!sheetId) {
-      return ContentService.createTextOutput("Error: Missing sheetId")
-        .setHeader("Access-Control-Allow-Origin", "*");
+      return ContentService.createTextOutput("Error: Missing sheetId");
     }
     
     var sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
     
     if (data.type === 'attendance') {
-      // Find row by ticketId
+      // Find row by ticketId and mark attendance
       var ticketId = data.ticketId;
       var range = sheet.getDataRange();
       var values = range.getValues();
-      var ticketIdIndex = 13; // TicketId is 14th column (index 13)
-      var attndIndex = 16; // attnd is 17th column (index 16)
+      var ticketIdIndex = 13; // Column N (14th column, index 13)
+      var attndIndex = 16;   // Column Q (17th column, index 16)
 
       for (var i = 1; i < values.length; i++) {
         if (values[i][ticketIdIndex] === ticketId) {
           sheet.getRange(i + 1, attndIndex + 1).setValue("Yes");
-          return ContentService.createTextOutput("Attendance Marked")
-            .setHeader("Access-Control-Allow-Origin", "*");
+          return ContentService.createTextOutput("Attendance Marked");
         }
       }
-      return ContentService.createTextOutput("Error: Ticket not found")
-        .setHeader("Access-Control-Allow-Origin", "*");
+      return ContentService.createTextOutput("Error: Ticket ID not found in sheet");
     } else {
       // Registration flow
       var timestamp = new Date();
 
-      // Ensure headers exist
+      // Ensure headers exist if sheet is empty
       if (sheet.getLastRow() === 0) {
         sheet.appendRow([
           "Timestamp", "Student Name", "Roll No", "Email", "Phone No", "Course", "Year", 
           "College Name", "Is Part of Society", "Society Department", "Availability", 
-          "Event ID", "Event Title", "Ticket ID", "Attended", "Created At", "Attendance"
+          "Event ID", "Event Title", "Ticket ID", "Attended", "Created At", "Attendance Status"
         ]);
-        sheet.getRange(1, 1, 1, 17).setFontWeight("bold");
+        sheet.getRange(1, 1, 1, 17).setFontWeight("bold").setBackground("#f3f3f3");
       }
       
-      // Columns: Timestamp, studentName, rollNo, email, phoneNo, course, year, collegeName, isPartOfSociety, societyDepartment, availability, eventId, eventTitle, ticketId, attended, createdAt, attnd
+      // Map fields from data to columns
       sheet.appendRow([
-        timestamp, // 1: Timestamp
-        data.studentName, // 2
-        data.rollNo, // 3
-        data.email, // 4
-        data.phoneNo, // 5
-        data.course, // 6
-        data.year, // 7
-        data.collegeName, // 8
-        data.isPartOfSociety, // 9
-        data.societyDepartment, // 10
-        data.availability, // 11
-        data.eventId, // 12
-        data.eventTitle, // 13
-        data.ticketId, // 14
-        data.attended, // 15
-        data.createdAt, // 16
-        "" // 17: attnd (initially blank or false/No)
+        timestamp,            // A: Timestamp
+        data.studentName,      // B: studentName
+        data.rollNo,           // C: rollNo
+        data.email,            // D: email
+        data.phoneNo,          // E: phoneNo
+        data.course,           // F: course
+        data.year,             // G: year
+        data.collegeName,      // H: collegeName
+        data.isPartOfSociety,  // I: isPartOfSociety
+        data.societyDepartment,// J: societyDepartment
+        data.availability,     // K: availability
+        data.eventId,          // L: eventId
+        data.eventTitle,       // M: eventTitle
+        data.ticketId,         // N: ticketId
+        data.attended,         // O: attended (bool)
+        data.createdAt,        // P: createdAt (ISO string)
+        "No"                   // Q: Attendance Status (Check-in status)
       ]);
       
-      // Send Email
+      // Trigger Email
       try {
         sendRegistrationEmail(data);
       } catch (emailErr) {
-        console.error("Email error: " + emailErr.toString());
+        console.error("Failed to send email: " + emailErr.toString());
       }
       
-      return ContentService.createTextOutput("Success")
-        .setHeader("Access-Control-Allow-Origin", "*");
+      return ContentService.createTextOutput("Success");
     }
   } catch (err) {
-    return ContentService.createTextOutput("Error: " + err.toString())
-      .setHeader("Access-Control-Allow-Origin", "*");
+    console.error("Script Error: " + err.toString());
+    return ContentService.createTextOutput("Error: " + err.toString());
   }
 }
 

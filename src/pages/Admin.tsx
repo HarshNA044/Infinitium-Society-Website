@@ -523,22 +523,18 @@ export default function Admin_Page() {
               const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
               if (appsScriptUrl) {
                 try {
-                  const response = await fetch(appsScriptUrl, {
+                  // Using mode: 'no-cors' and 'text/plain' to bypass CORS preflight
+                  await fetch(appsScriptUrl, {
                     method: 'POST',
-                    mode: 'cors',
-                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain' },
                     body: JSON.stringify({ 
                       type: 'attendance',
                       ticketId: decodedText,
                       sheetId: regData.sheetId || events.find((e:any)=>e.id===selectedScanEventId)?.sheetId
                     })
                   });
-                  if (!response.ok) {
-                    const textResponse = await response.text();
-                    console.error("Sheet update failed:", textResponse);
-                  } else {
-                    console.log("Sheet update successful:", await response.text());
-                  }
+                  console.log("Sheet attendance update sent (no-cors)");
                 } catch (sheetErr) {
                   console.error("Sheet update failed", sheetErr);
                 }

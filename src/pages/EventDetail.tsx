@@ -122,18 +122,15 @@ export default function EventDetail_Page() {
       const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
       if (appsScriptUrl) {
         try {
-          const response = await fetch(appsScriptUrl, {
+          // Using mode: 'no-cors' and 'text/plain' to bypass CORS preflight
+          // which Apps Script web apps do not support.
+          await fetch(appsScriptUrl, {
             method: 'POST',
-            mode: 'cors', // Changed to cors
-            headers: { 'Content-Type': 'application/json' },
+            mode: 'no-cors',
+            headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify({ ...regData, createdAt: new Date().toISOString() })
           });
-          if (!response.ok) {
-            const textResponse = await response.text();
-            console.error("Sheet update failed:", textResponse);
-          } else {
-            console.log("Sheet update successful:", await response.text());
-          }
+          console.log("Sheet update request sent (no-cors)");
         } catch (sErr) {
           console.error("Sheet error:", sErr);
         }
