@@ -2,6 +2,9 @@
  * Webhook script for Google Sheet registration and attendance.
  */
 function doPost(e) {
+  if (!e) {
+    return ContentService.createTextOutput("Error: No event provided").setMimeType(ContentService.MimeType.TEXT);
+  }
   // CORS Preflight
   if (e.parameter && e.parameter.method === 'OPTIONS') {
     return ContentService.createTextOutput("OK")
