@@ -53,7 +53,100 @@ export default function Admin_Page() {
   const [scanResult, setScanResult] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedScanEventId, setSelectedScanEventId] = useState<string>('');
+  
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
+  const ScannerTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const startScanner = (eventId: string) => {
+      if (isScanning || !eventId) return;
+      setIsScanning(true);
+      
+      ScannerTimeout.current = setTimeout(() => {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        scannerRef.current = new Html5QrcodeScanner(
+          "reader", 
+          { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 },
+            facingMode: isMobile ? { exact: "environment" } : "user"
+          }, 
+          false
+        );
+        
+        scannerRef.current.render(async (decodedText) => {
+          try {
+            setScanResult({ loading: true });
+            
+            // 1. Find registration in Firestore
+            const regRef = doc(db, 'events', eventId, 'registrations', decodedText);
+            const regSnap = await getDoc(regRef);
+            
+            if (!regSnap.exists()) {
+              throw new Error('Invalid ticket or wrong event');
+            }
+            
+            const regData = regSnap.data();
+            if (regData.attended) {
+              setScanResult({ 
+                success: true, 
+                student: regData,
+                alreadyMarked: true,
+                ticketId: decodedText
+              });
+            } else {
+              // 2. Mark as attended in Firestore
+              await updateDoc(regRef, { attended: true });
+              
+              // 3. Update event stats
+              const eventRef = doc(db, 'events', eventId);
+              const eventSnap = await getDoc(eventRef);
+              if (eventSnap.exists()) {
+                const currentAttendance = eventSnap.data().stats.attendance || 0;
+                await updateDoc(eventRef, {
+                  'stats.attendance': currentAttendance + 1
+                });
+              }
+
+              // 4. Update Google Sheet
+              const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+              if (appsScriptUrl) {
+                try {
+                  await fetch(appsScriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      action: 'markAttendance',
+                      ticketId: decodedText,
+                      sheetId: regData.sheetId || events.find((e:any)=>e.id===eventId)?.sheetId
+                    })
+                  });
+                } catch (sheetErr) {
+                  console.error("Sheet update failed", sheetErr);
+                }
+              }
+              
+              setScanResult({ 
+                success: true, 
+                student: regData,
+                alreadyMarked: false,
+                ticketId: decodedText
+              });
+            }
+            
+            loadFirebaseData();
+          } catch (err: any) {
+            console.error("Scan error:", err);
+            setScanResult({ success: false, error: err.message });
+          }
+          stopScanner();
+          setIsScanning(false);
+        }, (err) => {
+          // ignore errors
+        });
+      }, 300);
+  };
+
 
   // New states for expanded control
   const [achievements, setAchievements] = useState<any[]>([]);
@@ -467,101 +560,106 @@ export default function Admin_Page() {
     setGalleryImagePreview(null);
   };
 
+  // Effect to manage scanner initialization
   useEffect(() => {
-    if (activeTab === 'scanner' && isScanning && selectedScanEventId) {
-      const targetEvent = events.find((e: any) => e.id === selectedScanEventId);
-      if (!targetEvent) {
-        setIsScanning(false);
-        return;
-      }
-
-      scannerRef.current = new Html5QrcodeScanner(
-        "reader", 
-        { fps: 10, qrbox: { width: 250, height: 250 } }, 
-        false
-      );
-      
-      scannerRef.current.render(async (decodedText) => {
-        try {
-          setScanResult({ loading: true });
-          
-          // 1. Find registration in Firestore
-          // Note: registrations are subcollections of events
-          const regRef = doc(db, 'events', selectedScanEventId, 'registrations', decodedText);
-          const regSnap = await getDoc(regRef);
-          
-          if (!regSnap.exists()) {
-            throw new Error('Invalid ticket or wrong event');
-          }
-          
-          const regData = regSnap.data();
-          if (regData.attended) {
-            setScanResult({ 
-              success: true, 
-              student: regData,
-              alreadyMarked: true,
-              ticketId: decodedText
-            });
-          } else {
-            // 2. Mark as attended in Firestore
-            await updateDoc(regRef, { attended: true });
+    if (isScanning && activeTab === 'scanner' && selectedScanEventId) {
+      ScannerTimeout.current = setTimeout(() => {
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        scannerRef.current = new Html5QrcodeScanner(
+          "reader", 
+          { 
+            fps: 10, 
+            qrbox: { width: 250, height: 250 },
+            facingMode: isMobile ? { exact: "environment" } : "user"
+          }, 
+          false
+        );
+        
+        scannerRef.current.render(async (decodedText) => {
+          try {
+            setScanResult({ loading: true });
             
-            // 3. Update event stats
-            const eventRef = doc(db, 'events', selectedScanEventId);
-            const eventSnap = await getDoc(eventRef);
-            if (eventSnap.exists()) {
-              const currentAttendance = eventSnap.data().stats.attendance || 0;
-              await updateDoc(eventRef, {
-                'stats.attendance': currentAttendance + 1
+            // 1. Find registration in Firestore
+            const regRef = doc(db, 'events', selectedScanEventId, 'registrations', decodedText);
+            const regSnap = await getDoc(regRef);
+            
+            if (!regSnap.exists()) {
+              throw new Error('Invalid ticket or wrong event');
+            }
+            
+            const regData = regSnap.data();
+            if (regData.attended) {
+              setScanResult({ 
+                success: true, 
+                student: regData,
+                alreadyMarked: true,
+                ticketId: decodedText
+              });
+            } else {
+              // 2. Mark as attended in Firestore
+              await updateDoc(regRef, { attended: true });
+              
+              // 3. Update event stats
+              const eventRef = doc(db, 'events', selectedScanEventId);
+              const eventSnap = await getDoc(eventRef);
+              if (eventSnap.exists()) {
+                const currentAttendance = eventSnap.data().stats.attendance || 0;
+                await updateDoc(eventRef, {
+                  'stats.attendance': currentAttendance + 1
+                });
+              }
+
+              // 4. Update Google Sheet
+              const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+              if (appsScriptUrl) {
+                try {
+                  await fetch(appsScriptUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                      action: 'markAttendance',
+                      ticketId: decodedText,
+                      sheetId: regData.sheetId || events.find((e:any)=>e.id===selectedScanEventId)?.sheetId
+                    })
+                  });
+                } catch (sheetErr) {
+                  console.error("Sheet update failed", sheetErr);
+                }
+              }
+              
+              setScanResult({ 
+                success: true, 
+                student: regData,
+                alreadyMarked: false,
+                ticketId: decodedText
               });
             }
-
-            // 4. Update Google Sheet (Optional but good)
-            const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
-            if (appsScriptUrl) {
-              try {
-                await fetch(appsScriptUrl, {
-                  method: 'POST',
-                  mode: 'no-cors',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
-                    action: 'markAttendance',
-                    ticketId: decodedText,
-                    sheetId: regData.sheetId || targetEvent.sheetId
-                  })
-                });
-              } catch (sheetErr) {
-                console.error("Sheet update failed", sheetErr);
-              }
-            }
             
-            setScanResult({ 
-              success: true, 
-              student: regData,
-              alreadyMarked: false,
-              ticketId: decodedText
-            });
+            loadFirebaseData();
+          } catch (err: any) {
+            console.error("Scan error:", err);
+            setScanResult({ success: false, error: err.message });
           }
-          
-          loadFirebaseData();
-        } catch (err: any) {
-          console.error("Scan error:", err);
-          setScanResult({ success: false, error: err.message });
-        }
-        stopScanner();
-        setIsScanning(false);
-      }, (err) => {
-        // ignore errors
-      });
+          stopScanner();
+          setIsScanning(false);
+        }, (err) => {
+          // ignore errors
+        });
+      }, 500); // Increased timeout to ensure DOM update
     }
 
-    return () => stopScanner();
-  }, [activeTab, isScanning, selectedScanEventId]);
+    return () => {
+      stopScanner();
+      if (ScannerTimeout.current) clearTimeout(ScannerTimeout.current);
+    };
+  }, [isScanning, activeTab, selectedScanEventId]);
 
   const stopScanner = () => {
     if (scannerRef.current) {
-      scannerRef.current.clear().catch(console.error);
-      scannerRef.current = null;
+        // Clear scanner only if initialized, needs to be wrapped in a try/catch if it fails
+        scannerRef.current.clear().catch(console.error);
+        scannerRef.current = null;
     }
   };
 
@@ -1494,7 +1592,7 @@ export default function Admin_Page() {
                       </button>
                     </div>
                    ) : (
-                    <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-red-200 text-xs font-bold uppercase tracking-widest leading-loose">
+                    <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-brand-200 text-xs font-bold uppercase tracking-widest leading-loose">
                       No upcoming events available for scanning.<br/>
                       Marking attendance is restricted to events with "Upcoming" status.
                     </div>
