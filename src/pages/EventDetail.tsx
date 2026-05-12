@@ -108,8 +108,17 @@ export default function EventDetail_Page() {
       const timestamp = serverTimestamp();
       
       const regData = {
-        ...formData,
-        course: formData.course === 'Others' ? formData.otherCourse : formData.course,
+        studentName: formData.studentName,
+        rollNo: formData.rollNo,
+        email: formData.email,
+        phoneNo: formData.phoneNo,
+        course: formData.course,
+        otherCourse: formData.otherCourse,
+        year: formData.year,
+        collegeName: formData.collegeName,
+        isPartOfSociety: formData.isPartOfSociety,
+        societyDepartment: formData.societyDepartment,
+        availability: formData.availability,
         eventId: event.id,
         eventTitle: event.title,
         ticketId: ticketId,
@@ -120,6 +129,7 @@ export default function EventDetail_Page() {
 
       // 1. Save to Google Sheet
       const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+      console.log("Apps Script Configured:", !!appsScriptUrl);
       if (appsScriptUrl) {
         try {
           const payload = { 
@@ -128,15 +138,13 @@ export default function EventDetail_Page() {
           };
           console.log("Sending registration to Apps Script:", payload);
           
-          // Using mode: 'no-cors' and 'text/plain' to bypass CORS preflight
-          // which Apps Script web apps do not support.
           await fetch(appsScriptUrl, {
             method: 'POST',
             mode: 'no-cors',
             headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify(payload)
           });
-          console.log("Sheet update request sent (no-cors)");
+          console.log("Sheet update request sent successfully");
         } catch (sErr) {
           console.error("Sheet error:", sErr);
         }
