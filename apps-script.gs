@@ -14,7 +14,23 @@ function doPost(e) {
       return ContentService.createTextOutput("Error: Missing sheetId");
     }
     
-    var sheet = SpreadsheetApp.openById(sheetId).getActiveSheet();
+    // Extract ID if full Google Spreadsheet URL is provided
+    sheetId = sheetId.trim();
+    if (sheetId.indexOf("docs.google.com/spreadsheets") !== -1 || sheetId.indexOf("http") !== -1) {
+      var match = sheetId.match(/\/d\/([a-zA-Z0-9-_]+)/);
+      if (match && match[1]) {
+        sheetId = match[1];
+      }
+    }
+    
+    var spreadsheet = SpreadsheetApp.openById(sheetId);
+    var sheet = spreadsheet.getSheets()[0]; // Get first sheet/tab explicitly (foolproof)
+    
+    // Ensure the sheet has at least 12 columns to prevent range exception errors when getting values
+    var maxCols = sheet.getMaxColumns();
+    if (maxCols < 12) {
+      sheet.insertColumnsAfter(maxCols, 12 - maxCols);
+    }
     
     if (data.type === 'attendance') {
       // Find row by ticketId and mark attendance
@@ -41,9 +57,9 @@ function doPost(e) {
         "Part of Society", "Department", "availability", "Ticket-ID", "Attendance"
       ];
       
-      // Better header detection: check if first row is actually headers
+      // Better header detection: check if first row is actually headers (trimmed and lowercase check)
       var firstRowValues = lastRow > 0 ? sheet.getRange(1, 1, 1, 12).getValues()[0] : [];
-      var hasHeaders = firstRowValues[0] === "Name" || firstRowValues[0] === "name";
+      var hasHeaders = firstRowValues[0] && (firstRowValues[0].toString().trim().toLowerCase() === "name");
 
       if (!hasHeaders) {
         if (lastRow === 0) {
