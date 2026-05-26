@@ -481,7 +481,7 @@ export default function Admin_Page() {
             qrbox: { width: 250, height: 250 },
             facingMode: isMobile ? { exact: "environment" } : "user",
             supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-          }, 
+          } as any, 
           false
         );
         

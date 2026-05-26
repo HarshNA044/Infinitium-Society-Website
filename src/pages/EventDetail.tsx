@@ -103,7 +103,27 @@ export default function EventDetail_Page() {
     e.preventDefault();
     if (!validate()) return;
     setLoading(true);
+    setErrors({});
     try {
+      // Check for duplicate registration before writing to Firestore or making Sheet API calls
+      const regsRef = collection(db, 'events', event.id, 'registrations');
+      const regsSnap = await getDocs(regsRef);
+      const inputEmail = formData.email.trim().toLowerCase();
+      const inputRoll = formData.rollNo.trim().toLowerCase();
+      
+      const isDuplicate = regsSnap.docs.some(docSnap => {
+        const d = docSnap.data();
+        const existingEmail = (d.email || '').trim().toLowerCase();
+        const existingRoll = (d.rollNo || '').trim().toLowerCase();
+        return existingEmail === inputEmail || existingRoll === inputRoll;
+      });
+
+      if (isDuplicate) {
+        setErrors({ submit: "You have already registered for this event with this Email ID or College Roll No." });
+        setLoading(false);
+        return;
+      }
+
       const ticketId = `INF-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
       const timestamp = serverTimestamp();
       
@@ -680,6 +700,12 @@ export default function EventDetail_Page() {
                             placeholder="College Name"
                           />
                           {errors.collegeName && <p className="text-[8px] text-red-500 font-bold uppercase ml-2">{errors.collegeName}</p>}
+                        </div>
+                      )}
+
+                      {errors.submit && (
+                        <div className="mt-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold leading-relaxed text-center uppercase tracking-wide">
+                          {errors.submit}
                         </div>
                       )}
 
