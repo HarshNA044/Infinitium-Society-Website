@@ -489,64 +489,68 @@ export default function Admin_Page() {
           try {
             setScanResult({ loading: true });
             
-            // 1. Find registration in Firestore
-            const regRef = doc(db, 'events', selectedScanEventId, 'registrations', decodedText);
-            const regSnap = await getDoc(regRef);
-            
-            if (!regSnap.exists()) {
-              throw new Error('Invalid ticket or wrong event');
+            // 1. Fetch, verify and mark attendance directly via Apps Script
+            const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+            if (!appsScriptUrl) {
+              throw new Error("Apps Script URL is not configured (VITE_APPS_SCRIPT_URL).");
             }
-            
-            const regData = regSnap.data();
-            if (regData.attended) {
-              setScanResult({ 
-                success: true, 
-                student: regData,
-                alreadyMarked: true,
-                ticketId: decodedText
-              });
-            } else {
-              // 2. Mark as attended in Firestore
-              await updateDoc(regRef, { attended: true });
-              
-              // 3. Update event stats
+
+            const targetEvent = events.find((e: any) => e.id === selectedScanEventId);
+            if (!targetEvent || !targetEvent.sheetId) {
+              throw new Error("Selected event does not have an associated Google Sheet ID.");
+            }
+
+            const response = await fetch(appsScriptUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain' },
+              body: JSON.stringify({ 
+                type: 'attendance',
+                ticketId: decodedText,
+                sheetId: targetEvent.sheetId
+              })
+            });
+
+            const resultText = await response.text();
+            console.log("Apps Script attendance check response:", resultText);
+
+            let resObj: any = null;
+            try {
+              resObj = JSON.parse(resultText);
+            } catch (err) {
+              // Fallback for older Apps Script returning raw text
+              if (resultText === "Attendance Marked") {
+                resObj = { status: "success", alreadyMarked: false, student: { studentName: "Attendee" } };
+              } else if (resultText.toLowerCase().includes("not found") || resultText.toLowerCase().includes("error")) {
+                resObj = { status: "error", message: resultText };
+              } else {
+                resObj = { status: "success", alreadyMarked: true, student: { studentName: "Attendee" } };
+              }
+            }
+
+            if (!resObj || resObj.status === "error") {
+              throw new Error(resObj?.message || "Invalid ticket or wrong event.");
+            }
+
+            const regData = resObj.student || { studentName: "Attendee" };
+
+            // 2. Increment attendance stats on the local Event Firestore document if not already marked
+            if (!resObj.alreadyMarked) {
               const eventRef = doc(db, 'events', selectedScanEventId);
               const eventSnap = await getDoc(eventRef);
               if (eventSnap.exists()) {
-                const currentAttendance = eventSnap.data().stats.attendance || 0;
+                const currentAttendance = eventSnap.data().stats?.attendance || 0;
                 await updateDoc(eventRef, {
                   'stats.attendance': currentAttendance + 1
                 });
               }
-
-              // 4. Update Google Sheet
-              const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
-              if (appsScriptUrl) {
-                try {
-                  // Using mode: 'no-cors' and 'text/plain' to bypass CORS preflight
-                  await fetch(appsScriptUrl, {
-                    method: 'POST',
-                    mode: 'no-cors',
-                    headers: { 'Content-Type': 'text/plain' },
-                    body: JSON.stringify({ 
-                      type: 'attendance',
-                      ticketId: decodedText,
-                      sheetId: regData.sheetId || events.find((e:any)=>e.id===selectedScanEventId)?.sheetId
-                    })
-                  });
-                  console.log("Sheet attendance update sent (no-cors)");
-                } catch (sheetErr) {
-                  console.error("Sheet update failed", sheetErr);
-                }
-              }
-              
-              setScanResult({ 
-                success: true, 
-                student: regData,
-                alreadyMarked: false,
-                ticketId: decodedText
-              });
             }
+
+            setScanResult({ 
+              success: true, 
+              student: regData,
+              alreadyMarked: !!resObj.alreadyMarked,
+              ticketId: decodedText
+            });
             
             loadFirebaseData();
           } catch (err: any) {

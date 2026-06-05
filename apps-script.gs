@@ -42,11 +42,30 @@ function doPost(e) {
 
       for (var i = 1; i < values.length; i++) {
         if (values[i][ticketIdIndex] === ticketId) {
-          sheet.getRange(i + 1, attndIndex + 1).setValue("Yes");
-          return ContentService.createTextOutput("Attendance Marked");
+          var alreadyMarked = (values[i][attndIndex] === "Yes");
+          if (!alreadyMarked) {
+            sheet.getRange(i + 1, attndIndex + 1).setValue("Yes");
+          }
+          var student = {
+            studentName: values[i][0] || "",
+            rollNo: values[i][1] || "",
+            email: values[i][2] || "",
+            course: values[i][3] || "",
+            phoneNo: values[i][4] || "",
+            year: values[i][5] || "",
+            collegeName: values[i][6] || "",
+            ticketId: ticketId
+          };
+          var response = {
+            status: "success",
+            alreadyMarked: alreadyMarked,
+            student: student
+          };
+          return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
         }
       }
-      return ContentService.createTextOutput("Error: Ticket ID not found in sheet");
+      var errResponse = { status: "error", message: "Ticket ID not found in sheet" };
+      return ContentService.createTextOutput(JSON.stringify(errResponse)).setMimeType(ContentService.MimeType.JSON);
     } else {
       // Registration flow
       var lastRow = sheet.getLastRow();
@@ -99,18 +118,16 @@ function doPost(e) {
       var ticketId = data.ticketId || "";
       var attendance = ""; // attendance field is always empty initially
       
-      // 2. Prevent duplicate registrations for an event (matching Email ID or College Roll No.)
+      // 2. Prevent duplicate registrations for an event (matching College Roll No. only)
       if (lastRow > 1) {
         var sheetValues = sheet.getRange(1, 1, lastRow, 12).getValues();
-        var normalizedEmail = email.toString().trim().toLowerCase();
         var normalizedRoll = rollNo.toString().trim().toLowerCase();
         
         for (var i = 1; i < sheetValues.length; i++) {
           var rowRoll = (sheetValues[i][1] || "").toString().trim().toLowerCase();
-          var rowEmail = (sheetValues[i][2] || "").toString().trim().toLowerCase();
           
-          if ((normalizedRoll && rowRoll === normalizedRoll) || (normalizedEmail && rowEmail === normalizedEmail)) {
-            console.warn("Blocked duplicate registration for: " + normalizedEmail + " / " + normalizedRoll);
+          if (normalizedRoll && rowRoll === normalizedRoll) {
+            console.warn("Blocked duplicate registration for College Roll No: " + normalizedRoll);
             return ContentService.createTextOutput("Error: Duplicate Registration");
           }
         }
@@ -152,79 +169,102 @@ function doPost(e) {
 
 function sendRegistrationEmail(data) {
   try {
-    var qrCodeUrl = "https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=" + encodeURIComponent(data.ticketId);
+    var blob;
+    var fileName = "Ticket_" + (data.ticketId || "Entry") + ".pdf";
     
-    // Create HTML for PDF (Professional Ticket Design)
-    var pdfHtml = '<!DOCTYPE html><html><head><style>' +
-                  'body { font-family: "Helvetica", "Arial", sans-serif; color: #333; margin: 0; padding: 0; }' +
-                  '.ticket { width: 600px; margin: 20px auto; border: 2px solid #1e3a8a; border-radius: 10px; overflow: hidden; }' +
-                  '.header { background-color: #1e3a8a; color: white; padding: 20px; text-align: center; }' +
-                  '.header h1 { margin: 0; font-size: 24px; letter-spacing: 2px; }' +
-                  '.content { padding: 30px; display: flex; }' +
-                  '.info { flex: 1; }' +
-                  '.info p { margin: 10px 0; font-size: 14px; }' +
-                  '.info b { color: #1e3a8a; }' +
-                  '.qr-side { text-align: center; padding-left: 20px; border-left: 1px dashed #ccc; }' +
-                  '.footer { background-color: #f8fafc; padding: 15px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; }' +
-                  '</style></head><body>' +
-                  '<div class="ticket">' +
-                  '  <div class="header">' +
-                  '    <h1>ENTRY TICKET</h1>' +
-                  '    <div style="font-size: 14px; margin-top: 5px; opacity: 0.9;">ADGITM EVENT PORTAL</div>' +
-                  '  </div>' +
-                  '  <div class="content" style="display: table; width: 100%;">' +
-                  '    <div style="display: table-cell; vertical-align: top; width: 60%; padding: 20px;">' +
-                  '      <h2 style="color: #1e3a8a; margin-top: 0;">' + (data.eventTitle || "Event Registration") + '</h2>' +
-                  '      <p><b>Ticket ID:</b> ' + data.ticketId + '</p>' +
-                  '      <p><b>Attendee:</b> ' + data.studentName + '</p>' +
-                  '      <p><b>Roll No:</b> ' + data.rollNo + '</p>' +
-                  '      <p><b>Course:</b> ' + (data.course === "Others" ? data.otherCourse : data.course) + ' (' + data.year + ')</p>' +
-                  '      <p><b>College:</b> ' + data.collegeName + '</p>' +
-                  '    </div>' +
-                  '    <div style="display: table-cell; vertical-align: middle; text-align: center; width: 40%; border-left: 1px dashed #ccc; padding: 20px;">' +
-                  '      <img src="' + qrCodeUrl + '" width="150" height="150" />' +
-                  '      <p style="font-size: 11px; color: #666; margin-top: 10px;">SCAN FOR ENTRY</p>' +
-                  '    </div>' +
-                  '  </div>' +
-                  '  <div class="footer">' +
-                  '    IMPORTANT: Please present this ticket (printed or digital) at the registration desk. <br/>' +
-                  '    © 2024 ADGITM Society Team. All rights reserved.' +
-                  '  </div>' +
-                  '</div></body></html>';
-
-    var blob = HtmlService.createHtmlOutput(pdfHtml).getAs('application/pdf');
-    blob.setName("Ticket_" + data.ticketId + ".pdf");
-
-    // Professional Email Body
-    var body = '<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">' +
-               '  <div style="background-color: #1e3a8a; padding: 20px; text-align: center;">' +
-               '    <h1 style="color: white; margin: 0; font-size: 20px;">Registration Confirmed</h1>' +
-               '  </div>' +
-               '  <div style="padding: 30px; line-height: 1.6; color: #334155;">' +
-               '    <p>Dear <strong>' + data.studentName + '</strong>,</p>' +
-               '    <p>We are excited to confirm your registration for <strong>' + data.eventTitle + '</strong>. Your spot has been successfully reserved.</p>' +
-               '    <div style="background-color: #f1f5f9; padding: 20px; border-radius: 6px; margin: 20px 0;">' +
-               '      <p style="margin: 0;"><strong>Event:</strong> ' + data.eventTitle + '</p>' +
-               '      <p style="margin: 5px 0 0 0;"><strong>Ticket ID:</strong> ' + data.ticketId + '</p>' +
-               '    </div>' +
-               '    <p><strong>Your entry ticket is attached to this email as a PDF.</strong> Please ensure you have it available (on your phone or printed) to facilitate a smooth check-in process at the venue.</p>' +
-               '    <p>If you have any questions or require further assistance, please do not hesitate to contact the organizing committee.</p>' +
-               '    <p style="margin-top: 30px;">Best regards,<br/><strong>Event Organizing Team</strong><br/>ADGITM</p>' +
-               '  </div>' +
-               '  <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 12px; color: #64748b;">' +
-               '    This is an automated message. Please do not reply directly to this email.' +
-               '  </div>' +
-               '</div>';
-
-    MailApp.sendEmail({
-      to: data.email,
-      subject: "Registration Success - " + (data.eventTitle || "Event"),
-      htmlBody: body,
-      attachments: [blob]
-    });
-    
-    console.log("Ticket PDF sent successfully to " + data.email);
-  } catch (e) {
-    console.error("Failed to send email to " + data.email + ": " + e.toString());
+    if (data.pdfBase64) {
+      // Decode high-fidelity client-generated PDF
+      var base64Data = data.pdfBase64;
+      // If client sent the full data URI, strip prefix
+      if (base64Data.indexOf("base64,") !== -1) {
+        base64Data = base64Data.split("base64,")[1];
+      }
+      var decodedBytes = Utilities.base64Decode(base64Data);
+      blob = Utilities.newBlob(decodedBytes, "application/pdf", fileName);
+      console.log("Using client-provided high-fidelity PDF.");
+    } else {
+      // Fallback ticket layout with INFINITIUM / ARSD College branding
+      var qrCodeUrl = "https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=" + encodeURIComponent(data.ticketId);
+      
+      // Create HTML for PDF (Professional Ticket Design)
+      var pdfHtml = '<!DOCTYPE html><html><head><style>' +
+                    'body { font-family: "Helvetica", "Arial", sans-serif; color: #1e293b; margin: 0; padding: 0; }' +
+                    '.ticket { width: 600px; margin: 20px auto; border: 2px solid #14b8a6; border-radius: 10px; overflow: hidden; }' +
+                    '.header { background-color: #0f0c29; color: white; padding: 25px 20px; text-align: center; border-bottom: 5px solid #14b8a6; }' +
+                    '.header h1 { margin: 0; font-size: 28px; letter-spacing: 2px; font-weight: bold; }' +
+                    '.content { padding: 30px; display: flex; background: white; }' +
+                    '.info { flex: 1; }' +
+                    '.info p { margin: 10px 0; font-size: 14px; }' +
+                    '.info b { color: #0f0c29; }' +
+                    '.qr-side { text-align: center; padding-left: 20px; border-left: 1px dashed #ccc; }' +
+                    '.footer { background-color: #f8fafc; padding: 15px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; }' +
+                    '</style></head><body>' +
+                    '<div class="ticket">' +
+                    '  <div class="header">' +
+                    '    <h1>INFINITIUM</h1>' +
+                    '    <div style="font-size: 12px; margin-top: 5px; opacity: 0.9; letter-spacing: 1px;">ATMA RAM SANATAN DHARMA COLLEGE | UNIVERSITY OF DELHI</div>' +
+                    '  </div>' +
+                    '  <div class="content" style="display: table; width: 100%;">' +
+                    '    <div style="display: table-cell; vertical-align: top; width: 60%; padding: 20px;">' +
+                    '      <h2 style="color: #0f0c29; margin-top: 0; font-size: 18px; text-transform: uppercase;">' + (data.eventTitle || "Event Registration") + '</h2>' +
+                    '      <p style="font-size: 13px; color: #64748b; margin-bottom: 15px;">Official Entry Pass</p>' +
+                    '      <p><b>Ticket ID:</b> ' + data.ticketId + '</p>' +
+                    '      <p><b>Attendee:</b> ' + data.studentName + '</p>' +
+                    '      <p><b>Roll No:</b> ' + data.rollNo + '</p>' +
+                    '      <p><b>Course:</b> ' + (data.course === "Others" ? data.otherCourse : data.course) + ' (' + data.year + ')</p>' +
+                    '      <p><b>College:</b> ' + data.collegeName + '</p>' +
+                    '    </div>' +
+                    '    <div style="display: table-cell; vertical-align: middle; text-align: center; width: 40%; border-left: 1px dashed #e2e8f0; padding: 20px;">' +
+                    '      <img src="' + qrCodeUrl + '" width="150" height="150" style="display: block; margin: 0 auto;" />' +
+                    '      <p style="font-size: 11px; color: #64748b; margin-top: 10px; font-weight: bold; letter-spacing: 1px;">SCAN FOR ENTRY</p>' +
+                    '    </div>' +
+                    '  </div>' +
+                    '  <div class="footer">' +
+                    '    * Please present this ticket (printed or digital) at the registration desk. <br/>' +
+                    '    © Infinitium Society, Atma Ram Sanatan Dharma College' +
+                    '  </div>' +
+                    '</div></body></html>';
+  
+        blob = HtmlService.createHtmlOutput(pdfHtml).getAs('application/pdf');
+        blob.setName(fileName);
+      }
+  
+      // Professional Email Body (Infinitium Brand)
+      var body = '<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">' +
+                 '  <div style="background-color: #0f0c29; border-top: 4px solid #14b8a6; padding: 25px; text-align: center;">' +
+                 '    <h1 style="color: white; margin: 0; font-size: 24px; letter-spacing: 2px;">INFINITIUM</h1>' +
+                 '    <p style="color: #14b8a6; margin: 5px 0 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;">Atma Ram Sanatan Dharma College</p>' +
+                 '  </div>' +
+                 '  <div style="padding: 30px; line-height: 1.6; color: #334155; bg: #ffffff;">' +
+                 '    <h2 style="color: #0f0c29; margin-top: 0; font-size: 18px;">Registration Confirmed!</h2>' +
+                 '    <p>Dear <strong>' + data.studentName + '</strong>,</p>' +
+                 '    <p>Thank you for registering. Your booking has been successfully recorded for the following event:</p>' +
+                 '    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin: 20px 0;">' +
+                 '      <p style="margin: 0; font-size: 15px;"><strong>Event:</strong> ' + data.eventTitle + '</p>' +
+                 '      <p style="margin: 5px 0 0 0; font-size: 13px; color: #64748b;"><strong>Ticket ID:</strong> ' + data.ticketId + '</p>' +
+                 '    </div>' +
+                 '    <p><strong>Your official entry pass is attached to this email as a PDF ticket.</strong> Please have this PDF file or its printed version handy at the venue registration desk for smooth check-in.</p>' +
+                 '    <p>We look forward to seeing you there!</p>' +
+                 '    <p style="margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 20px;">' +
+                 '      Warm regards,<br/>' +
+                 '      <strong>Infinitium Organizing Committee</strong><br/>' +
+                 '      Atma Ram Sanatan Dharma College, University of Delhi' +
+                 '    </p>' +
+                 '  </div>' +
+                 '  <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">' +
+                 '    This is an automatically generated system email. Please do not reply directly to this message.' +
+                 '  </div>' +
+                 '</div>';
+  
+      MailApp.sendEmail({
+        to: data.email,
+        subject: "Registration Confirmed: " + (data.eventTitle || "Event"),
+        htmlBody: body,
+        attachments: [blob]
+      });
+      
+      console.log("Ticket PDF sent successfully to " + data.email);
+    } catch (e) {
+      console.error("Failed to send email to " + data.email + ": " + e.toString());
+    }
   }
-}

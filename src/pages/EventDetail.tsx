@@ -99,98 +99,19 @@ export default function EventDetail_Page() {
     return `${displayH}:${formattedMinutes} ${ampm}`;
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-    setLoading(true);
-    setErrors({});
-    try {
-      // Check for duplicate registration before writing to Firestore or making Sheet API calls
-      const regsRef = collection(db, 'events', event.id, 'registrations');
-      const regsSnap = await getDocs(regsRef);
-      const inputEmail = formData.email.trim().toLowerCase();
-      const inputRoll = formData.rollNo.trim().toLowerCase();
-      
-      const isDuplicate = regsSnap.docs.some(docSnap => {
-        const d = docSnap.data();
-        const existingEmail = (d.email || '').trim().toLowerCase();
-        const existingRoll = (d.rollNo || '').trim().toLowerCase();
-        return existingEmail === inputEmail || existingRoll === inputRoll;
-      });
-
-      if (isDuplicate) {
-        setErrors({ submit: "You have already registered for this event with this Email ID or College Roll No." });
-        setLoading(false);
-        return;
-      }
-
-      const ticketId = `INF-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
-      const timestamp = serverTimestamp();
-      
-      const regData = {
-        studentName: formData.studentName,
-        rollNo: formData.rollNo,
-        email: formData.email,
-        phoneNo: formData.phoneNo,
-        course: formData.course,
-        otherCourse: formData.otherCourse,
-        year: formData.year,
-        collegeName: formData.collegeName,
-        isPartOfSociety: formData.isPartOfSociety,
-        societyDepartment: formData.societyDepartment,
-        availability: formData.availability,
-        eventId: event.id,
-        eventTitle: event.title,
-        ticketId: ticketId,
-        sheetId: event.sheetId,
-        attended: false,
-        createdAt: timestamp
-      };
-
-      // 1. Save to Google Sheet
-      const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
-      console.log("Apps Script Configured:", !!appsScriptUrl);
-      if (appsScriptUrl) {
-        try {
-          const payload = { 
-            ...regData, 
-            createdAt: new Date().toISOString() 
-          };
-          console.log("Sending registration to Apps Script:", payload);
-          
-          await fetch(appsScriptUrl, {
-            method: 'POST',
-            mode: 'no-cors',
-            headers: { 'Content-Type': 'text/plain' },
-            body: JSON.stringify(payload)
-          });
-          console.log("Sheet update request sent successfully");
-        } catch (sErr) {
-          console.error("Sheet error:", sErr);
-        }
-      }
-
-      // 2. Save to Firestore (Required for local scanner validation)
-      const regRef = doc(db, 'events', event.id, 'registrations', ticketId);
-      await setDoc(regRef, regData);
-
-      setRegistrationSuccess(regData);
-    } catch (err) {
-      console.error(err);
-      handleFirestoreError(err, OperationType.WRITE, `events/${event.id}/registrations`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const downloadTicket = async () => {
+  const generateTicketPdf = async (
+    ticketId: string,
+    studentName: string,
+    collegeName: string,
+    rollNo: string,
+    course: string,
+    otherCourse?: string
+  ) => {
     const doc = new jsPDF({
       orientation: 'p',
       unit: 'mm',
       format: 'a4'
     });
-    
-    const ticketId = registrationSuccess.ticketId;
     
     // Generate QR Code Data URL
     const qrDataUrl = await QRCode.toDataURL(ticketId, {
@@ -253,22 +174,23 @@ export default function EventDetail_Page() {
     doc.text('ATTENDEE NAME', 25, 120);
     doc.setTextColor(30, 41, 59);
     doc.setFontSize(11);
-    doc.text(registrationSuccess.studentName.toUpperCase(), 25, 127);
+    doc.text(studentName.toUpperCase(), 25, 127);
     
     doc.setTextColor(148, 163, 184);
     doc.text('INSTITUTION', 130, 120);
     doc.setTextColor(30, 41, 59);
-    doc.text(registrationSuccess.collegeName, 130, 127, { maxWidth: 55 });
+    doc.text(collegeName, 130, 127, { maxWidth: 55 });
     
     doc.setTextColor(148, 163, 184);
     doc.text('ROLL NUMBER', 25, 145);
     doc.setTextColor(30, 41, 59);
-    doc.text(registrationSuccess.rollNo, 25, 152);
+    doc.text(rollNo, 25, 152);
     
     doc.setTextColor(148, 163, 184);
     doc.text('DEPARTMENT/COURSE', 130, 145);
     doc.setTextColor(30, 41, 59);
-    doc.text(registrationSuccess.course, 130, 152);
+    const finalCourse = course === 'Others' ? (otherCourse || '') : course;
+    doc.text(finalCourse, 130, 152);
 
     // QR Code Section
     doc.setFillColor(248, 250, 252);
@@ -287,7 +209,126 @@ export default function EventDetail_Page() {
     doc.text('* Please present this QR Code at the registration desk on the event day.', 105, 270, { align: 'center' });
     doc.text('Unauthorized duplication or resale of this ticket is strictly prohibited.', 105, 275, { align: 'center' });
     
-    doc.save(`INFINITIUM_${event.title.replace(/\s+/g, '_')}_Ticket.pdf`);
+    return doc;
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validate()) return;
+    setLoading(true);
+    setErrors({});
+    try {
+      const ticketId = `INF-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+      
+      const regData = {
+        studentName: formData.studentName,
+        rollNo: formData.rollNo,
+        email: formData.email,
+        phoneNo: formData.phoneNo,
+        course: formData.course,
+        otherCourse: formData.otherCourse,
+        year: formData.year,
+        collegeName: formData.collegeName,
+        isPartOfSociety: formData.isPartOfSociety,
+        societyDepartment: formData.societyDepartment,
+        availability: formData.availability,
+        eventId: event.id,
+        eventTitle: event.title,
+        ticketId: ticketId,
+        sheetId: event.sheetId,
+        attended: false,
+        createdAt: new Date().toISOString()
+      };
+
+      // Generate the official ticket pass as a high-fidelity PDF instantly
+      let pdfBase64 = "";
+      try {
+        const docObj = await generateTicketPdf(
+          ticketId,
+          formData.studentName,
+          formData.collegeName,
+          formData.rollNo,
+          formData.course,
+          formData.otherCourse
+        );
+        const fullDataUri = docObj.output('datauristring');
+        const base64Index = fullDataUri.indexOf(';base64,');
+        if (base64Index !== -1) {
+          pdfBase64 = fullDataUri.substring(base64Index + 8);
+        } else {
+          pdfBase64 = btoa(docObj.output());
+        }
+      } catch (pdfErr) {
+        console.error("Failed to generate PDF ticket for email attachment:", pdfErr);
+      }
+
+      // Check for config
+      const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+      console.log("Apps Script Configured Url:", appsScriptUrl);
+      if (!appsScriptUrl) {
+        setErrors({ submit: "Registration failed: Apps Script URL is not configured. Please set VITE_APPS_SCRIPT_URL in your workspace properties." });
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const payload = { 
+          ...regData, 
+          pdfBase64: pdfBase64
+        };
+        console.log("Sending registration to Apps Script:", payload);
+        
+        const response = await fetch(appsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify(payload)
+        });
+        
+        const resultText = await response.text();
+        console.log("Apps Script response received:", resultText);
+        
+        if (resultText) {
+          if (resultText.includes("Duplicate Registration") || resultText.includes("already registered") || resultText.toLowerCase().includes("duplicate")) {
+            setErrors({ submit: "You have already registered for this event. This College Roll No. is already registered." });
+            setLoading(false);
+            return;
+          } else if (resultText.startsWith("Error:")) {
+            setErrors({ submit: `Sheet Error: ${resultText.replace("Error:", "").trim()}` });
+            setLoading(false);
+            return;
+          }
+        }
+        console.log("Sheet update request sent successfully and verified. Result:", resultText);
+      } catch (sErr) {
+        console.error("CORS, communication, or endpoint error from Apps Script webhook:", sErr);
+        setErrors({ submit: "Failed to connect to the spreadsheet server. Please try again or check the configured Webhook link." });
+        setLoading(false);
+        return;
+      }
+
+      setRegistrationSuccess(regData);
+    } catch (err: any) {
+      console.error(err);
+      setErrors({ submit: err?.message || "An unexpected registration error occurred." });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const downloadTicket = async () => {
+    try {
+      const docObj = await generateTicketPdf(
+        registrationSuccess.ticketId,
+        registrationSuccess.studentName,
+        registrationSuccess.collegeName,
+        registrationSuccess.rollNo,
+        registrationSuccess.course,
+        registrationSuccess.otherCourse
+      );
+      docObj.save(`INFINITIUM_${event.title.replace(/\s+/g, '_')}_Ticket.pdf`);
+    } catch (err) {
+      console.error("Failed to download ticket:", err);
+    }
   };
 
   const handleShare = async () => {
