@@ -30,7 +30,7 @@ const Card = ({ icon: Icon, title, text, delay }: any) => (
       <Icon className="w-7 h-7" />
     </div>
     <h3 className="text-lg md:text-xl font-black text-zinc-900 mb-3 tracking-tight uppercase break-words leading-tight">{title}</h3>
-    <p className="text-sm text-zinc-500 leading-relaxed font-medium break-words">{text}</p>
+    <p className="text-sm text-zinc-500 leading-relaxed font-medium break-words text-justify">{text}</p>
   </motion.div>
 );
 
@@ -53,7 +53,7 @@ const DepartmentCard = ({ icon: Icon, title, aim, tasks, delay }: any) => (
       <p className="text-[10px] text-brand-600 font-black uppercase tracking-[0.2em] mb-6 border-b border-brand-100 pb-2 inline-block break-words">Aim: {aim}</p>
       <ul className="space-y-3">
         {tasks.map((task: string, i: number) => (
-          <li key={i} className="flex gap-3 text-sm text-slate-500 leading-snug font-medium break-words">
+          <li key={i} className="flex gap-3 text-sm text-slate-500 leading-snug font-medium break-words text-justify">
             <span className="text-brand-600 font-bold">•</span> {task}
           </li>
         ))}
@@ -141,7 +141,7 @@ export default function About_Page() {
     <div className="py-16 md:py-24 px-6 md:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Hero Section */}
-        <div className="max-w-5xl mb-20 md:mb-32">
+        <div className="max-w-5xl mb-20 md:mb-32 mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -161,7 +161,7 @@ export default function About_Page() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="aspect-video md:aspect-[21/9] w-full bg-slate-100 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative mb-8 md:mb-12 shadow-2xl shadow-brand-600/10"
+              className="aspect-video md:aspect-[21/9] w-full max-w-4xl mx-auto bg-slate-100 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative mb-8 md:mb-12 shadow-2xl shadow-brand-600/10"
             >
               <img 
                 src={data.hero.image} 
@@ -171,7 +171,7 @@ export default function About_Page() {
               <div className="absolute inset-0 bg-brand-600/10 mix-blend-multiply" />
             </motion.div>
 
-            <p className="text-base md:text-xl text-slate-700 font-medium leading-relaxed max-w-4xl text-left">
+            <p className="text-base md:text-xl text-slate-700 font-medium leading-relaxed max-w-4xl mx-auto text-justify">
               {data.hero.paragraph}
             </p>
           </motion.div>
@@ -241,7 +241,7 @@ export default function About_Page() {
                     <div>
                       <h4 className="text-xl md:text-2xl font-black mb-2 uppercase tracking-tighter text-slate-900 leading-tight">{imp.title}</h4>
                       <p className="text-brand-600 text-[10px] md:text-xs font-black uppercase tracking-widest mb-3">{imp.text.split(' ')[0]} Impact</p>
-                      <p className="text-slate-500 text-sm leading-relaxed font-medium">{imp.text}</p>
+                      <p className="text-slate-500 text-sm leading-relaxed font-medium text-justify">{imp.text}</p>
                     </div>
                   </motion.div>
                  );
