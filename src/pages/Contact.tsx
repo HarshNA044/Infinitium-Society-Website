@@ -59,11 +59,11 @@ export default function Contact_Page() {
   );
 
   return (
-    <div className="py-24 px-4 bg-brand-50/30 min-h-screen">
+    <div className="pt-10 pb-24 px-4 bg-brand-50/30 min-h-screen">
       <div className="max-w-7xl mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-start">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-zinc-900 mb-8 leading-none uppercase">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black tracking-tighter text-zinc-900 mb-4 leading-none uppercase">
               Let's build <br />
               <span className="text-brand-600 font-sans not-italic tracking-widest">the future</span> <br />
               together.

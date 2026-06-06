@@ -218,14 +218,14 @@ export default function Events_Page() {
   const filteredEvents = events.filter((e: any) => filter === 'All' || e.type === filter);
 
   return (
-    <div className="py-20 px-4 min-h-screen bg-[#fcfcfc]">
+    <div className="pt-10 pb-20 px-4 min-h-screen bg-[#fcfcfc]">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-20 flex flex-col md:flex-row justify-between items-start gap-6">
+        <header className="mb-10 flex flex-col md:flex-row justify-between items-start gap-6">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
               <Calendar className="w-3 h-3" /> Schedule
             </div>
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-8 uppercase text-left">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-4 uppercase text-left">
               Events & <br /> <span className="text-brand-600">Archive</span>
             </h1>
           </div>

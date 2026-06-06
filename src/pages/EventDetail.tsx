@@ -386,7 +386,7 @@ export default function EventDetail_Page() {
                   {event.status}
                 </span>
              </div>
-             <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tighter leading-none uppercase mb-8">
+             <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tighter leading-none uppercase mb-4">
                {event.title}
              </h1>
           </div>
@@ -394,7 +394,7 @@ export default function EventDetail_Page() {
       </div>
 
       {/* Content Section */}
-      <div className="max-w-4xl mx-auto px-8 py-20">
+      <div className="max-w-4xl mx-auto px-8 py-10 md:py-12">
         <div className="space-y-12">
             <div>
                <h2 className="text-xl md:text-2xl font-black tracking-tighter uppercase text-slate-900 mb-2">

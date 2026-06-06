@@ -171,7 +171,7 @@ export default function About_Page() {
   }
 
   return (
-    <div className="py-16 md:py-24 px-6 md:px-8 bg-white">
+    <div className="pt-10 md:pt-12 pb-16 md:pb-24 px-6 md:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Hero Section */}
         <div className="max-w-7xl mb-20 md:mb-32 mx-auto">
@@ -180,11 +180,11 @@ export default function About_Page() {
             animate={{ opacity: 1, y: 0 }}
             className="flex flex-col"
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 md:mb-8 border border-brand-100 self-start">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-brand-100 self-start">
               <Users className="w-3 h-3" /> About INFINITIUM
             </div>
             
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none uppercase mb-8 md:mb-12 text-left">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none uppercase mb-4 md:mb-6 text-left">
               {data.hero.title === "IGNITING CURIOSITY & FOSTERING EXCELLENCE" ? (
                 <>IGNITING <br /> <span className="text-brand-600">CURIOSITY</span> <br /> & FOSTERING <br /> EXCELLENCE</>
               ) : data.hero.title}

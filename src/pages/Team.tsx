@@ -37,17 +37,17 @@ export default function Team_Page() {
   const filteredMembers = allMembers.filter((m: any) => m.tenure === tenure);
 
   return (
-    <div className="py-24 px-4 bg-white min-h-screen">
+    <div className="pt-10 pb-24 px-4 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col lg:flex-row gap-12">
+        <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
           <aside className="lg:w-72 flex-shrink-0">
-             <div className="sticky top-32 space-y-10">
+             <div className="sticky top-32 space-y-6">
                 <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-brand-100">
                     <Users className="w-3 h-3" /> Core Team
                   </div>
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase mb-6 text-left">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase mb-4 text-left">
                     The Minds Behind <br /> <span className="text-brand-600">INFINITIUM</span>
                   </h1>
                 </div>
@@ -70,9 +70,7 @@ export default function Team_Page() {
                          <Users className="w-4 h-4" />
                       </div>
                    </div>
-                   <p className="mt-4 text-[9px] text-slate-400 font-bold leading-relaxed px-1">
-                      Explore the legacy of INFINITIUM through its past and present core members.
-                   </p>
+
                 </div>
              </div>
           </aside>

@@ -83,11 +83,11 @@ export default function Feedback_Page() {
   };
 
   return (
-    <div className="py-24 px-4 bg-white min-h-screen">
+    <div className="pt-10 pb-24 px-4 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-24">
         {/* Feedback Area */}
         <div>
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-8 uppercase text-left">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-4 uppercase text-left">
               Feedback & <br /> <span className="text-brand-600">Ideas</span>
             </h1>
 

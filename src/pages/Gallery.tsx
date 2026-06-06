@@ -27,11 +27,11 @@ export default function Gallery_Page() {
   }, []);
 
   return (
-    <div className="py-24 px-4 bg-white">
+    <div className="pt-10 pb-24 px-4 bg-white">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-24 flex flex-col md:flex-row justify-between items-start gap-6">
+        <header className="mb-10 flex flex-col md:flex-row justify-between items-start gap-6">
           <div className="max-w-2xl">
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-8 uppercase text-left">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-4 uppercase text-left">
               Moments <br /> <span className="text-brand-600">Captured</span>
             </h1>
           </div>
