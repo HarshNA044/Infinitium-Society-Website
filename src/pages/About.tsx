@@ -141,7 +141,7 @@ export default function About_Page() {
     <div className="py-16 md:py-24 px-6 md:px-8 bg-white">
       <div className="max-w-7xl mx-auto">
         {/* Hero Section */}
-        <div className="max-w-5xl mb-20 md:mb-32 mx-auto">
+        <div className="max-w-7xl mb-20 md:mb-32 mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
@@ -161,7 +161,7 @@ export default function About_Page() {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.2 }}
-              className="aspect-video md:aspect-[21/9] w-full max-w-4xl mx-auto bg-slate-100 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative mb-8 md:mb-12 shadow-2xl shadow-brand-600/10"
+              className="aspect-video md:aspect-[21/9] w-full max-w-7xl mx-auto bg-slate-100 rounded-2xl md:rounded-[2.5rem] overflow-hidden relative mb-8 md:mb-12 shadow-2xl shadow-brand-600/10"
             >
               <img 
                 src={data.hero.image} 
@@ -171,7 +171,7 @@ export default function About_Page() {
               <div className="absolute inset-0 bg-brand-600/10 mix-blend-multiply" />
             </motion.div>
 
-            <p className="text-base md:text-xl text-slate-700 font-medium leading-relaxed max-w-4xl mx-auto text-justify">
+            <p className="text-base md:text-xl text-slate-700 font-medium leading-relaxed max-w-7xl mx-auto text-justify">
               {data.hero.paragraph}
             </p>
           </motion.div>
