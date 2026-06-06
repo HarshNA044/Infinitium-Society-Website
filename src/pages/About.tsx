@@ -13,7 +13,7 @@ import { Link } from 'react-router-dom';
 
 const SectionTitle = ({ children, subtitle }: { children: React.ReactNode, subtitle?: string }) => (
   <div className="mb-10 md:mb-16">
-    <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 leading-[0.9]">{children}</h2>
+    <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 leading-tight md:leading-[1.1]">{children}</h2>
     {subtitle && <p className="text-[10px] md:text-sm font-bold text-brand-600 uppercase tracking-[0.3em] font-sans">{subtitle}</p>}
   </div>
 );
@@ -24,13 +24,13 @@ const Card = ({ icon: Icon, title, text, delay }: any) => (
     whileInView={{ opacity: 1, scale: 1 }}
     viewport={{ once: true }}
     transition={{ delay }}
-    className="p-8 bg-white border border-zinc-100 rounded-xl shadow-sm hover:shadow-xl hover:border-brand-100 transition-all group"
+    className="p-5 md:p-6 lg:p-8 bg-white border border-zinc-100 rounded-xl shadow-sm hover:shadow-xl hover:border-brand-100 transition-all group"
   >
     <div className="w-14 h-14 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
       <Icon className="w-7 h-7" />
     </div>
-    <h3 className="text-xl font-black text-zinc-900 mb-3 tracking-tight uppercase">{title}</h3>
-    <p className="text-sm text-zinc-500 leading-relaxed font-medium">{text}</p>
+    <h3 className="text-lg md:text-xl font-black text-zinc-900 mb-3 tracking-tight uppercase break-words leading-tight">{title}</h3>
+    <p className="text-sm text-zinc-500 leading-relaxed font-medium break-words">{text}</p>
   </motion.div>
 );
 
@@ -40,20 +40,20 @@ const DepartmentCard = ({ icon: Icon, title, aim, tasks, delay }: any) => (
     whileInView={{ opacity: 1, y: 0 }}
     viewport={{ once: true }}
     transition={{ delay }}
-    className="p-8 bg-white text-slate-950 rounded-2xl relative overflow-hidden border border-slate-100 shadow-sm h-full flex flex-col"
+    className="p-5 md:p-6 lg:p-8 bg-white text-slate-950 rounded-2xl relative overflow-hidden border border-slate-100 shadow-sm h-full flex flex-col"
   >
-    <div className="absolute top-0 right-0 p-8 opacity-5">
-      <Icon className="w-32 h-32 text-brand-600" />
+    <div className="absolute top-0 right-0 p-4 md:p-6 lg:p-8 opacity-5">
+      <Icon className="w-24 h-24 md:w-32 md:h-32 text-brand-600" />
     </div>
     <div className="relative z-10">
       <div className="w-12 h-12 bg-brand-50 text-brand-600 rounded-xl flex items-center justify-center mb-6 border border-brand-100 font-black">
         <Icon className="w-6 h-6" />
       </div>
-      <h3 className="text-2xl font-black mb-4 tracking-tighter uppercase text-slate-900">{title} Department</h3>
-      <p className="text-[10px] text-brand-600 font-black uppercase tracking-[0.2em] mb-6 border-b border-brand-100 pb-2 inline-block">Aim: {aim}</p>
+      <h3 className="text-xl md:text-2xl font-black mb-4 tracking-tighter uppercase text-slate-900 break-words leading-tight">{title} Department</h3>
+      <p className="text-[10px] text-brand-600 font-black uppercase tracking-[0.2em] mb-6 border-b border-brand-100 pb-2 inline-block break-words">Aim: {aim}</p>
       <ul className="space-y-3">
         {tasks.map((task: string, i: number) => (
-          <li key={i} className="flex gap-3 text-sm text-slate-500 leading-snug font-medium">
+          <li key={i} className="flex gap-3 text-sm text-slate-500 leading-snug font-medium break-words">
             <span className="text-brand-600 font-bold">•</span> {task}
           </li>
         ))}
@@ -151,7 +151,7 @@ export default function About_Page() {
               <Users className="w-3 h-3" /> About INFINITIUM
             </div>
             
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] uppercase mb-8 md:mb-12 text-left">
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.95] md:leading-none uppercase mb-8 md:mb-12 text-left">
               {data.hero.title === "IGNITING CURIOSITY & FOSTERING EXCELLENCE" ? (
                 <>IGNITING <br /> <span className="text-brand-600">CURIOSITY</span> <br /> & FOSTERING <br /> EXCELLENCE</>
               ) : data.hero.title}
@@ -171,7 +171,7 @@ export default function About_Page() {
               <div className="absolute inset-0 bg-brand-600/10 mix-blend-multiply" />
             </motion.div>
 
-            <p className="text-base md:text-xl text-slate-700 font-medium leading-relaxed max-w-4xl text-justify">
+            <p className="text-base md:text-xl text-slate-700 font-medium leading-relaxed max-w-4xl text-left">
               {data.hero.paragraph}
             </p>
           </motion.div>
