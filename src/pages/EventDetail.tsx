@@ -386,7 +386,7 @@ export default function EventDetail_Page() {
                   {event.status}
                 </span>
              </div>
-             <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-white tracking-tighter leading-none uppercase mb-8">
+             <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tighter leading-none uppercase mb-8">
                {event.title}
              </h1>
           </div>

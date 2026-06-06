@@ -47,12 +47,9 @@ export default function Team_Page() {
                   <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
                     <Users className="w-3 h-3" /> Core Team
                   </div>
-                  <h1 className="text-4xl font-black text-slate-900 tracking-tighter leading-[0.85] uppercase mb-6 text-left">
+                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase mb-6 text-left">
                     The Minds Behind <br /> <span className="text-brand-600">INFINITIUM</span>
                   </h1>
-                  <p className="text-slate-500 font-medium text-xs leading-relaxed uppercase tracking-widest">
-                    Dedicated student leaders building the future of ARSD College.
-                  </p>
                 </div>
 
                 <div className="p-8 bg-zinc-50 rounded-xl border border-zinc-100 shadow-sm transition-all hover:shadow-xl hover:shadow-brand-600/5">

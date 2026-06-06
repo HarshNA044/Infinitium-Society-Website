@@ -12,10 +12,9 @@ import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
 
-const SectionTitle = ({ children, subtitle }: { children: React.ReactNode, subtitle?: string }) => (
+const SectionTitle = ({ children }: { children: React.ReactNode, subtitle?: string }) => (
   <div className="mb-10 md:mb-16">
     <h2 className="text-3xl md:text-5xl font-black text-slate-900 tracking-tighter uppercase mb-2 leading-tight md:leading-[1.1]">{children}</h2>
-    {subtitle && <p className="text-[10px] md:text-sm font-bold text-brand-600 uppercase tracking-[0.3em] font-sans">{subtitle}</p>}
   </div>
 );
 
@@ -185,7 +184,7 @@ export default function About_Page() {
               <Users className="w-3 h-3" /> About INFINITIUM
             </div>
             
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.95] md:leading-none uppercase mb-8 md:mb-12 text-left">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none uppercase mb-8 md:mb-12 text-left">
               {data.hero.title === "IGNITING CURIOSITY & FOSTERING EXCELLENCE" ? (
                 <>IGNITING <br /> <span className="text-brand-600">CURIOSITY</span> <br /> & FOSTERING <br /> EXCELLENCE</>
               ) : data.hero.title}

@@ -220,18 +220,15 @@ export default function Events_Page() {
   return (
     <div className="py-20 px-4 min-h-screen bg-[#fcfcfc]">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-20 flex flex-col md:flex-row justify-between items-end gap-6">
+        <header className="mb-20 flex flex-col md:flex-row justify-between items-start gap-6">
           <div className="max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-6 border border-brand-100">
               <Calendar className="w-3 h-3" /> Schedule
             </div>
-            <h1 className="text-4xl sm:text-6xl md:text-8xl font-black text-slate-900 tracking-tighter leading-[0.85] mb-8 uppercase text-left">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-8 uppercase text-left">
               Events & <br /> <span className="text-brand-600">Archive</span>
             </h1>
           </div>
-          <p className="text-slate-500 font-medium max-w-xs text-sm leading-relaxed uppercase tracking-widest text-right">
-            Broaden your horizons with our planned seminars and vibrant fests.
-          </p>
         </header>
 
         {/* Filters */}

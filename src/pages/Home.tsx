@@ -169,7 +169,7 @@ export default function Home_Page() {
               <Zap className="w-64 h-64 text-brand-600" />
             </div>
             
-            <h2 className="text-4xl sm:text-6xl md:text-8xl font-black mb-8 leading-[0.9] tracking-tighter uppercase italic">
+            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black mb-8 leading-[0.9] tracking-tighter uppercase italic">
               INFINITIUM <br /> <span className="text-brand-600">INSPIRING</span> <br /> INNOVATION
             </h2>
 
