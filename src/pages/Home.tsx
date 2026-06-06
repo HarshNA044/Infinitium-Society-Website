@@ -173,7 +173,7 @@ export default function Home_Page() {
               <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tighter uppercase leading-none text-slate-950">
                 INFINITIUM
               </h1>
-              <p className="whitespace-nowrap text-[9px] min-[360px]:text-[10px] min-[400px]:text-[11px] sm:text-xl md:text-2xl font-black text-brand-600 uppercase tracking-[0.24em] sm:tracking-[0.26em] md:tracking-[0.28em] leading-none mt-2 mr-[-0.28em]">
+              <p className="whitespace-nowrap text-lg sm:text-3xl md:text-4xl font-black text-brand-600 uppercase tracking-tighter leading-none mt-2">
                 INSPIRING INNOVATION
               </p>
             </div>
@@ -386,17 +386,19 @@ export default function Home_Page() {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="md:col-span-4 md:row-span-4 bg-white rounded-2xl p-8 text-slate-950 flex flex-col justify-between relative overflow-hidden border border-slate-100 shadow-sm"
+          className="md:col-span-4 md:row-span-4 bg-white rounded-2xl p-8 text-slate-950 flex flex-col justify-between items-center text-center relative overflow-hidden border border-slate-100 shadow-sm"
         >
-          <div className="absolute top-6 left-6">
+          <div className="absolute top-6 left-1/2 -translate-x-1/2">
              <span className="text-[9px] font-black uppercase text-slate-400 tracking-[0.3em]">Our Legacy</span>
           </div>
-          <div className="mt-8 text-center sm:text-left">
-            <Trophy className="w-16 h-16 text-brand-600 mb-6 mx-auto sm:mx-0" />
+          <div className="mt-10 flex flex-col items-center">
+            <Trophy className="w-16 h-16 text-brand-600 mb-6 mx-auto" />
             <h4 className="text-2xl font-black mb-2 tracking-tighter uppercase">{latestAchievement?.title || "Recent Win"}</h4>
-            <p className="text-xs text-slate-400 mb-8 leading-relaxed uppercase font-bold tracking-widest">
-              {latestAchievement?.description || "Empowering the next generation of scientific leaders."}
-            </p>
+            {(!latestAchievement?.description || latestAchievement?.description.trim().toLowerCase() !== latestAchievement?.title?.trim().toLowerCase()) && (
+              <p className="text-xs text-slate-400 mb-8 leading-relaxed uppercase font-bold tracking-widest max-w-xs mx-auto">
+                {latestAchievement?.description || "Empowering the next generation of scientific leaders."}
+              </p>
+            )}
           </div>
           <Link 
             to="/achievements"

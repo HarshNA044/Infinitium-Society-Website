@@ -46,16 +46,16 @@ export default function Achievements_Page() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="bento-card group hover:shadow-2xl hover:shadow-brand-600/5 transition-all"
+              className="bento-card group hover:shadow-2xl hover:shadow-brand-600/5 transition-all flex flex-col items-center text-center p-8 relative"
             >
-              <div className="flex justify-between items-start mb-6">
-                <div className="w-12 h-12 bg-brand-50 text-brand-500 rounded-xl flex items-center justify-center border border-brand-100 group-hover:scale-110 transition-transform">
-                  <Trophy className="w-6 h-6 text-brand-600" />
-                </div>
-                <span className="text-[10px] bento-tag bg-slate-100 text-slate-500 font-black">{item.date}</span>
+              <span className="absolute top-4 right-4 text-[10px] bento-tag bg-slate-100 text-slate-500 font-black px-2 py-1 rounded">{item.date}</span>
+              <div className="w-12 h-12 bg-brand-50 text-brand-500 rounded-xl flex items-center justify-center border border-brand-100 group-hover:scale-110 transition-transform mb-4 mt-2">
+                <Trophy className="w-6 h-6 text-brand-600" />
               </div>
-              <h3 className="text-xl font-black text-slate-900 group-hover:text-brand-600 transition-colors uppercase tracking-tighter">{item.title}</h3>
-              <p className="mt-4 text-xs text-slate-500 font-medium leading-relaxed">{item.description}</p>
+              <h3 className="text-xl font-black text-slate-900 group-hover:text-brand-600 transition-colors uppercase tracking-tighter mb-2">{item.title}</h3>
+              {item.description && item.description.trim().toLowerCase() !== item.title?.trim().toLowerCase() && (
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">{item.description}</p>
+              )}
             </motion.div>
           ))}
         </div>
