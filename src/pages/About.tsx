@@ -5,7 +5,8 @@ import {
   Search, Handshake, Microscope, MessageSquare,
   BookOpen, Edit3, Monitor, Calendar, Megaphone, DollarSign,
   TrendingUp, Award, UserPlus, Globe, Trophy,
-  Shield, Heart, Zap, Sparkles, Cpu, FileText
+  Shield, Heart, Zap, Sparkles, Cpu, FileText,
+  Atom, Beaker, Terminal, Network
 } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -24,13 +25,46 @@ const Card = ({ icon: Icon, title, text, delay }: any) => (
     whileInView={{ opacity: 1, scale: 1 }}
     viewport={{ once: true }}
     transition={{ delay }}
-    className="p-5 md:p-6 lg:p-8 bg-white border border-zinc-100 rounded-xl shadow-sm hover:shadow-xl hover:border-brand-100 transition-all group"
+    className="p-5 md:p-6 lg:p-8 bg-white border border-zinc-100 rounded-xl shadow-sm hover:shadow-xl hover:border-brand-100 transition-all group animate-none"
   >
     <div className="w-14 h-14 bg-brand-50 text-brand-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
       <Icon className="w-7 h-7" />
     </div>
     <h3 className="text-lg md:text-xl font-black text-zinc-900 mb-3 tracking-tight uppercase break-words leading-tight">{title}</h3>
     <p className="text-sm text-zinc-500 leading-relaxed font-medium break-words text-justify">{text}</p>
+  </motion.div>
+);
+
+const DomainCard = ({ icon: Icon, title, text, delay, colorClasses }: any) => (
+  <motion.div
+    initial={{ opacity: 0, y: 30 }}
+    whileInView={{ opacity: 1, y: 0 }}
+    viewport={{ once: true }}
+    transition={{ delay, duration: 0.4, ease: "easeOut" }}
+    className="p-6 md:p-8 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-2xl hover:border-transparent hover:shadow-brand-500/5 transition-all duration-300 relative overflow-hidden group flex flex-col justify-between h-full min-h-[280px]"
+  >
+    {/* Background interactive gradient glow */}
+    <div className={`absolute -right-12 -top-12 w-28 h-28 rounded-full blur-2xl opacity-0 group-hover:opacity-10 transition-all duration-500 ${colorClasses.glow}`} />
+    
+    <div>
+      {/* Icon Frame */}
+      <div className={`w-14 h-14 ${colorClasses.bg} ${colorClasses.text} rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 border ${colorClasses.border} shadow-sm`}>
+        <Icon className="w-7 h-7" />
+      </div>
+      
+      {/* Title */}
+      <h3 className="text-xl font-black text-slate-900 mb-3 tracking-tight uppercase break-words leading-tight">
+        {title}
+      </h3>
+      
+      {/* Paragraph text with alignment fixed */}
+      <p className="text-sm text-slate-500 leading-relaxed font-semibold break-words text-justify">
+        {text}
+      </p>
+    </div>
+
+    {/* Bottom Accent Highlight Bar */}
+    <div className={`w-12 h-1 mt-6 rounded-full group-hover:w-full transition-all duration-500 ${colorClasses.lineBg}`} />
   </motion.div>
 );
 
@@ -171,7 +205,7 @@ export default function About_Page() {
               <div className="absolute inset-0 bg-brand-600/10 mix-blend-multiply" />
             </motion.div>
 
-            <p className="text-base md:text-xl text-slate-700 font-medium leading-relaxed max-w-7xl mx-auto text-justify">
+            <p className="text-sm md:text-base lg:text-lg text-slate-600 font-normal leading-relaxed max-w-7xl mx-auto text-justify">
               {data.hero.paragraph}
             </p>
           </motion.div>
@@ -180,19 +214,75 @@ export default function About_Page() {
         {/* Scientific Domains Section */}
         <section className="mb-20 md:mb-32">
           <SectionTitle subtitle="Our core domains">Explore Our Scientific Domains</SectionTitle>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-5 md:gap-6">
             {[
-              { title: 'Physics', text: 'Understanding the fundamental laws governing the universe.', icon: Microscope },
-              { title: 'Chemistry', text: 'Exploring matter, materials, reactions, and modern applications.', icon: Search },
-              { title: 'Computer Science', text: 'Bridging logic, computation, AI, and data-driven technologies.', icon: Monitor },
-              { title: 'Electronics', text: 'Innovating with circuits, embedded systems, and smart technologies.', icon: Target },
-              { title: 'Interdisciplinary Sciences', text: 'Connecting multiple scientific domains to solve real-world problems.', icon: Handshake }
+              { 
+                title: 'Physics', 
+                text: 'Understanding the fundamental laws governing the universe.', 
+                icon: Atom,
+                colorClasses: {
+                  glow: "bg-violet-500",
+                  bg: "bg-violet-50 group-hover:bg-violet-100/70",
+                  text: "text-violet-600",
+                  border: "border-violet-100 group-hover:border-violet-200",
+                  lineBg: "bg-gradient-to-r from-violet-500 to-fuchsia-500"
+                }
+              },
+              { 
+                title: 'Chemistry', 
+                text: 'Exploring matter, materials, reactions, and modern applications.', 
+                icon: Beaker,
+                colorClasses: {
+                  glow: "bg-emerald-500",
+                  bg: "bg-emerald-50 group-hover:bg-emerald-100/70",
+                  text: "text-emerald-600",
+                  border: "border-emerald-100 group-hover:border-emerald-200",
+                  lineBg: "bg-gradient-to-r from-emerald-500 to-teal-500"
+                }
+              },
+              { 
+                title: 'Computer Science', 
+                text: 'Bridging logic, computation, AI, and data-driven technologies.', 
+                icon: Terminal,
+                colorClasses: {
+                  glow: "bg-blue-500",
+                  bg: "bg-blue-50 group-hover:bg-blue-100/70",
+                  text: "text-blue-600",
+                  border: "border-blue-100 group-hover:border-blue-200",
+                  lineBg: "bg-gradient-to-r from-blue-500 to-indigo-500"
+                }
+              },
+              { 
+                title: 'Electronics', 
+                text: 'Innovating with circuits, embedded systems, and smart technologies.', 
+                icon: Cpu,
+                colorClasses: {
+                  glow: "bg-amber-500",
+                  bg: "bg-amber-50 group-hover:bg-amber-100/70",
+                  text: "text-amber-600",
+                  border: "border-amber-100 group-hover:border-amber-200",
+                  lineBg: "bg-gradient-to-r from-amber-500 to-orange-500"
+                }
+              },
+              { 
+                title: 'Interdisciplinary Sciences', 
+                text: 'Connecting multiple scientific domains to solve real-world problems.', 
+                icon: Network,
+                colorClasses: {
+                  glow: "bg-cyan-500",
+                  bg: "bg-cyan-50 group-hover:bg-cyan-100/70",
+                  text: "text-cyan-600",
+                  border: "border-cyan-100 group-hover:border-cyan-200",
+                  lineBg: "bg-gradient-to-r from-cyan-500 to-sky-500"
+                }
+              }
             ].map((domain, i) => (
-              <Card 
+              <DomainCard 
                 key={i}
                 icon={domain.icon} 
                 title={domain.title} 
                 text={domain.text}
+                colorClasses={domain.colorClasses}
                 delay={0.1 * (i + 1)}
               />
             ))}
