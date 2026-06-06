@@ -112,7 +112,7 @@ export default function Home_Page() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-12 md:row-span-4 bg-white/90 backdrop-blur-xl rounded-2xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-2xl shadow-brand-500/15 hover:shadow-brand-500/20 transition-all duration-500 group border border-white/50 transform-gpu"
+          className="md:col-span-12 md:row-span-4 bg-white/90 backdrop-blur-xl rounded-2xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-[0_0_50px_rgba(20,184,166,0.15)] hover:shadow-[0_0_60px_rgba(20,184,166,0.22)] transition-all duration-500 group border border-white/50 transform-gpu"
         >
           {/* Decorative Background Elements - Optimized for performance */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -165,15 +165,15 @@ export default function Home_Page() {
           </div>
 
           <div className="relative z-10">
-            <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
+            <div className="absolute top-0 right-8 md:right-16 p-8 opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
               <Zap className="w-64 h-64 text-brand-600" />
             </div>
             
             <div className="mb-6 flex flex-col items-start select-none">
-              <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter uppercase leading-none text-slate-950">
+              <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tighter uppercase leading-none text-slate-950">
                 INFINITIUM
               </h1>
-              <p className="text-base sm:text-2xl md:text-3xl font-black text-brand-600 uppercase tracking-[0.25em] sm:tracking-[0.27em] md:tracking-[0.29em] leading-none mt-2 mr-[-0.29em]">
+              <p className="whitespace-nowrap text-[9px] min-[360px]:text-[10px] min-[400px]:text-[11px] sm:text-xl md:text-2xl font-black text-brand-600 uppercase tracking-[0.24em] sm:tracking-[0.26em] md:tracking-[0.28em] leading-none mt-2 mr-[-0.28em]">
                 INSPIRING INNOVATION
               </p>
             </div>
