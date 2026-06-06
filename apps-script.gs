@@ -171,6 +171,7 @@ function sendRegistrationEmail(data) {
   try {
     var blob;
     var fileName = "Ticket_" + (data.ticketId || "Entry") + ".pdf";
+    var qrCodeUrl = "https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=" + encodeURIComponent(data.ticketId || "");
     
     if (data.pdfBase64) {
       // Decode high-fidelity client-generated PDF
@@ -184,7 +185,6 @@ function sendRegistrationEmail(data) {
       console.log("Using client-provided high-fidelity PDF.");
     } else {
       // Fallback ticket layout with INFINITIUM / ARSD College branding
-      var qrCodeUrl = "https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=" + encodeURIComponent(data.ticketId);
       
       // Create HTML for PDF (Professional Ticket Design)
       var pdfHtml = '<!DOCTYPE html><html><head><style>' +
@@ -243,7 +243,12 @@ function sendRegistrationEmail(data) {
                  '      <p style="margin: 0; font-size: 15px;"><strong>Event:</strong> ' + data.eventTitle + '</p>' +
                  '      <p style="margin: 5px 0 0 0; font-size: 13px; color: #64748b;"><strong>Ticket ID:</strong> ' + data.ticketId + '</p>' +
                  '    </div>' +
-                 '    <p><strong>Your official entry pass is attached to this email as a PDF ticket.</strong> Please have this PDF file or its printed version handy at the venue registration desk for smooth check-in.</p>' +
+                 '    <div style="text-align: center; margin: 25px 0; padding: 15px; border: 1px dashed #14b8a6; border-radius: 8px; background-color: #f8fafc;">' +
+                 '      <p style="margin: 0 0 10px 0; font-size: 13px; color: #0d9488; font-weight: bold; letter-spacing: 0.5px;">YOUR ENTRY QR CODE</p>' +
+                 '      <img src="' + qrCodeUrl + '" width="150" height="150" style="display: block; margin: 0 auto; border: 4px solid white; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);" />' +
+                 '      <p style="font-size: 11px; color: #64748b; margin: 10px 0 0 0; font-weight: bold; letter-spacing: 1px; text-transform: uppercase;">SCAN FOR ENTRY</p>' +
+                 '    </div>' +
+                 '    <p><strong>Your official entry pass is also attached to this email as a PDF ticket.</strong> Please have this PDF file or its printed version handy at the venue registration desk for smooth check-in.</p>' +
                  '    <p>We look forward to seeing you there!</p>' +
                  '    <p style="margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 20px;">' +
                  '      Warm regards,<br/>' +
