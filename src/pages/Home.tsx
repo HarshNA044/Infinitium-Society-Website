@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { 
   ArrowRight, Calendar, Users, Trophy, ChevronRight, Zap, Star, 
   Plus, QrCode as QrIcon, Lightbulb, Book, MessageSquare, Globe2,
-  Cpu, TestTube2, Monitor, MapPin, Share2
+  Cpu, TestTube2, Monitor, MapPin, Share2, UserCheck
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
@@ -112,7 +112,7 @@ export default function Home_Page() {
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-12 md:row-span-4 bg-white/90 backdrop-blur-xl rounded-2xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-xl shadow-brand-500/5 group border border-white/50 transform-gpu"
+          className="md:col-span-12 md:row-span-4 bg-white/90 backdrop-blur-xl rounded-2xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-2xl shadow-brand-500/15 hover:shadow-brand-500/20 transition-all duration-500 group border border-white/50 transform-gpu"
         >
           {/* Decorative Background Elements - Optimized for performance */}
           <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
@@ -169,16 +169,20 @@ export default function Home_Page() {
               <Zap className="w-64 h-64 text-brand-600" />
             </div>
             
-            <h2 className="text-3xl sm:text-5xl md:text-6xl font-black mb-4 leading-[0.9] tracking-tighter uppercase italic">
-              INFINITIUM <br /> <span className="text-brand-600">INSPIRING</span> <br /> INNOVATION
-            </h2>
+            <div className="mb-6 flex flex-col items-start select-none">
+              <h1 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tighter uppercase leading-none text-slate-950">
+                INFINITIUM
+              </h1>
+              <p className="text-base sm:text-2xl md:text-3xl font-black text-brand-600 uppercase tracking-[0.25em] sm:tracking-[0.27em] md:tracking-[0.29em] leading-none mt-2 mr-[-0.29em]">
+                INSPIRING INNOVATION
+              </p>
+            </div>
 
             <div className="flex flex-wrap gap-6 md:gap-8 items-center mt-4 pt-8 border-t border-slate-900/5">
               <div className="flex flex-col max-w-lg">
                 <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Legacy of ARSD College</span>
-                <p className="text-xs md:text-sm font-medium text-slate-500 leading-relaxed uppercase tracking-tight text-left">
-                  INFINITIUM stands as the premier scientific hub of Atma Ram Sanatan Dharma College, 
-                  unifying curiosity and academic rigor to shape the next generation of pioneers.
+                <p className="text-xs md:text-sm font-medium text-slate-600 leading-relaxed tracking-tight text-left">
+                  INFINITIUM stands as the premier scientific hub of Physical Sciences at ARSD College, bringing together students from Chemistry, Computer Science, Electronics, and Applied Sciences to foster innovation, research, creativity, and scientific thinking.
                 </p>
               </div>
               <Link 
@@ -197,25 +201,27 @@ export default function Home_Page() {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="md:col-span-12 md:row-span-1 bg-amber-400 rounded-2xl border border-amber-500 p-6 flex items-center justify-between hover:scale-[1.01] transition-transform cursor-pointer"
-          onClick={() => window.scrollTo({ top: document.getElementById('events-section')?.offsetTop || 0, behavior: 'smooth' })}
+          className="md:col-span-12 md:row-span-1"
         >
-          <div className="flex flex-col">
-            <h4 className="font-black text-amber-950 uppercase text-lg tracking-tighter leading-none">Quick Register</h4>
-            <p className="text-[9px] text-amber-900 font-bold uppercase leading-none opacity-70 mt-1">Join upcoming events instantly and be part of the innovation</p>
-          </div>
-          <div className="flex items-center gap-4">
-             <div className="flex -space-x-2">
-                {[1,2,3,4].map(i => (
-                  <div key={i} className="w-8 h-8 rounded-full border-2 border-amber-400 bg-amber-200 flex items-center justify-center text-[10px] font-black text-amber-800">
-                    {String.fromCharCode(64 + i)}
-                  </div>
-                ))}
-             </div>
-             <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-lg shadow-amber-950/10">
-               <Plus className="w-6 h-6" />
-             </div>
-          </div>
+          <Link 
+            to="/contact"
+            className="bg-amber-400 rounded-2xl border border-amber-500 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:scale-[1.01] transition-transform cursor-pointer block hover:shadow-lg hover:shadow-amber-500/10"
+          >
+            <div className="flex flex-col">
+              <h4 className="font-black text-amber-950 uppercase text-lg tracking-tighter leading-none">Quick Register</h4>
+              <p className="text-xs sm:text-sm text-amber-900 font-bold uppercase leading-tight mt-2 max-w-xl">
+                Become a proud member of a science focussed community for your growth.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+              <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center text-amber-950">
+                <UserCheck className="w-5 h-5" />
+              </div>
+              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-lg shadow-amber-950/10">
+                <ArrowRight className="w-5 h-5" />
+              </div>
+            </div>
+          </Link>
         </motion.div>
 
         {/* Ongoing & Recent Section (Span 12) */}
