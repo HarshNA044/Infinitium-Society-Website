@@ -176,14 +176,14 @@ export default function Home_Page() {
             <div className="flex flex-wrap gap-6 md:gap-8 items-center mt-4 pt-8 border-t border-slate-900/5">
               <div className="flex flex-col max-w-lg">
                 <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Legacy of ARSD College</span>
-                <p className="text-xs md:text-sm font-medium text-slate-500 leading-relaxed uppercase tracking-tight">
+                <p className="text-xs md:text-sm font-medium text-slate-500 leading-relaxed uppercase tracking-tight text-left">
                   INFINITIUM stands as the premier scientific hub of Atma Ram Sanatan Dharma College, 
                   unifying curiosity and academic rigor to shape the next generation of pioneers.
                 </p>
               </div>
               <Link 
                 to="/about"
-                className="w-full md:w-auto md:ml-auto bg-brand-600 text-white px-10 py-5 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all shadow-xl shadow-brand-600/20 active:scale-95 text-center"
+                className="w-full md:w-auto md:ml-auto bg-brand-600 text-white px-10 py-5 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all shadow-xl shadow-brand-600/20 active:scale-95 text-center cursor-pointer"
               >
                 Our Story
               </Link>
