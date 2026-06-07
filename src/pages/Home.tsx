@@ -158,7 +158,7 @@ export default function Home_Page() {
         
         {/* Centered Hero Navigation Links for Desktop/Tablet */}
         <div className="hidden md:flex items-center justify-center gap-8 py-8 w-full relative z-20 select-none border-b border-slate-100/50 backdrop-blur-sm bg-white/10">
-          {navItems.map((item) => (
+          {navItems.filter(item => item.name !== 'Home').map((item) => (
             <Link
               key={item.name}
               to={item.path}
