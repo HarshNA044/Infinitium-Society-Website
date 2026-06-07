@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { 
-  ArrowRight, Calendar, Users, Trophy, ChevronRight, Zap, Star, 
+  ArrowRight, Calendar, Users, Trophy, Zap, Star, 
   Plus, QrCode as QrIcon, Lightbulb, Book, MessageSquare, Globe2,
   Cpu, TestTube2, Monitor, MapPin, Share2, UserCheck
 } from 'lucide-react';
@@ -137,58 +137,54 @@ export default function Home_Page() {
   const latestAchievement = achievements[0];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:auto-rows-[minmax(80px,_auto)]">
+    <div className="w-full">
+      {/* Main Hero / Featured Event (100% width) with RetroGrid & Premium Aesthetics */}
+      <motion.div 
+        id="hero-section"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full relative overflow-hidden text-slate-950 flex flex-col justify-center border-b border-slate-100 transform-gpu py-20 md:py-28"
+      >
+        <RetroGrid opacity={0.35} lightLineColor="#e2e8f0" />
         
-        {/* Main Hero / Featured Event (Span 12x4) with RetroGrid & Premium Aesthetics */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-12 md:row-span-4 bg-white rounded-3xl relative overflow-hidden text-slate-950 flex flex-col justify-center shadow-lg border border-slate-100 transform-gpu py-12 md:py-16"
-        >
-          <RetroGrid opacity={0.35} lightLineColor="#e2e8f0" />
-          
-          <div className="relative z-10 px-6 sm:px-8 md:px-12 flex flex-col items-center text-center max-w-4xl mx-auto space-y-6">
-            {/* Title Badge representing Legacy */}
-            <h1 className="text-[10px] md:text-xs text-slate-600 group font-sans mx-auto px-5 py-2.5 bg-gradient-to-tr from-zinc-300/20 via-zinc-400/20 to-transparent border-[2.5px] border-black/5 rounded-3xl w-fit flex items-center justify-center gap-1 uppercase tracking-widest font-black">
-              Legacy of ARSD College
-              <ChevronRight className="inline w-3.5 h-3.5 ml-1 group-hover:translate-x-1 duration-300 transition-transform" />
-            </h1>
-
-            <div className="space-y-3">
-              {/* Main Typographic Heading */}
-              <h2 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight bg-clip-text text-transparent bg-[linear-gradient(180deg,#090d16,_#2d3748)] uppercase select-none leading-none">
-                INFINITIUM
-              </h2>
-              
-              {/* Tagline showing Inspiring Innovation, text size smaller than INFINITIUM */}
-              <span className="block text-xl sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-600 into-brand-500 to-teal-500 uppercase tracking-widest select-none font-sans leading-none">
-                INSPIRING INNOVATION
-              </span>
-            </div>
-
-            {/* Description Paragraph */}
-            <p className="max-w-2xl mx-auto text-slate-500 text-xs sm:text-sm font-semibold leading-relaxed tracking-normal">
-              INFINITIUM stands as the premier scientific hub of Physical Sciences at ARSD College, bringing together students from Chemistry, Computer Science, Electronics, and Applied Sciences to foster innovation, research, creativity, and scientific thinking.
-            </p>
-
-            {/* Action Call with Conic Laser Spinning Border */}
-            <div className="items-center justify-center gap-x-3 mt-4">
-              <span className="relative inline-block overflow-hidden rounded-full p-[1.5px]">
-                <span className="absolute inset-[-1000%] animate-[spin_5s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#ccfbf1_0%,#0d9488_50%,#ccfbf1_100%)]" />
-                <div className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-white text-xs font-semibold backdrop-blur-3xl">
-                  <Link
-                    to="/about"
-                    className="inline-flex rounded-full text-center group items-center w-full justify-center bg-gradient-to-tr from-zinc-300/10 via-brand-50/25 to-transparent text-slate-900 border-input border-[1px] hover:bg-gradient-to-tr hover:from-zinc-300/20 hover:via-brand-50/50 hover:to-transparent duration-300 py-3.5 px-10 uppercase font-black tracking-widest text-[11px]"
-                  >
-                    Our Story
-                    <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-0.5 duration-300 transition-transform" />
-                  </Link>
-                </div>
-              </span>
-            </div>
+        <div className="relative z-10 px-6 sm:px-8 md:px-12 flex flex-col items-center text-center max-w-4xl mx-auto space-y-8">
+          <div className="space-y-3">
+            {/* Main Typographic Heading */}
+            <h2 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight bg-clip-text text-transparent bg-[linear-gradient(180deg,#090d16,_#2d3748)] uppercase select-none leading-none">
+              INFINITIUM
+            </h2>
+            
+            {/* Tagline showing Inspiring Innovation, text size smaller than INFINITIUM */}
+            <span className="block text-xl sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-600 into-brand-500 to-teal-500 uppercase tracking-widest select-none font-sans leading-none">
+              INSPIRING INNOVATION
+            </span>
           </div>
-        </motion.div>
+
+          {/* Description Paragraph */}
+          <p className="max-w-2xl mx-auto text-slate-500 text-xs sm:text-sm font-semibold leading-relaxed tracking-normal">
+            INFINITIUM stands as the premier scientific hub of Physical Sciences at ARSD College, bringing together students from Chemistry, Computer Science, Electronics, and Applied Sciences to foster innovation, research, creativity, and scientific thinking.
+          </p>
+
+          {/* Action Call with Conic Laser Spinning Border */}
+          <div className="items-center justify-center gap-x-3 mt-4">
+            <span className="relative inline-block overflow-hidden rounded-full p-[1.5px]">
+              <span className="absolute inset-[-1000%] animate-[spin_5s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#ccfbf1_0%,#0d9488_50%,#ccfbf1_100%)]" />
+              <div className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-white text-xs font-semibold backdrop-blur-3xl">
+                <Link
+                  to="/about"
+                  className="inline-flex rounded-full text-center group items-center w-full justify-center bg-gradient-to-tr from-zinc-300/10 via-brand-50/25 to-transparent text-slate-900 border-input border-[1px] hover:bg-gradient-to-tr hover:from-zinc-300/20 hover:via-brand-50/50 hover:to-transparent duration-300 py-3.5 px-10 uppercase font-black tracking-widest text-[11px]"
+                >
+                  Our Story
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-0.5 duration-300 transition-transform" />
+                </Link>
+              </div>
+            </span>
+          </div>
+        </div>
+      </motion.div>
+
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:auto-rows-[minmax(80px,_auto)]">
 
 
         {/* Quick Registration (Span 12x1) */}
@@ -467,6 +463,7 @@ export default function Home_Page() {
           </motion.button>
         </div>
       </div>
+    </div>
     </div>
   );
 }

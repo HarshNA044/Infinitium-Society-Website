@@ -36,7 +36,33 @@ export const Logo = ({ className = "" }: { className?: string }) => (
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
+
+  const isHome = location.pathname === '/';
+
+  useEffect(() => {
+    if (!isHome) {
+      setIsScrolled(true);
+      return;
+    }
+
+    const handleScroll = () => {
+      const heroEl = document.getElementById('hero-section');
+      const threshold = heroEl ? heroEl.offsetHeight : 550;
+      if (window.scrollY >= threshold) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isHome]);
+
+  const showBranding = !isHome || isScrolled || isOpen;
 
   const navItems = [
     { name: 'Home', path: '/', icon: Home },
@@ -48,10 +74,23 @@ const Navigation = () => {
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+    <nav className={cn(
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out transform-gpu",
+      showBranding 
+        ? "bg-white/90 backdrop-blur-md border-b border-slate-200/100 shadow-sm" 
+        : "bg-transparent border-b border-transparent shadow-none"
+    )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-20 items-center">
-          <Link to="/" className="flex items-center gap-3 group">
+          <Link 
+            to="/" 
+            className={cn(
+              "flex items-center gap-3 group transition-all duration-300 ease-out origin-left",
+              showBranding 
+                ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" 
+                : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
+            )}
+          >
             <Logo />
             <div>
               <h1 className="text-xl font-black leading-none tracking-tight text-brand-950 uppercase">INFINITIUM</h1>
@@ -210,7 +249,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-white font-sans text-brand-950 selection:bg-brand-100 selection:text-brand-900">
       {!isAdminPath && <Navigation />}
-      <main className={cn(!isAdminPath && "pt-20")}>
+      <main className={cn(!isAdminPath && location.pathname !== '/' && "pt-20")}>
         <Routes>
           <Route path="/" element={<Home_Page />} />
           <Route path="/about" element={<About_Page />} />
