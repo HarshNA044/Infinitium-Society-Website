@@ -169,7 +169,7 @@ export default function Home_Page() {
           ))}
         </div>
         
-        <div className="relative z-10 px-6 sm:px-8 md:px-12 flex flex-col items-center text-center max-w-4xl mx-auto space-y-8 pt-16 md:pt-24 pb-8">
+        <div className="relative z-10 px-6 sm:px-8 md:px-12 flex flex-col items-center text-center max-w-4xl mx-auto space-y-8 pt-32 sm:pt-36 md:pt-24 pb-8">
           <div className="space-y-3">
             {/* Main Typographic Heading */}
             <h2 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight bg-clip-text text-transparent bg-[linear-gradient(180deg,#090d16,_#2d3748)] uppercase select-none leading-none">

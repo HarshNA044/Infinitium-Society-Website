@@ -75,7 +75,7 @@ const Navigation = () => {
 
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 z-50 transition-all duration-300 ease-out transform-gpu",
+      "fixed top-0 left-0 right-0 z-50 transition-all duration-150 ease-out transform-gpu",
       showBranding 
         ? "bg-white/90 backdrop-blur-md border-b border-slate-200/100 shadow-sm" 
         : "bg-transparent border-b border-transparent shadow-none"
@@ -85,7 +85,7 @@ const Navigation = () => {
           <Link 
             to="/" 
             className={cn(
-              "flex items-center gap-3 group transition-all duration-300 ease-out origin-left",
+              "flex items-center gap-3 group transition-all duration-150 ease-out origin-left",
               showBranding 
                 ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" 
                 : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
@@ -100,7 +100,7 @@ const Navigation = () => {
 
           {/* Desktop Nav */}
           <div className={cn(
-            "hidden md:flex items-center gap-6 transition-all duration-300 ease-out transform",
+            "hidden md:flex items-center gap-6 transition-all duration-150 ease-out transform",
             showBranding 
               ? "opacity-100 translate-x-0 pointer-events-auto" 
               : "opacity-0 translate-x-4 pointer-events-none"
