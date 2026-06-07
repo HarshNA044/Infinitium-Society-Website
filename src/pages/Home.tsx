@@ -194,6 +194,9 @@ export default function Home_Page() {
       >
         <RetroGrid opacity={0.35} lightLineColor="#e2e8f0" />
         
+        {/* Bottom to top gradient fading in hero section using the same brand colors as used in Inspiring Innovation */}
+        <div className="absolute inset-0 bg-gradient-to-t from-brand-500/15 via-brand-600/[0.04] to-transparent pointer-events-none z-0" />
+        
         {/* Animated Background Scientific & Technical Icons */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
           {backgroundIcons.map((item, index) => {
