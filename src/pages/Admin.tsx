@@ -489,6 +489,26 @@ export default function Admin_Page() {
           try {
             setScanResult({ loading: true });
             
+            let cleanTicketId = decodedText.trim();
+            // Fallback: If scanner decoded a full URL
+            if (cleanTicketId.includes("http")) {
+              try {
+                const url = new URL(cleanTicketId);
+                const ticketParam = url.searchParams.get("ticket") || url.searchParams.get("ticketId") || url.searchParams.get("id");
+                if (ticketParam) {
+                  cleanTicketId = ticketParam.trim();
+                } else {
+                  const segments = url.pathname.split('/');
+                  const lastSegment = segments[segments.length - 1];
+                  if (lastSegment && lastSegment.toUpperCase().startsWith("INF-")) {
+                    cleanTicketId = lastSegment.trim();
+                  }
+                }
+              } catch (urlErr) {
+                console.error("Failed to parse scanned text as URL:", urlErr);
+              }
+            }
+
             // 1. Fetch, verify and mark attendance directly via Apps Script
             const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
             if (!appsScriptUrl) {
@@ -517,6 +537,8 @@ export default function Admin_Page() {
               const regsResult = await getRegsResponse.json();
               if (regsResult.status === "success" && regsResult.registrations) {
                 excelData = regsResult.registrations;
+              } else {
+                throw new Error(regsResult.message || "Failed to retrieve registration data from sheet. Make sure your Apps Script has the latest code deployed.");
               }
               
               // Write temporary JSON with excel data to Firebase
@@ -530,9 +552,12 @@ export default function Admin_Page() {
               const tempSnap = await getDoc(tempDocRef);
               if (tempSnap.exists()) {
                 const parsedContent = JSON.parse(tempSnap.data().content);
-                const ticket = parsedContent.find((r: any) => r.ticketId === decodedText);
+                const targetIdUpper = cleanTicketId.toUpperCase();
+                const ticket = parsedContent.find((r: any) => 
+                  r.ticketId && r.ticketId.toString().trim().toUpperCase() === targetIdUpper
+                );
                 if (!ticket) {
-                  throw new Error(`Ticket ID ${decodedText} not found in Excel sheet.`);
+                  throw new Error(`Ticket ID "${cleanTicketId}" not found in Excel sheet.`);
                 }
               }
             } catch (jsonErr: any) {
@@ -553,7 +578,7 @@ export default function Admin_Page() {
               headers: { 'Content-Type': 'text/plain' },
               body: JSON.stringify({ 
                 type: 'attendance',
-                ticketId: decodedText,
+                ticketId: cleanTicketId,
                 sheetId: targetEvent.sheetId
               })
             });
