@@ -61,15 +61,16 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
     } else if (data.type === 'attendance') {
       // Find row by ticketId and mark attendance
-      var ticketId = data.ticketId;
+      var ticketId = (data.ticketId || "").toString().trim().toUpperCase();
       var range = sheet.getDataRange();
       var values = range.getValues();
       var ticketIdIndex = 10; // Column K (11th column, index 10)
       var attndIndex = 11;   // Column L (12th column, index 11)
 
       for (var i = 1; i < values.length; i++) {
-        if (values[i][ticketIdIndex] === ticketId) {
-          var alreadyMarked = (values[i][attndIndex] === "Yes");
+        var rowTicketId = (values[i][ticketIdIndex] || "").toString().trim().toUpperCase();
+        if (rowTicketId === ticketId) {
+          var alreadyMarked = (values[i][attndIndex] === "Yes" || values[i][attndIndex] === "yes");
           if (!alreadyMarked) {
             sheet.getRange(i + 1, attndIndex + 1).setValue("Yes");
           }
@@ -91,7 +92,7 @@ function doPost(e) {
           return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
         }
       }
-      var errResponse = { status: "error", message: "Ticket ID not found in sheet" };
+      var errResponse = { status: "error", message: "Ticket ID '" + ticketId + "' not found in sheet" };
       return ContentService.createTextOutput(JSON.stringify(errResponse)).setMimeType(ContentService.MimeType.JSON);
     } else {
       // Registration flow
