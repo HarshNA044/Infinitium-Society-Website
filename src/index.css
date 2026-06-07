@@ -37,17 +37,40 @@
   animation: wave-ripple 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
 }
 
+@keyframes float-gentle {
+  0%, 100% {
+    transform: translateY(0);
+    opacity: 0.25;
+  }
+  50% {
+    transform: translateY(-16px);
+    opacity: 0.65;
+  }
+}
+
+.animate-float-icon {
+  animation: float-gentle var(--float-duration, 12s) ease-in-out infinite;
+  animation-delay: var(--float-delay, 0s);
+  will-change: transform, opacity;
+}
+
 @keyframes grid-animation {
   0% {
-    background-position: 0 0;
+    transform: translateY(0);
   }
   100% {
-    background-position: 0 var(--cell-size, 60px);
+    transform: translateY(var(--cell-size, 60px));
   }
 }
 
 .animate-grid {
-  animation: grid-animation 15s linear infinite;
+  will-change: transform;
+}
+
+@media (min-width: 1024px) {
+  .animate-grid {
+    animation: grid-animation 25s linear infinite;
+  }
 }
 
 @layer base {

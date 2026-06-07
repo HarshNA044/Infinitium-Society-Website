@@ -50,11 +50,14 @@ const Navigation = () => {
     const handleScroll = () => {
       const heroEl = document.getElementById('hero-section');
       const threshold = heroEl ? heroEl.offsetHeight - 80 : 500;
-      if (window.scrollY >= threshold) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      const parsedScrolled = window.scrollY >= threshold;
+      
+      setIsScrolled((prev) => {
+        if (prev !== parsedScrolled) {
+          return parsedScrolled;
+        }
+        return prev;
+      });
     };
 
     handleScroll();
