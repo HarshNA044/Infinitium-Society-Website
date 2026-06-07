@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Calendar, MapPin, Search, Filter, ArrowRight, X, 
-  CheckCircle2, Download, QrCode as QrIcon, Share2
+  CheckCircle2, Download, QrCode as QrIcon, Share2, MessageSquare
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
@@ -67,7 +67,8 @@ export default function Events_Page() {
         eventId: selectedEvent.id,
         eventTitle: selectedEvent.title,
         ticketId: ticketId,
-        sheetId: selectedEvent.sheetId
+        sheetId: selectedEvent.sheetId,
+        whatsappGroup: selectedEvent.whatsappGroup || ""
       };
 
       const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
@@ -407,6 +408,25 @@ export default function Events_Page() {
                     Registration confirmed for <span className="text-brand-600">{selectedEvent?.title}</span>. 
                     <br />Save the ticket below.
                   </p>
+                  
+                  {selectedEvent?.whatsappGroup && (
+                    <div className="mb-8 p-4 bg-emerald-50 border border-emerald-100/80 text-emerald-800 rounded-2xl text-left max-w-sm mx-auto flex items-center gap-3">
+                      <div className="p-2 bg-emerald-600/10 text-emerald-600 rounded-xl shrink-0">
+                        <MessageSquare className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-600">Official updates</p>
+                        <a 
+                          href={selectedEvent.whatsappGroup} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-xs font-black hover:underline inline-flex items-center gap-1 text-emerald-900 mt-0.5"
+                        >
+                          Join WhatsApp Group &rarr;
+                        </a>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="bg-slate-50 p-8 rounded-2xl border border-slate-200 mb-8 flex flex-col items-center shadow-inner">
                     <div className="bg-white p-3 rounded-2xl shadow-xl">

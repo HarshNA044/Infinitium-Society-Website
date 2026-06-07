@@ -274,7 +274,7 @@ export default function Home_Page() {
           </div>
 
           {/* Description Paragraph */}
-          <p className="max-w-2xl mx-auto text-slate-500 text-xs sm:text-sm font-semibold leading-relaxed tracking-normal">
+          <p className="max-w-2xl mx-auto text-slate-500 text-xs sm:text-sm font-semibold leading-relaxed tracking-normal text-justify sm:text-center">
             INFINITIUM stands as the premier scientific hub of Physical Sciences at ARSD College, bringing together students from Chemistry, Computer Science, Electronics, and Applied Sciences to foster innovation, research, creativity, and scientific thinking.
           </p>
 

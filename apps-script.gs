@@ -258,6 +258,14 @@ function sendRegistrationEmail(data) {
       }
   
     // Professional Email Body (Infinitium Brand)
+      var whatsappBlock = '';
+      if (data.whatsappGroup) {
+        whatsappBlock = '    <div style="background-color: #eafbe7; border: 1px solid #cce8cc; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 5px solid #10b981;">' +
+                        '      <p style="margin: 0; font-size: 15px; color: #065f46;"><strong>Join the Event WhatsApp Group:</strong></p>' +
+                        '      <p style="margin: 5px 0 0 0; font-size: 13px; color: #047857;">For quick announcements and real-time updates: <a href="' + data.whatsappGroup + '" style="color: #047857; font-weight: bold; text-decoration: underline;" target="_blank">Click here to join</a></p>' +
+                        '    </div>';
+      }
+
       var body = '<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">' +
                  '  <div style="background-color: #0f0c29; border-top: 4px solid #14b8a6; padding: 25px; text-align: center;">' +
                  '    <h1 style="color: white; margin: 0; font-size: 24px; letter-spacing: 2px;">INFINITIUM</h1>' +
@@ -271,6 +279,7 @@ function sendRegistrationEmail(data) {
                  '      <p style="margin: 0; font-size: 15px;"><strong>Event:</strong> ' + data.eventTitle + '</p>' +
                  '      <p style="margin: 5px 0 0 0; font-size: 13px; color: #64748b;"><strong>Ticket ID:</strong> ' + data.ticketId + '</p>' +
                  '    </div>' +
+                 whatsappBlock +
                  '    <p><strong>Your official entry pass is attached to this email as a PDF ticket.</strong> Please have this PDF file or its printed version handy at the venue registration desk for smooth check-in.</p>' +
                  '    <p>We look forward to seeing you there!</p>' +
                  '    <p style="margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 20px;">' +

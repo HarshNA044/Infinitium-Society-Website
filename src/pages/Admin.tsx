@@ -6,7 +6,7 @@ import {
   Trash2, CheckCircle, XCircle, ChevronLeft,
   LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
   Trophy, Download, LogIn, Github, Menu, X, MessageSquare,
-  Globe, Award, Target, Handshake, Lightbulb
+  Globe, Award, Target, Handshake, Lightbulb, Clock
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -69,8 +69,6 @@ export default function Admin_Page() {
   const [isImageProcessing, setIsImageProcessing] = useState(false);
   const [isSubmittingGallery, setIsSubmittingGallery] = useState(false);
 
-  const [messages, setMessages] = useState<any[]>([]);
-
   // About management state
   const [aboutData, setAboutData] = useState<any>(null);
   const [isSavingAbout, setIsSavingAbout] = useState(false);
@@ -132,14 +130,6 @@ export default function Admin_Page() {
         setGallery(gallerySnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (e) {
         handleFirestoreError(e, OperationType.GET, 'gallery');
-      }
-
-      // Load Messages
-      try {
-        const messagesSnap = await getDocs(query(collection(db, 'contact_messages'), orderBy('timestamp', 'desc')));
-        setMessages(messagesSnap.docs.map(d => ({ id: d.id, ...d.data() })));
-      } catch (e) {
-        handleFirestoreError(e, OperationType.GET, 'contact_messages');
       }
 
       // Load About
@@ -332,6 +322,7 @@ export default function Admin_Page() {
       image: eventImagePreview || formData.get('image') as string,
       description: formData.get('description') as string,
       startTime: formData.get('startTime') as string || '',
+      whatsappGroup: formData.get('whatsappGroup') as string || '',
       status: editingEvent?.status || 'Upcoming',
       isInterCollege: !!formData.get('isInterCollege'),
       stats: {
@@ -738,40 +729,47 @@ export default function Admin_Page() {
 
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 left-0 w-64 bg-white border-r border-zinc-200 p-6 flex flex-col gap-8 z-[80] transition-transform duration-300 md:relative md:translate-x-0",
+        "fixed inset-y-0 left-0 w-64 bg-white border-r border-zinc-100 shadow-xl shadow-zinc-200/40 p-6 flex flex-col gap-8 z-[80] transition-transform duration-300 md:relative md:translate-x-0",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <Link to="/" className="hidden md:flex items-center gap-3 hover:opacity-80 transition-opacity">
-          <Logo className="w-10 h-10" />
+          <Logo className="w-11 h-11 transition-transform hover:scale-105" />
           <div>
-            <h2 className="font-black text-sm uppercase tracking-tighter leading-none">INFINITIUM</h2>
-            <p className="text-[7px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1 hidden sm:block">Society of Physical Sciences, ARSD College</p>
+            <h2 className="font-black text-sm uppercase tracking-tighter leading-none text-zinc-900">INFINITIUM</h2>
+            <p className="text-[7px] text-zinc-400 font-extrabold uppercase tracking-[0.1em] mt-1 hidden sm:block">PHYSICAL SCIENCES HUB</p>
           </div>
         </Link>
 
-        <div className="p-4 bg-zinc-50 rounded-xl border border-zinc-100 mb-4">
-          <div className="flex items-center gap-3">
-            <img src={user.photoURL || ''} className="w-8 h-8 rounded-full" alt="Admin" />
+        {/* User Block with high polish */}
+        <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 mb-2 relative overflow-hidden group">
+          <div className="flex items-center gap-3 relative z-10">
+            <div className="relative">
+              <img src={user.photoURL || ''} className="w-10 h-10 rounded-xl object-cover ring-2 ring-brand-500/20" alt="Admin" referrerPolicy="no-referrer" />
+              <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></span>
+            </div>
             <div className="overflow-hidden">
-              <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest truncate">{user.displayName}</p>
-              <button 
-                onClick={handleLogout}
-                className="text-[9px] font-bold text-red-500 uppercase hover:underline"
-              >
-                Sign Out
-              </button>
+              <p className="text-[10px] font-black uppercase text-zinc-800 tracking-wider truncate mb-0.5">{user.displayName}</p>
+              <div className="flex items-center gap-2">
+                <span className="text-[8px] bg-brand-100 text-brand-700 font-black uppercase px-1 rounded-sm">ADMIN</span>
+                <button 
+                  onClick={handleLogout}
+                  className="text-[9px] font-bold text-red-500 uppercase hover:text-red-700 transition-colors"
+                >
+                  Sign Out
+                </button>
+              </div>
             </div>
           </div>
+          <div className="absolute inset-0 bg-gradient-to-r from-brand-600/[0.02] to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
         </div>
 
-        <nav className="flex flex-col gap-2">
+        <nav className="flex flex-col gap-1.5">
           {[
             { id: 'overview', icon: BarChart3, label: 'Overview' },
             { id: 'events', icon: ListOrdered, label: 'Events' },
             { id: 'members', icon: Users, label: 'Team' },
             { id: 'achievements', icon: Trophy, label: 'Achievements' },
             { id: 'gallery', icon: Camera, label: 'Gallery' },
-            { id: 'messages', icon: MessageSquare, label: 'Messages' },
             { id: 'about', icon: LayoutDashboard, label: 'About Page' },
             { id: 'scanner', icon: Scan, label: 'QR Scanner' },
           ].map(tab => (
@@ -782,12 +780,17 @@ export default function Admin_Page() {
                 setIsSidebarOpen(false);
               }}
               className={cn(
-                "flex items-center gap-3 px-4 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest transition-all",
-                activeTab === tab.id ? "bg-brand-600 text-white shadow-lg shadow-brand-600/20" : "text-zinc-500 hover:bg-brand-50 hover:text-brand-600"
+                "flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all duration-200 relative group/btn",
+                activeTab === tab.id 
+                  ? "bg-brand-600 text-white shadow-md shadow-brand-600/30 font-extrabold translate-x-1" 
+                  : "text-zinc-500 hover:bg-brand-50 hover:text-brand-600"
               )}
             >
-              <tab.icon className="w-5 h-5" />
+              <tab.icon className={cn("w-4.5 h-4.5 transition-transform group-hover/btn:scale-110", activeTab === tab.id ? "text-white" : "text-zinc-400 group-hover/btn:text-brand-500")} />
               {tab.label}
+              {activeTab === tab.id && (
+                <span className="absolute right-3 w-1.5 h-1.5 bg-white rounded-full"></span>
+              )}
             </button>
           ))}
         </nav>
@@ -848,32 +851,7 @@ export default function Admin_Page() {
               <Plus className="w-5 h-5" /> Add Image
             </button>
           )}
-          {activeTab === 'messages' && (
-            <button 
-              onClick={() => {
-                const headers = ['ID', 'Name', 'Email', 'Message', 'Timestamp'];
-                const rows = messages.map(m => [
-                  m.id,
-                  m.name,
-                  m.email,
-                  `"${m.message?.replace(/"/g, '""')}"`,
-                  m.timestamp?.toDate ? m.timestamp.toDate().toLocaleString() : new Date(m.timestamp).toLocaleString()
-                ]);
-                const csvContent = "data:text/csv;charset=utf-8," 
-                  + headers.join(",") + "\n"
-                  + rows.map(e => e.join(",")).join("\n");
-                const encodedUri = encodeURI(csvContent);
-                const link = document.createElement("a");
-                link.setAttribute("href", encodedUri);
-                link.setAttribute("download", `infinitium_contact_messages_${new Date().toISOString().split('T')[0]}.csv`);
-                document.body.appendChild(link);
-                link.click();
-              }}
-              className="flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20 border border-brand-700"
-            >
-              <Download className="w-5 h-5" /> Download Excel (CSV)
-            </button>
-          )}
+
           {activeTab === 'about' && (
             <button 
               onClick={async () => {
@@ -902,26 +880,47 @@ export default function Admin_Page() {
 
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bento-card bg-white p-8">
-                <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.2em] mb-2">Total Registrations</p>
-                <p className="text-4xl font-black text-slate-900 tracking-tighter">{stats.totalRegistrations}</p>
-                <div className="mt-4 h-1 bg-slate-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand-600 w-3/4"></div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bento-card bg-white p-8 border border-zinc-100 shadow-sm relative overflow-hidden group hover:border-brand-350 transition-all duration-300">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-zinc-400 font-extrabold text-[10px] uppercase tracking-[0.2em]">Total Registrations</p>
+                  <div className="p-2 bg-brand-50 rounded-xl text-brand-600 transition-colors group-hover:bg-brand-100">
+                    <Users className="w-4.5 h-4.5" />
+                  </div>
+                </div>
+                <p className="text-4xl font-black text-zinc-900 tracking-tighter mt-1">{stats.totalRegistrations}</p>
+                <div className="mt-6 h-1 w-full bg-zinc-100 rounded-full overflow-hidden">
+                  <div className="h-full bg-brand-500 transition-all duration-1000" style={{ width: `${stats.totalRegistrations > 0 ? 80 : 0}%` }}></div>
                 </div>
               </div>
-              <div className="bento-card bg-brand-600 p-8 text-white border-none shadow-brand-600/20">
-                <p className="text-brand-100 font-bold text-[10px] uppercase tracking-[0.2em] mb-2">Total Attendance</p>
-                <p className="text-4xl font-black tracking-tighter">{stats.totalAttendance}</p>
-                <div className="mt-4 h-1 bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white w-1/2"></div>
+
+              <div className="bento-card bg-gradient-to-br from-brand-600 to-brand-700 p-8 text-white border-none shadow-xl shadow-brand-600/10 hover:shadow-brand-600/20 transition-all duration-300 relative overflow-hidden group">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-brand-100/90 font-extrabold text-[10px] uppercase tracking-[0.2em]">Total Attendance</p>
+                  <div className="p-2 bg-white/10 rounded-xl text-white transition-transform group-hover:scale-105">
+                    <Scan className="w-4.5 h-4.5" />
+                  </div>
                 </div>
+                <p className="text-4xl font-black tracking-tighter mt-1">{stats.totalAttendance}</p>
+                <div className="mt-6 h-1 w-full bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-white transition-all duration-1000" style={{ width: `${stats.totalRegistrations > 0 ? (stats.totalAttendance / stats.totalRegistrations) * 100 : 0}%` }}></div>
+                </div>
+                <div className="absolute right-0 top-0 w-24 h-24 bg-white/[0.03] rounded-full blur-xl pointer-events-none"></div>
               </div>
-              <div className="bento-card bg-amber-400 p-8 border-amber-500">
-                <p className="text-amber-900/60 font-bold text-[10px] uppercase tracking-[0.2em] mb-2">Completion Rate</p>
-                <p className="text-4xl font-black text-amber-950 tracking-tighter">
+
+              <div className="bento-card bg-gradient-to-br from-amber-400 to-amber-500 p-8 text-amber-950 border-none shadow-xl shadow-amber-500/10 hover:shadow-amber-500/25 transition-all duration-300 relative overflow-hidden group">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-amber-950/75 font-extrabold text-[10px] uppercase tracking-[0.2em]">Completion Rate</p>
+                  <div className="p-2 bg-amber-950/10 rounded-xl text-amber-955">
+                    <Trophy className="w-4.5 h-4.5" />
+                  </div>
+                </div>
+                <p className="text-4xl font-black tracking-tighter mt-1">
                   {stats.totalRegistrations > 0 ? Math.round((stats.totalAttendance / stats.totalRegistrations) * 100) : 0}%
                 </p>
+                <div className="mt-6 h-1 w-full bg-amber-950/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-950 transition-all duration-1000" style={{ width: `${stats.totalRegistrations > 0 ? (stats.totalAttendance / stats.totalRegistrations) * 100 : 0}%` }}></div>
+                </div>
               </div>
             </div>
 
@@ -1454,188 +1453,305 @@ export default function Admin_Page() {
               </p>
             </div>
           </div>
-        )}
+        )}        {activeTab === 'scanner' && (
+          <div className="max-w-xl mx-auto space-y-8">
+            {/* Custom Embedded Stylesheet for Scanner Laser and Tech Effects */}
+            <style>{`
+              @keyframes laser-sweep {
+                0% { top: 0%; opacity: 0.3; }
+                40% { opacity: 1; }
+                60% { opacity: 1; }
+                100% { top: 100%; opacity: 0.3; }
+              }
+              .laser-sweep-line {
+                position: absolute;
+                left: 0;
+                width: 100%;
+                height: 4px;
+                background: linear-gradient(to right, transparent, #14b8a6, #2dd4bf, #14b8a6, transparent);
+                box-shadow: 0 0 10px #14b8a6, 0 0 20px #2dd4bf;
+                animation: laser-sweep 3s infinite ease-in-out;
+                z-index: 10;
+              }
+              .scanner-corner {
+                position: absolute;
+                width: 28px;
+                height: 28px;
+                border-color: #14b8a6;
+                border-width: 4px;
+                z-index: 20;
+              }
+            `}</style>
 
-        {activeTab === 'messages' && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-hidden">
-               <div className="p-8 border-b border-zinc-100 flex justify-between items-center">
-                  <h3 className="text-sm font-black uppercase text-zinc-400 tracking-widest">Contact Form Submissions</h3>
-                  <span className="px-3 py-1 bg-brand-50 text-brand-600 rounded-full text-[10px] font-black uppercase">{messages.length} Total Messages</span>
-               </div>
-               <div className="overflow-x-auto">
-                 <table className="w-full text-left border-collapse min-w-[800px]">
-                   <thead className="bg-zinc-50 border-b border-zinc-100">
-                     <tr>
-                       <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-widest">SENDER</th>
-                       <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-widest">MESSAGE</th>
-                       <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-widest">DATE</th>
-                       <th className="px-8 py-5 text-[10px] font-black text-zinc-400 uppercase tracking-widest text-right">ACTION</th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-zinc-100">
-                     {messages.map((m: any) => (
-                       <tr key={m.id} className="hover:bg-zinc-50/50 transition-colors group">
-                         <td className="px-8 py-6">
-                            <p className="font-bold text-zinc-900 text-sm">{m.name}</p>
-                            <p className="text-[11px] text-zinc-400 font-medium">{m.email}</p>
-                         </td>
-                         <td className="px-8 py-6">
-                            <p className="text-zinc-600 text-sm font-medium line-clamp-2 max-w-md">{m.message}</p>
-                         </td>
-                         <td className="px-8 py-6">
-                            <p className="text-[10px] font-bold text-zinc-400 uppercase">
-                              {m.timestamp?.toDate ? m.timestamp.toDate().toLocaleDateString() : new Date(m.timestamp).toLocaleDateString()}
-                            </p>
-                            <p className="text-[9px] text-zinc-300 font-bold uppercase mt-0.5">
-                              {m.timestamp?.toDate ? m.timestamp.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                            </p>
-                         </td>
-                         <td className="px-8 py-6 text-right">
-                            <button 
-                              onClick={async () => {
-                                if (window.confirm("Are you sure you want to delete this message?")) {
-                                  try {
-                                    await deleteDoc(doc(db, 'contact_messages', m.id));
-                                    loadFirebaseData();
-                                  } catch (err) {
-                                    console.error(err);
-                                  }
-                                }
-                              }}
-                              className="p-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-600 hover:text-white transition-all opacity-0 group-hover:opacity-100"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                         </td>
-                       </tr>
-                     ))}
-                     {messages.length === 0 && (
-                       <tr>
-                         <td colSpan={4} className="px-8 py-20 text-center">
-                            <div className="w-16 h-16 bg-zinc-50 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-dashed border-zinc-200">
-                              <MessageSquare className="w-6 h-6 text-zinc-300" />
-                            </div>
-                            <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">No messages found in database</p>
-                         </td>
-                       </tr>
-                     )}
-                   </tbody>
-                 </table>
-               </div>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'scanner' && (
-          <div className="max-w-xl mx-auto">
-             {!isScanning ? (
-               <div className="bento-card bg-brand-950 p-12 rounded-[3.5rem] border border-brand-900 text-center flex flex-col items-center shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-6 left-6">
-                    <span className="text-[9px] font-black uppercase text-brand-400 tracking-[0.3em]">Scanner Active</span>
+            {!isScanning ? (
+              <div className="space-y-6">
+                <div className="bg-zinc-950 p-8 md:p-12 rounded-[2.5rem] border border-zinc-900 text-center flex flex-col items-center shadow-2xl relative overflow-hidden">
+                  <div className="absolute top-6 left-6 flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                    <span className="text-[9px] font-black uppercase text-brand-400 tracking-[0.3em]">SYSTEM ACTIVE</span>
                   </div>
-                  <div className="w-24 h-24 bg-white/5 text-brand-400 rounded-[2rem] flex items-center justify-center mb-8 border border-white/10">
-                    <Scan className="w-10 h-10" />
+                  
+                  <div className="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-[1.75rem] flex items-center justify-center mb-6 border border-emerald-500/20 shadow-inner">
+                    <Scan className="w-9 h-9 animate-pulse" />
                   </div>
-                  <h3 className="text-2xl font-black mb-4 text-white tracking-tighter uppercase">Attendance Core</h3>
-                  <p className="text-brand-100/60 mb-8 leading-relaxed text-sm font-bold uppercase tracking-widest">
-                     Select an upcoming event to start marking attendance.
-                   </p>
-
-                   {scannableEvents.length > 0 ? (
-                    <div className="w-full space-y-6">
-                      <select 
-                        value={selectedScanEventId}
-                        onChange={(e) => setSelectedScanEventId(e.target.value)}
-                        className="w-full bg-white/5 border-2 border-white/10 rounded-2xl p-4 text-white font-bold text-sm outline-none focus:border-brand-600 transition-all"
-                      >
-                        <option value="" className="bg-zinc-900">Select Upcoming Event</option>
-                        {scannableEvents.map((e: any) => (
-                          <option key={e.id} value={e.id} className="bg-zinc-900">
-                            {e.title}
-                          </option>
-                        ))}
-                      </select>
-
-                      <button 
-                        disabled={!selectedScanEventId}
-                        onClick={() => setIsScanning(true)}
-                        className="w-full py-5 bg-brand-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-500 transition-all flex items-center justify-center gap-3 shadow-xl shadow-brand-600/20 disabled:opacity-50"
-                      >
-                        <Camera className="w-5 h-5" /> Open Scanner
-                      </button>
-                    </div>
-                   ) : (
-                    <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-2xl text-brand-200 text-xs font-bold uppercase tracking-widest leading-loose">
-                      No upcoming events available for scanning.<br/>
-                      Marking attendance is restricted to events with "Upcoming" status.
-                    </div>
-                   )}
+                  
+                  <h3 className="text-xl font-extrabold text-white tracking-tight">ATTENDANCE CONTROLLER</h3>
+                  <p className="text-zinc-400 mt-2 text-xs font-semibold leading-relaxed max-w-sm">
+                    Select an upcoming high-priority event below to launch the digital registration checkpoint.
+                  </p>
+                  
                   <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-600/10 blur-3xl"></div>
-               </div>
-             ) : (
-               <div className="space-y-8">
-                 <div className="bg-slate-900 rounded-[3.5rem] overflow-hidden border-4 border-indigo-600 shadow-2xl relative shadow-indigo-600/20">
-                    <div id="reader" className="w-full"></div>
+                </div>
+
+                {/* Event Selector Grid (Cards Instead of Native Dropdown List) */}
+                <div className="space-y-4">
+                  <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Upcoming Events Ready for Check-in</h4>
+                  
+                  {scannableEvents.length > 0 ? (
+                    <div className="grid gap-3">
+                      {scannableEvents.map((e: any) => {
+                        const isSelected = selectedScanEventId === e.id;
+                        return (
+                          <button
+                            key={e.id}
+                            type="button"
+                            onClick={() => setSelectedScanEventId(e.id)}
+                            className={cn(
+                              "w-full text-left p-5 rounded-2xl border transition-all flex items-center justify-between group relative overflow-hidden",
+                              isSelected 
+                                ? "bg-brand-50/70 border-brand-500 shadow-md ring-2 ring-brand-500/10" 
+                                : "bg-white border-zinc-200/80 hover:border-zinc-300 hover:shadow-sm"
+                            )}
+                          >
+                            <div className="flex items-center gap-4 relative z-10">
+                              <div className={cn(
+                                "w-11 h-11 rounded-xl flex items-center justify-center transition-colors",
+                                isSelected ? "bg-brand-500 text-white" : "bg-zinc-100 text-zinc-400 group-hover:bg-zinc-200/50"
+                              )}>
+                                <Calendar className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <h5 className="font-extrabold text-sm text-zinc-900 line-clamp-1">{e.title}</h5>
+                                <div className="flex items-center gap-3 mt-1 text-[11px] text-zinc-500 font-medium">
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="w-3.5 h-3.5" />
+                                    {e.date} {e.time ? `• ${e.time}` : ''}
+                                  </span>
+                                  {e.venue && (
+                                    <span className="text-zinc-400 line-clamp-1">@{e.venue}</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 relative z-10">
+                              {isSelected ? (
+                                <div className="px-3 py-1 bg-brand-500 text-white rounded-full text-[9px] font-black uppercase tracking-wider">SELECTED</div>
+                              ) : (
+                                <div className="w-5 h-5 rounded-full border border-zinc-200 group-hover:border-zinc-300 flex items-center justify-center">
+                                  <div className="w-2.5 h-2.5 rounded-full bg-transparent group-hover:bg-zinc-100 transition-colors"></div>
+                                </div>
+                              )}
+                            </div>
+
+                            <div className="absolute inset-x-0 bottom-0 h-1 bg-brand-500/5 hover:bg-brand-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center bg-zinc-50 border border-zinc-200/60 rounded-2xl">
+                      <div className="w-12 h-12 bg-zinc-100 text-zinc-400 rounded-xl flex items-center justify-center mx-auto mb-3">
+                        <Calendar className="w-5 h-5 text-zinc-400" />
+                      </div>
+                      <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">No scannable events available</p>
+                      <p className="text-[11px] text-zinc-400 max-w-xs mx-auto">
+                        To mark attendance, ensure you have newly scheduled events marked as "Upcoming".
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Selected Event Actions */}
+                {selectedScanEventId && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-6 bg-zinc-900 text-white rounded-3xl space-y-4 shadow-xl relative overflow-hidden"
+                  >
+                    <div className="relative z-10 flex items-start justify-between">
+                      <div className="space-y-1">
+                        <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md font-black uppercase tracking-widest">checkpoint ready</span>
+                        <h4 className="text-base font-bold text-white leading-tight">
+                          {scannableEvents.find(e => e.id === selectedScanEventId)?.title}
+                        </h4>
+                      </div>
+                    </div>
+
+                    <div className="h-px bg-zinc-800 relative z-10"></div>
+
+                    <div className="grid grid-cols-2 gap-4 text-xs font-bold uppercase relative z-10">
+                      <div>
+                        <span className="text-[9px] text-zinc-500 block mb-0.5 tracking-wider">TICKET VERIFICATION</span>
+                        <span className="text-white text-xs">QR Digital Code</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-zinc-500 block mb-0.5 tracking-wider font-semibold">METHODOLOGY</span>
+                        <span className="text-emerald-400 text-xs text-nowrap flex items-center gap-1.5">
+                          <CheckCircle className="w-3.5 h-3.5" /> Instant Check-In
+                        </span>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => setIsScanning(true)}
+                      className="w-full py-4.5 bg-brand-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-400 transition-all flex items-center justify-center gap-3 shadow-lg shadow-brand-500/20 relative z-10 active:scale-[0.98]"
+                    >
+                      <Camera className="w-5 h-5" /> Open Visual Scanner
+                    </button>
+
+                    <div className="absolute -right-16 -bottom-16 w-32 h-32 bg-brand-500/10 blur-2xl rounded-full"></div>
+                  </motion.div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between bg-white border border-zinc-200/80 p-4 rounded-2xl shadow-sm">
+                  <div className="flex items-center gap-3">
                     <button 
                       onClick={() => setIsScanning(false)}
-                      className="absolute top-6 right-6 p-3 bg-white/10 backdrop-blur-md rounded-2xl hover:bg-white/20 transition-all text-white border border-white/20"
+                      className="p-2 hover:bg-zinc-50 rounded-xl transition-all"
                     >
-                      <XCircle className="w-6 h-6" />
+                      <ChevronLeft className="w-5 h-5 text-gray-500" />
                     </button>
-                 </div>
-                 <p className="text-center text-slate-500 font-black uppercase text-[10px] tracking-widest">Protocol: Direct Visual Verification</p>
-               </div>
-             )}
+                    <div>
+                      <h4 className="text-xs font-black uppercase text-zinc-400 tracking-wider">CHECKPOINT</h4>
+                      <h5 className="text-xs font-bold text-zinc-800 line-clamp-1 max-w-[200px] sm:max-w-xs">{scannableEvents.find(e => e.id === selectedScanEventId)?.title}</h5>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-2 text-[10px] font-black uppercase text-brand-650 bg-brand-50 px-3 py-1.5 rounded-full border border-brand-100">
+                    <span className="w-2.5 h-2.5 rounded-full bg-brand-500 animate-ping"></span>
+                    STREAM LIVE
+                  </span>
+                </div>
 
-             {/* Scan Result Overlay */}
-             <AnimatePresence>
-               {scanResult && (
-                 <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                    <motion.div 
-                      className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
-                      initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                      onClick={() => setScanResult(null)}
-                    />
-                    <motion.div 
-                      initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                      className="relative bg-white w-full max-w-sm rounded-[3rem] p-10 text-center shadow-2xl"
-                    >
-                      {scanResult.success ? (
-                        <>
-                          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <CheckCircle className="w-10 h-10" />
-                          </div>
-                          <h3 className="text-2xl font-bold text-zinc-900 mb-2">
-                            {scanResult.alreadyMarked ? "Already Marked" : "Success!"}
+                <div className="relative bg-slate-950 rounded-[3rem] overflow-hidden border-[6px] border-slate-900 shadow-xl max-w-md mx-auto aspect-square">
+                  {/* Glowing vertical sliding laser line */}
+                  <div className="laser-sweep-line pointer-events-none" />
+                  
+                  {/* High Tech Custom Reticle Bracket Corners */}
+                  <div className="absolute top-8 left-8 scanner-corner border-t-4 border-l-4 rounded-tl-md pointer-events-none" />
+                  <div className="absolute top-8 right-8 scanner-corner border-t-4 border-r-4 rounded-tr-md pointer-events-none" />
+                  <div className="absolute bottom-8 left-8 scanner-corner border-b-4 border-l-4 rounded-bl-md pointer-events-none" />
+                  <div className="absolute bottom-8 right-8 scanner-corner border-b-4 border-r-4 rounded-br-md pointer-events-none" />
+                  
+                  {/* Target frame overlay to prompt the user */}
+                  <div className="absolute inset-0 bg-black/30 pointer-events-none" />
+                  
+                  {/* Central alignment circle guide */}
+                  <div className="absolute inset-[24%] border border-white/10 rounded-full pointer-events-none animate-pulse flex items-center justify-center shadow-inner bg-black/10">
+                    <div className="w-1.5 h-1.5 rounded-full bg-brand-500"></div>
+                  </div>
+
+                  <div id="reader" className="w-full h-full [&_video]:object-cover [&_video]:w-full [&_video]:h-full border-none pointer-events-auto"></div>
+
+                  <button 
+                    onClick={() => setIsScanning(false)}
+                    className="absolute top-4 right-4 p-3 bg-black/60 hover:bg-black/80 backdrop-blur-md rounded-2xl transition-all text-white border border-white/10 z-20"
+                  >
+                    <XCircle className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="text-center space-y-2">
+                  <p className="text-zinc-500 font-extrabold uppercase text-[10px] tracking-widest">DIAGNOSTIC PROTOCOL ACTIVE</p>
+                  <p className="text-zinc-400 text-xs leading-relaxed max-w-sm mx-auto">
+                    Adjust the alignment by moving the student's digital registration card QR code until locked in the scan box.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Scan Result Overlay */}
+            <AnimatePresence>
+              {scanResult && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+                  <motion.div 
+                    className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
+                    initial={{ opacity: 0 }} 
+                    animate={{ opacity: 1 }} 
+                    exit={{ opacity: 0 }}
+                    onClick={() => setScanResult(null)}
+                  />
+                  <motion.div 
+                    initial={{ opacity: 0, scale: 0.93, y: 15 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.93, y: 15 }}
+                    className="relative bg-white w-full max-w-md rounded-[2.5rem] p-8 text-center shadow-2xl border border-zinc-100 overflow-hidden"
+                  >
+                    {scanResult.success ? (
+                      <div className="space-y-6">
+                        <div className={cn(
+                          "w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-md",
+                          scanResult.alreadyMarked ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"
+                        )}>
+                          {scanResult.alreadyMarked ? (
+                            <Award className="w-10 h-10 animate-bounce" />
+                          ) : (
+                            <CheckCircle className="w-10 h-10 animate-bounce" />
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tight">
+                            {scanResult.alreadyMarked ? "Already Verified" : "Verification Succeeded"}
                           </h3>
-                          <p className="text-lg font-bold text-brand-600 mb-4 uppercase tracking-tight">{scanResult.student?.studentName}</p>
-                          <p className="text-zinc-500 text-sm mb-10">Attendance marked for {scanResult.student?.rollNo}</p>
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <XCircle className="w-10 h-10" />
+                          <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 inline-block w-full">
+                            <p className="text-zinc-400 text-[10.5px] font-black uppercase tracking-widest mb-1">STUDENT PROFILE</p>
+                            <p className="text-base font-extrabold text-zinc-900">{scanResult.student?.studentName}</p>
+                            <p className="text-zinc-500 font-bold text-xs mt-1">{scanResult.student?.rollNo}</p>
                           </div>
-                          <h3 className="text-2xl font-bold text-zinc-900 mb-2">Scan Failed</h3>
-                          <p className="text-zinc-500 text-sm mb-10">{scanResult.error || 'Invalid or expired ticket.'}</p>
-                        </>
-                      )}
+                        </div>
+
+                        <div className="space-y-1.5 text-xs text-zinc-500 text-center font-medium bg-brand-50/50 p-4 rounded-xl border border-brand-100/60">
+                          <p className="font-extrabold uppercase text-brand-650 tracking-wider text-[9.5px]">AUTOMATED AUDIT REPORT</p>
+                          <p>Record uploaded database log check list.</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                          <XCircle className="w-10 h-10 animate-pulse" />
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tight">Verification Rejected</h3>
+                          <p className="text-zinc-500 text-sm max-w-sm mx-auto leading-relaxed">
+                            {scanResult.error || 'The presentation code was unrecognized or expired.'}
+                          </p>
+                        </div>
+
+                        <div className="text-xs text-red-600 font-semibold bg-red-50 p-4 rounded-xl border border-red-100">
+                          Ensure they are showing the correct ticket issued by INFINITIUM.
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-8">
                       <button 
                         onClick={() => {
                           setScanResult(null);
-                          setIsScanning(true); // Restart scanner
+                          setIsScanning(true); // Restart scanner immediately
                         }}
-                        className="w-full py-4 bg-zinc-900 text-white rounded-2xl font-bold hover:bg-zinc-800 transition-all"
+                        className="w-full py-4.5 bg-zinc-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-zinc-805 transition-all text-center shadow-lg active:scale-95"
                       >
-                        Scan Next
+                        scan next ticket
                       </button>
-                    </motion.div>
-                 </div>
-               )}
-             </AnimatePresence>
+                    </div>
+                  </motion.div>
+                </div>
+              )}
+            </AnimatePresence>
           </div>
         )}
       </main>
@@ -1743,6 +1859,15 @@ export default function Admin_Page() {
                       />
                     </div>
                    )}
+                   <div className="space-y-2">
+                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">WhatsApp Group Link (Optional)</label>
+                     <input 
+                       name="whatsappGroup" 
+                       defaultValue={editingEvent?.whatsappGroup || ''}
+                       className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 text-sm mb-4" 
+                       placeholder="e.g. https://chat.whatsapp.com/..." 
+                     />
+                   </div>
                    <div className="space-y-2">
                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Or Poster Image URL</label>
                      <input 

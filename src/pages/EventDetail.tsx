@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Calendar, MapPin, ArrowLeft, CheckCircle2, 
-  Download, Clock, Tag, Share2, Info, ArrowRight, X
+  Download, Clock, Tag, Share2, Info, ArrowRight, X, MessageSquare
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
@@ -236,6 +236,7 @@ export default function EventDetail_Page() {
         eventTitle: event.title,
         ticketId: ticketId,
         sheetId: event.sheetId,
+        whatsappGroup: event.whatsappGroup || "",
         attended: false,
         createdAt: new Date().toISOString()
       };
@@ -830,6 +831,25 @@ export default function EventDetail_Page() {
                     Registration confirmed for <span className="text-brand-600">{event?.title}</span>. 
                     <br />Save the ticket below.
                   </p>
+                  
+                  {event?.whatsappGroup && (
+                    <div className="mb-8 p-4 bg-emerald-50 border border-emerald-100/80 text-emerald-800 rounded-2xl text-left max-w-sm mx-auto flex items-center gap-3">
+                      <div className="p-2 bg-emerald-600/10 text-emerald-600 rounded-xl">
+                        <MessageSquare className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-600">Official updates</p>
+                        <a 
+                          href={event.whatsappGroup} 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="text-xs font-black hover:underline inline-flex items-center gap-1 text-emerald-950 mt-0.5"
+                        >
+                          Join WhatsApp Group &rarr;
+                        </a>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="bg-slate-50 p-6 md:p-8 rounded-2xl border border-slate-200 mb-8 flex flex-col items-center shadow-inner max-w-sm mx-auto">
                     <div className="bg-white p-3 rounded-2xl shadow-xl w-36 h-36 flex items-center justify-center">
