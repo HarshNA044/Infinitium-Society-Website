@@ -49,7 +49,7 @@ const Navigation = () => {
 
     const handleScroll = () => {
       const heroEl = document.getElementById('hero-section');
-      const threshold = heroEl ? heroEl.offsetHeight : 550;
+      const threshold = heroEl ? heroEl.offsetHeight - 80 : 500;
       if (window.scrollY >= threshold) {
         setIsScrolled(true);
       } else {
@@ -99,7 +99,12 @@ const Navigation = () => {
           </Link>
 
           {/* Desktop Nav */}
-          <div className="hidden md:flex items-center gap-6">
+          <div className={cn(
+            "hidden md:flex items-center gap-6 transition-all duration-300 ease-out transform",
+            showBranding 
+              ? "opacity-100 translate-x-0 pointer-events-auto" 
+              : "opacity-0 translate-x-4 pointer-events-none"
+          )}>
             {navItems.map((item) => (
               <Link
                 key={item.name}

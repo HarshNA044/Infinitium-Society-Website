@@ -49,6 +49,15 @@ const SectionHeader = ({ title }: { title: string }) => (
   </div>
 );
 
+const navItems = [
+  { name: 'Home', path: '/' },
+  { name: 'About', path: '/about' },
+  { name: 'Events', path: '/events' },
+  { name: 'Gallery', path: '/gallery' },
+  { name: 'Achievements', path: '/achievements' },
+  { name: 'Team', path: '/team' },
+];
+
 export default function Home_Page() {
   const [events, setEvents] = useState<any[]>([]);
   const [achievements, setAchievements] = useState<any[]>([]);
@@ -143,11 +152,24 @@ export default function Home_Page() {
         id="hero-section"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="w-full relative overflow-hidden text-slate-950 flex flex-col justify-center border-b border-slate-100 transform-gpu py-20 md:py-28"
+        className="w-full relative overflow-hidden text-slate-950 flex flex-col justify-start border-b border-slate-100 transform-gpu pb-16 md:pb-24"
       >
         <RetroGrid opacity={0.35} lightLineColor="#e2e8f0" />
         
-        <div className="relative z-10 px-6 sm:px-8 md:px-12 flex flex-col items-center text-center max-w-4xl mx-auto space-y-8">
+        {/* Centered Hero Navigation Links for Desktop/Tablet */}
+        <div className="hidden md:flex items-center justify-center gap-8 py-8 w-full relative z-20 select-none border-b border-slate-100/50 backdrop-blur-sm bg-white/10">
+          {navItems.map((item) => (
+            <Link
+              key={item.name}
+              to={item.path}
+              className="text-xs font-black uppercase tracking-widest text-slate-500 hover:text-brand-600 transition-colors duration-300"
+            >
+              {item.name}
+            </Link>
+          ))}
+        </div>
+        
+        <div className="relative z-10 px-6 sm:px-8 md:px-12 flex flex-col items-center text-center max-w-4xl mx-auto space-y-8 pt-16 md:pt-24 pb-8">
           <div className="space-y-3">
             {/* Main Typographic Heading */}
             <h2 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight bg-clip-text text-transparent bg-[linear-gradient(180deg,#090d16,_#2d3748)] uppercase select-none leading-none">
