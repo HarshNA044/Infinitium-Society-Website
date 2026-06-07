@@ -192,13 +192,6 @@ export default function Home_Page() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full relative overflow-hidden text-slate-950 flex flex-col justify-start border-b border-slate-100 transform-gpu pb-16 md:pb-24"
       >
-        {/* Shifting Aurora Background Lights */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-          <div
-            className="aurora-gradient-lights opacity-45 [mask-image:radial-gradient(ellipse_at_100%_0%,black_10%,var(--transparent)_70%)]"
-          ></div>
-        </div>
-
         <RetroGrid opacity={0.35} lightLineColor="#e2e8f0" />
         
         {/* Animated Background Scientific & Technical Icons */}
