@@ -224,8 +224,6 @@ import Events_Page from './pages/Events';
 import Gallery_Page from './pages/Gallery';
 import Achievements_Page from './pages/Achievements';
 import Team_Page from './pages/Team';
-import Contact_Page from './pages/Contact';
-import Feedback_Page from './pages/Feedback';
 import Admin_Page from './pages/Admin';
 import EventDetail_Page from './pages/EventDetail';
 
@@ -263,8 +261,6 @@ function AppContent() {
           <Route path="/gallery" element={<Gallery_Page />} />
           <Route path="/achievements" element={<Achievements_Page />} />
           <Route path="/team" element={<Team_Page />} />
-          <Route path="/contact" element={<Contact_Page />} />
-          <Route path="/feedback" element={<Feedback_Page />} />
           <Route path="/admin/*" element={<Admin_Page />} />
         </Routes>
       </main>

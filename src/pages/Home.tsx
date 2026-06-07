@@ -3,7 +3,9 @@ import { motion } from 'motion/react';
 import { 
   ArrowRight, Calendar, Users, Trophy, Zap, Star, 
   Plus, QrCode as QrIcon, Lightbulb, Book, MessageSquare, Globe2,
-  Cpu, TestTube2, Monitor, MapPin, Share2, UserCheck
+  Cpu, TestTube2, Monitor, MapPin, Share2, UserCheck,
+  Atom, Beaker, Terminal, Network, Microscope, Orbit,
+  Database, Binary, Compass
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
@@ -56,6 +58,42 @@ const navItems = [
   { name: 'Gallery', path: '/gallery' },
   { name: 'Achievements', path: '/achievements' },
   { name: 'Team', path: '/team' },
+];
+
+const backgroundIcons = [
+  // --- COLORFUL ICONS ---
+  // Physics (Atom/Orbit) - Colorful
+  { icon: Atom, left: "5%", top: "8%", size: "w-8 h-8 md:w-24 md:h-24", color: "text-indigo-500/35", delay: 0, duration: 12, rotate: [0, 360] },
+  { icon: Orbit, left: "76%", top: "11%", size: "w-7 h-7 md:w-18 md:h-18", color: "text-violet-500/35", delay: 1, duration: 14, rotate: [0, -360] },
+  { icon: Globe2, left: "88%", top: "22%", size: "w-6 h-6 md:w-16 md:h-16", color: "text-blue-500/32", delay: 0.5, duration: 15, rotate: [0, 360] },
+
+  // Chemistry (Beaker/TestTube) - Colorful
+  { icon: Beaker, left: "32%", top: "14%", size: "w-6 h-6 md:w-16 md:h-16", color: "text-emerald-500/35", delay: 0.8, duration: 10, rotate: [0, -12, 12, 0] },
+  { icon: TestTube2, left: "14%", top: "45%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-teal-500/32", delay: 2.2, duration: 9, rotate: [0, 15, -15, 0] },
+  { icon: Microscope, left: "55%", top: "84%", size: "w-7 h-7 md:w-18 md:h-18", color: "text-rose-500/30", delay: 2.5, duration: 11, rotate: [] },
+
+  // Computer Science & Electronics - Colorful
+  { icon: Terminal, left: "68%", top: "28%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-cyan-500/35", delay: 3, duration: 8, rotate: [0, 5, -5, 0] },
+  { icon: Cpu, left: "20%", top: "82%", size: "w-7 h-7 md:w-18 md:h-18", color: "text-amber-500/35", delay: 1.5, duration: 10, rotate: [0, 90, 180, 270, 360] },
+  { icon: Zap, left: "48%", top: "4%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-yellow-500/40", delay: 1.8, duration: 7, rotate: [0, 10, -10, 0] },
+  { icon: Lightbulb, left: "92%", top: "54%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-orange-500/32", delay: 4, duration: 12, rotate: [0, -10, 10, 0] },
+  { icon: Network, left: "62%", top: "52%", size: "w-6 h-6 md:w-16 md:h-16", color: "text-sky-500/35", delay: 0.5, duration: 13, rotate: [0, 360] },
+  { icon: Compass, left: "38%", top: "65%", size: "w-6 h-6 md:w-16 md:h-16", color: "text-fuchsia-500/30", delay: 1.1, duration: 14, rotate: [0, 360] },
+
+  // --- SCI-FI / NEUTRAL GREY ICONS (Adding depth & balance) ---
+  { icon: Atom, left: "25%", top: "28%", size: "w-5 h-5 md:w-12 md:h-12", color: "text-slate-400/28", delay: 1.2, duration: 13, rotate: [0, -360] },
+  { icon: Orbit, left: "10%", top: "62%", size: "w-6 h-6 md:w-15 md:h-15", color: "text-zinc-400/26", delay: 2.1, duration: 16, rotate: [0, 360] },
+  { icon: Database, left: "82%", top: "78%", size: "w-7 h-7 md:w-16 md:h-16", color: "text-zinc-500/28", delay: 3.2, duration: 11, rotate: [] },
+  { icon: Binary, left: "12%", top: "22%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-slate-400/28", delay: 0.7, duration: 9, rotate: [] },
+  { icon: Terminal, left: "54%", top: "22%", size: "w-5 h-5 md:w-12 md:h-12", color: "text-slate-400/26", delay: 2.8, duration: 8, rotate: [0, -5, 5, 0] },
+  { icon: Cpu, left: "74%", top: "48%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-zinc-400/28", delay: 1.9, duration: 12, rotate: [0, -90, -180, -270, -360] },
+  { icon: Monitor, left: "44%", top: "36%", size: "w-5 h-5 md:w-13 md:h-13", color: "text-slate-400/26", delay: 3.1, duration: 10, rotate: [] },
+  { icon: Beaker, left: "93%", top: "5%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-zinc-400/25", delay: 1.4, duration: 11, rotate: [0, 10, -10, 0] },
+  { icon: Book, left: "28%", top: "55%", size: "w-5 h-5 md:w-13 md:h-13", color: "text-slate-400/26", delay: 2.4, duration: 10, rotate: [] },
+  { icon: Zap, left: "80%", top: "92%", size: "w-5 h-5 md:w-13 md:h-13", color: "text-zinc-400/28", delay: 0.9, duration: 7, rotate: [0, -15, 15, 0] },
+  { icon: Globe2, left: "42%", top: "90%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-slate-400/28", delay: 3.6, duration: 14, rotate: [] },
+  { icon: Binary, left: "64%", top: "75%", size: "w-6 h-6 md:w-12 md:h-12", color: "text-zinc-400/26", delay: 1.7, duration: 8, rotate: [] },
+  { icon: Microscope, left: "3%", top: "93%", size: "w-6 h-6 md:w-13 md:h-13", color: "text-slate-400/28", delay: 2.9, duration: 12, rotate: [] }
 ];
 
 export default function Home_Page() {
@@ -156,8 +194,58 @@ export default function Home_Page() {
       >
         <RetroGrid opacity={0.35} lightLineColor="#e2e8f0" />
         
+        {/* Animated Background Scientific & Technical Icons */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden select-none z-0">
+          {backgroundIcons.map((item, index) => {
+            const { icon: Icon, left, top, size, color, delay, duration, rotate } = item;
+            return (
+              <motion.div
+                key={index}
+                className={cn("absolute pointer-events-auto cursor-help", color)}
+                style={{ left, top }}
+                initial={{ y: 0, opacity: 0, scale: 0.8 }}
+                animate={{
+                  y: [0, -15, 0],
+                  opacity: [0.35, 0.85, 0.35],
+                }}
+                whileHover={{ scale: 1.25, opacity: 0.95, rotate: 15 }}
+                transition={{
+                  y: {
+                    duration: duration,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: delay,
+                  },
+                  opacity: {
+                    duration: duration,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                    delay: delay,
+                  }
+                }}
+              >
+                {rotate && rotate.length > 0 ? (
+                  <motion.div
+                    animate={{ rotate: rotate }}
+                    transition={{
+                      duration: duration * 1.5,
+                      repeat: Infinity,
+                      ease: "linear",
+                      delay: delay,
+                    }}
+                  >
+                    <Icon className={size} strokeWidth={1.8} />
+                  </motion.div>
+                ) : (
+                  <Icon className={size} strokeWidth={1.8} />
+                )}
+              </motion.div>
+            );
+          })}
+        </div>
+        
         {/* Centered Hero Navigation Links for Desktop/Tablet */}
-        <div className="hidden md:flex items-center justify-center gap-8 py-8 w-full relative z-20 select-none border-b border-slate-100/50 backdrop-blur-sm bg-white/10">
+        <div className="hidden md:flex items-center justify-center gap-8 py-8 w-full relative z-20 select-none bg-transparent">
           {navItems.filter(item => item.name !== 'Home').map((item) => (
             <Link
               key={item.name}
@@ -207,35 +295,6 @@ export default function Home_Page() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:auto-rows-[minmax(80px,_auto)]">
-
-
-        {/* Quick Registration (Span 12x1) */}
-        <motion.div 
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.2 }}
-          className="md:col-span-12 md:row-span-1"
-        >
-          <Link 
-            to="/contact"
-            className="bg-amber-400 rounded-2xl border border-amber-500 p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:scale-[1.01] transition-transform cursor-pointer block hover:shadow-lg hover:shadow-amber-500/10"
-          >
-            <div className="flex flex-col">
-              <h4 className="font-black text-amber-950 uppercase text-lg tracking-tighter leading-none">Quick Register</h4>
-              <p className="text-xs sm:text-sm text-amber-900 font-bold uppercase leading-tight mt-2 max-w-xl">
-                Become a proud member of a science focussed community for your growth.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
-              <div className="w-10 h-10 bg-amber-500/20 rounded-full flex items-center justify-center text-amber-950">
-                <UserCheck className="w-5 h-5" />
-              </div>
-              <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-amber-600 shadow-lg shadow-amber-950/10">
-                <ArrowRight className="w-5 h-5" />
-              </div>
-            </div>
-          </Link>
-        </motion.div>
 
         {/* Ongoing & Recent Section (Span 12) */}
         <div id="events-section" className="md:col-span-12 py-12">
