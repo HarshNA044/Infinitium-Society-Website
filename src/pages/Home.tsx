@@ -387,7 +387,7 @@ export default function Home_Page() {
           whileInView={{ opacity: 1, scale: 1 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, ease: "easeOut" }}
-          className="md:col-span-8 md:row-span-4 bg-zinc-950 rounded-2xl relative overflow-hidden group shadow-2xl shadow-brand-500/10 border border-white/5"
+          className="h-[450px] sm:h-[500px] md:h-[420px] lg:h-[480px] md:col-span-12 bg-zinc-950 rounded-2xl relative overflow-hidden group shadow-2xl shadow-brand-500/10 border border-white/5"
         >
           <div className="absolute inset-0 z-0">
             {galleryImages.length > 0 ? (
@@ -458,7 +458,7 @@ export default function Home_Page() {
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
           transition={{ delay: 0.2 }}
-          className="md:col-span-4 md:row-span-4 bg-white rounded-2xl p-8 text-slate-950 flex flex-col justify-between items-center text-center relative overflow-hidden border border-slate-100 shadow-sm"
+          className="md:col-span-12 bg-white rounded-2xl p-8 sm:p-12 text-slate-950 flex flex-col justify-between items-center text-center relative overflow-hidden border border-slate-100 shadow-sm py-12 md:py-16"
         >
           <div className="absolute top-6 left-1/2 -translate-x-1/2">
              <span className="text-[9px] font-black uppercase text-slate-400 tracking-[0.3em]">Our Legacy</span>
