@@ -8,7 +8,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { doc, getDoc, collection, getDocs, orderBy, query, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, orderBy, query, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 import QRCode from 'qrcode';
 
@@ -267,6 +267,64 @@ export default function EventDetail_Page() {
       console.log("Apps Script Configured Url:", appsScriptUrl);
       if (!appsScriptUrl) {
         setErrors({ submit: "Registration failed: Apps Script URL is not configured. Please set VITE_APPS_SCRIPT_URL in your workspace properties." });
+        setLoading(false);
+        return;
+      }
+
+      // Check duplicate using temp JSON in Firebase
+      let isDuplicate = false;
+      const tempId = `temp_reg_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+      const tempDocRef = doc(db, 'temp_jsons', tempId);
+      
+      try {
+        console.log("Fetching registrations to build temp JSON for duplicate check...");
+        const getRegsResponse = await fetch(appsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            type: 'get_registrations',
+            sheetId: event.sheetId
+          })
+        });
+        
+        const regsResult = await getRegsResponse.json();
+        
+        if (regsResult.status === "success") {
+          const registrationsList = regsResult.registrations || [];
+          
+          // Store the registrations as a concise JSON in Firebase to comply with the storage-efficient cache requirement
+          console.log(`Writing temporary JSON data to Firebase: temp_jsons/${tempId}`);
+          await setDoc(tempDocRef, {
+            content: JSON.stringify(registrationsList),
+            createdAt: serverTimestamp()
+          });
+          
+          // Read back the temporary JSON data from Firebase to perform the duplicate check
+          const tempSnap = await getDoc(tempDocRef);
+          if (tempSnap.exists()) {
+            const cacheContent = tempSnap.data().content;
+            const cachedRegs = JSON.parse(cacheContent);
+            
+            const normalizedRoll = formData.rollNo.toString().trim().toLowerCase();
+            isDuplicate = cachedRegs.some((r: any) => 
+               r.rollNo && r.rollNo.toString().trim().toLowerCase() === normalizedRoll
+            );
+          }
+        }
+      } catch (checkErr) {
+        console.error("Error doing temp JSON database duplicate check:", checkErr);
+      } finally {
+        // ALWAYS delete the temporary JSON document from Firebase Storage/Firestore once duplicate check completes
+        try {
+          console.log(`Deleting temporary JSON data from Firebase: temp_jsons/${tempId}`);
+          await deleteDoc(tempDocRef);
+        } catch (delErr) {
+          console.error("Error deleting temp JSON document:", delErr);
+        }
+      }
+
+      if (isDuplicate) {
+        setErrors({ submit: "You have already registered for this event. This College Roll No. is already registered." });
         setLoading(false);
         return;
       }

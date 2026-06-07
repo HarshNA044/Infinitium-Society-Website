@@ -156,6 +156,16 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["studentName", "rollNo", "email", "ticketId", "eventId", "createdAt"]
+    },
+    "TempJson": {
+      "title": "Temporary JSON Cache",
+      "description": "A temporary collection of JSON data stored concisely in Firebase for duplicate checking and scanning check-ins",
+      "type": "object",
+      "properties": {
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["content", "createdAt"]
     }
   },
   "firestore": {
@@ -190,6 +200,10 @@
     "/contact_messages": {
       "schema": "ContactMessage",
       "description": "Collection of messages from the contact form"
+    },
+    "/temp_jsons": {
+      "schema": "TempJson",
+      "description": "Collection of temporary JSON documents"
     }
   }
 }

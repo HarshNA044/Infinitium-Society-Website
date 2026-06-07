@@ -500,6 +500,54 @@ export default function Admin_Page() {
               throw new Error("Selected event does not have an associated Google Sheet ID.");
             }
 
+            const tempId = `temp_scan_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+            const tempDocRef = doc(db, 'temp_jsons', tempId);
+            let excelData: any[] = [];
+            
+            try {
+              console.log("Fetching all sheet registrations to build temporary JSON...");
+              const getRegsResponse = await fetch(appsScriptUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                  type: 'get_registrations',
+                  sheetId: targetEvent.sheetId
+                })
+              });
+              const regsResult = await getRegsResponse.json();
+              if (regsResult.status === "success" && regsResult.registrations) {
+                excelData = regsResult.registrations;
+              }
+              
+              // Write temporary JSON with excel data to Firebase
+              console.log(`Creating temporary JSON document for scanner in Firebase: temp_jsons/${tempId}`);
+              await setDoc(tempDocRef, {
+                content: JSON.stringify(excelData),
+                createdAt: serverTimestamp()
+              });
+              
+              // Read the temporary JSON document from Firebase and use it
+              const tempSnap = await getDoc(tempDocRef);
+              if (tempSnap.exists()) {
+                const parsedContent = JSON.parse(tempSnap.data().content);
+                const ticket = parsedContent.find((r: any) => r.ticketId === decodedText);
+                if (!ticket) {
+                  throw new Error(`Ticket ID ${decodedText} not found in Excel sheet.`);
+                }
+              }
+            } catch (jsonErr: any) {
+              console.error("Error managing temp JSON during scanning:", jsonErr);
+              throw jsonErr;
+            } finally {
+              // ALWAYS delete the temporary JSON document from Firebase Storage/Firestore once attendance check completes
+              try {
+                console.log(`Deleting temporary JSON document from Firebase: temp_jsons/${tempId}`);
+                await deleteDoc(tempDocRef);
+              } catch (delErr) {
+                console.error("Error deleting temp JSON document:", delErr);
+              }
+            }
+
             const response = await fetch(appsScriptUrl, {
               method: 'POST',
               headers: { 'Content-Type': 'text/plain' },

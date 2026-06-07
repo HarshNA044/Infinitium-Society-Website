@@ -32,7 +32,34 @@ function doPost(e) {
       sheet.insertColumnsAfter(maxCols, 12 - maxCols);
     }
     
-    if (data.type === 'attendance') {
+    if (data.type === 'get_registrations') {
+      var lastRow = sheet.getLastRow();
+      if (lastRow <= 1) {
+        var response = { status: "success", registrations: [] };
+        return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+      }
+      var values = sheet.getRange(1, 1, lastRow, 12).getValues();
+      var list = [];
+      for (var i = 1; i < values.length; i++) {
+        var row = values[i];
+        list.push({
+          studentName: row[0] || "",
+          rollNo: row[1] || "",
+          email: row[2] || "",
+          course: row[3] || "",
+          phoneNo: row[4] || "",
+          year: row[5] || "",
+          collegeName: row[6] || "",
+          isPartOfSociety: row[7] || "",
+          societyDepartment: row[8] || "",
+          availability: row[9] || "",
+          ticketId: row[10] || "",
+          attended: row[11] === "Yes"
+        });
+      }
+      var response = { status: "success", registrations: list };
+      return ContentService.createTextOutput(JSON.stringify(response)).setMimeType(ContentService.MimeType.JSON);
+    } else if (data.type === 'attendance') {
       // Find row by ticketId and mark attendance
       var ticketId = data.ticketId;
       var range = sheet.getDataRange();
