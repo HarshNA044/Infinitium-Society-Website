@@ -63,37 +63,37 @@ const navItems = [
 const backgroundIcons = [
   // --- COLORFUL ICONS ---
   // Physics (Atom/Orbit) - Colorful
-  { icon: Atom, left: "5%", top: "8%", size: "w-8 h-8 md:w-24 md:h-24", color: "text-indigo-500/35", delay: 0, duration: 12, rotate: [0, 360] },
-  { icon: Orbit, left: "76%", top: "11%", size: "w-7 h-7 md:w-18 md:h-18", color: "text-violet-500/35", delay: 1, duration: 14, rotate: [0, -360] },
-  { icon: Globe2, left: "88%", top: "22%", size: "w-6 h-6 md:w-16 md:h-16", color: "text-blue-500/32", delay: 0.5, duration: 15, rotate: [0, 360] },
+  { icon: Atom, left: "5%", top: "8%", size: "w-14 h-14 md:w-24 md:h-24", color: "text-indigo-500/35", delay: 0, duration: 12, rotate: [0, 360] },
+  { icon: Orbit, left: "76%", top: "11%", size: "w-12 h-12 md:w-18 md:h-18", color: "text-violet-500/35", delay: 1, duration: 14, rotate: [0, -360] },
+  { icon: Globe2, left: "88%", top: "22%", size: "w-11 h-11 md:w-16 md:h-16", color: "text-blue-500/32", delay: 0.5, duration: 15, rotate: [0, 360] },
 
   // Chemistry (Beaker/TestTube) - Colorful
-  { icon: Beaker, left: "32%", top: "14%", size: "w-6 h-6 md:w-16 md:h-16", color: "text-emerald-500/35", delay: 0.8, duration: 10, rotate: [0, -12, 12, 0] },
-  { icon: TestTube2, left: "14%", top: "45%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-teal-500/32", delay: 2.2, duration: 9, rotate: [0, 15, -15, 0] },
-  { icon: Microscope, left: "55%", top: "84%", size: "w-7 h-7 md:w-18 md:h-18", color: "text-rose-500/30", delay: 2.5, duration: 11, rotate: [] },
+  { icon: Beaker, left: "32%", top: "14%", size: "w-11 h-11 md:w-16 md:h-16", color: "text-emerald-500/35", delay: 0.8, duration: 10, rotate: [0, -12, 12, 0] },
+  { icon: TestTube2, left: "14%", top: "45%", size: "w-11 h-11 md:w-14 md:h-14", color: "text-teal-500/32", delay: 2.2, duration: 9, rotate: [0, 15, -15, 0] },
+  { icon: Microscope, left: "55%", top: "84%", size: "w-12 h-12 md:w-18 md:h-18", color: "text-rose-500/30", delay: 2.5, duration: 11, rotate: [] },
 
   // Computer Science & Electronics - Colorful
-  { icon: Terminal, left: "68%", top: "28%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-cyan-500/35", delay: 3, duration: 8, rotate: [0, 5, -5, 0] },
-  { icon: Cpu, left: "20%", top: "82%", size: "w-7 h-7 md:w-18 md:h-18", color: "text-amber-500/35", delay: 1.5, duration: 10, rotate: [0, 90, 180, 270, 360] },
-  { icon: Zap, left: "48%", top: "4%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-yellow-500/40", delay: 1.8, duration: 7, rotate: [0, 10, -10, 0] },
-  { icon: Lightbulb, left: "92%", top: "54%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-orange-500/32", delay: 4, duration: 12, rotate: [0, -10, 10, 0] },
-  { icon: Network, left: "62%", top: "52%", size: "w-6 h-6 md:w-16 md:h-16", color: "text-sky-500/35", delay: 0.5, duration: 13, rotate: [0, 360] },
-  { icon: Compass, left: "38%", top: "65%", size: "w-6 h-6 md:w-16 md:h-16", color: "text-fuchsia-500/30", delay: 1.1, duration: 14, rotate: [0, 360] },
+  { icon: Terminal, left: "68%", top: "28%", size: "w-11 h-11 md:w-14 md:h-14", color: "text-cyan-500/35", delay: 3, duration: 8, rotate: [0, 5, -5, 0] },
+  { icon: Cpu, left: "20%", top: "82%", size: "w-12 h-12 md:w-18 md:h-18", color: "text-amber-500/35", delay: 1.5, duration: 10, rotate: [0, 90, 180, 270, 360] },
+  { icon: Zap, left: "48%", top: "4%", size: "w-11 h-11 md:w-14 md:h-14", color: "text-yellow-500/40", delay: 1.8, duration: 7, rotate: [0, 10, -10, 0] },
+  { icon: Lightbulb, left: "92%", top: "54%", size: "w-11 h-11 md:w-14 md:h-14", color: "text-orange-500/32", delay: 4, duration: 12, rotate: [0, -10, 10, 0] },
+  { icon: Network, left: "62%", top: "52%", size: "w-11 h-11 md:w-16 md:h-16", color: "text-sky-500/35", delay: 0.5, duration: 13, rotate: [0, 360] },
+  { icon: Compass, left: "38%", top: "65%", size: "w-11 h-11 md:w-16 md:h-16", color: "text-fuchsia-500/30", delay: 1.1, duration: 14, rotate: [0, 360] },
 
   // --- SCI-FI / NEUTRAL GREY ICONS (Adding depth & balance) ---
-  { icon: Atom, left: "25%", top: "28%", size: "w-5 h-5 md:w-12 md:h-12", color: "text-slate-400/28", delay: 1.2, duration: 13, rotate: [0, -360] },
-  { icon: Orbit, left: "10%", top: "62%", size: "w-6 h-6 md:w-15 md:h-15", color: "text-zinc-400/26", delay: 2.1, duration: 16, rotate: [0, 360] },
-  { icon: Database, left: "82%", top: "78%", size: "w-7 h-7 md:w-16 md:h-16", color: "text-zinc-500/28", delay: 3.2, duration: 11, rotate: [] },
-  { icon: Binary, left: "12%", top: "22%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-slate-400/28", delay: 0.7, duration: 9, rotate: [] },
-  { icon: Terminal, left: "54%", top: "22%", size: "w-5 h-5 md:w-12 md:h-12", color: "text-slate-400/26", delay: 2.8, duration: 8, rotate: [0, -5, 5, 0] },
-  { icon: Cpu, left: "74%", top: "48%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-zinc-400/28", delay: 1.9, duration: 12, rotate: [0, -90, -180, -270, -360] },
-  { icon: Monitor, left: "44%", top: "36%", size: "w-5 h-5 md:w-13 md:h-13", color: "text-slate-400/26", delay: 3.1, duration: 10, rotate: [] },
-  { icon: Beaker, left: "93%", top: "5%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-zinc-400/25", delay: 1.4, duration: 11, rotate: [0, 10, -10, 0] },
-  { icon: Book, left: "28%", top: "55%", size: "w-5 h-5 md:w-13 md:h-13", color: "text-slate-400/26", delay: 2.4, duration: 10, rotate: [] },
-  { icon: Zap, left: "80%", top: "92%", size: "w-5 h-5 md:w-13 md:h-13", color: "text-zinc-400/28", delay: 0.9, duration: 7, rotate: [0, -15, 15, 0] },
-  { icon: Globe2, left: "42%", top: "90%", size: "w-6 h-6 md:w-14 md:h-14", color: "text-slate-400/28", delay: 3.6, duration: 14, rotate: [] },
-  { icon: Binary, left: "64%", top: "75%", size: "w-6 h-6 md:w-12 md:h-12", color: "text-zinc-400/26", delay: 1.7, duration: 8, rotate: [] },
-  { icon: Microscope, left: "3%", top: "93%", size: "w-6 h-6 md:w-13 md:h-13", color: "text-slate-400/28", delay: 2.9, duration: 12, rotate: [] }
+  { icon: Atom, left: "25%", top: "28%", size: "w-10 h-10 md:w-12 md:h-12", color: "text-slate-400/28", delay: 1.2, duration: 13, rotate: [0, -360] },
+  { icon: Orbit, left: "10%", top: "62%", size: "w-11 h-11 md:w-15 md:h-15", color: "text-zinc-400/26", delay: 2.1, duration: 16, rotate: [0, 360] },
+  { icon: Database, left: "82%", top: "78%", size: "w-12 h-12 md:w-16 md:h-16", color: "text-zinc-500/28", delay: 3.2, duration: 11, rotate: [] },
+  { icon: Binary, left: "12%", top: "22%", size: "w-11 h-11 md:w-14 md:h-14", color: "text-slate-400/28", delay: 0.7, duration: 9, rotate: [] },
+  { icon: Terminal, left: "54%", top: "22%", size: "w-10 h-10 md:w-12 md:h-12", color: "text-slate-400/26", delay: 2.8, duration: 8, rotate: [0, -5, 5, 0] },
+  { icon: Cpu, left: "74%", top: "48%", size: "w-11 h-11 md:w-14 md:h-14", color: "text-zinc-400/28", delay: 1.9, duration: 12, rotate: [0, -90, -180, -270, -360] },
+  { icon: Monitor, left: "44%", top: "36%", size: "w-10 h-10 md:w-13 md:h-13", color: "text-slate-400/26", delay: 3.1, duration: 10, rotate: [] },
+  { icon: Beaker, left: "93%", top: "5%", size: "w-11 h-11 md:w-14 md:h-14", color: "text-zinc-400/25", delay: 1.4, duration: 11, rotate: [0, 10, -10, 0] },
+  { icon: Book, left: "28%", top: "55%", size: "w-10 h-10 md:w-13 md:h-13", color: "text-slate-400/26", delay: 2.4, duration: 10, rotate: [] },
+  { icon: Zap, left: "80%", top: "92%", size: "w-10 h-10 md:w-13 md:h-13", color: "text-zinc-400/28", delay: 0.9, duration: 7, rotate: [0, -15, 15, 0] },
+  { icon: Globe2, left: "42%", top: "90%", size: "w-11 h-11 md:w-14 md:h-14", color: "text-slate-400/28", delay: 3.6, duration: 14, rotate: [] },
+  { icon: Binary, left: "64%", top: "75%", size: "w-11 h-11 md:w-12 md:h-12", color: "text-zinc-400/26", delay: 1.7, duration: 8, rotate: [] },
+  { icon: Microscope, left: "3%", top: "93%", size: "w-11 h-11 md:w-13 md:h-13", color: "text-slate-400/28", delay: 2.9, duration: 12, rotate: [] }
 ];
 
 export default function Home_Page() {
