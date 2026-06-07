@@ -37,6 +37,19 @@
   animation: wave-ripple 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
 }
 
+@keyframes grid-animation {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 var(--cell-size, 60px);
+  }
+}
+
+.animate-grid {
+  animation: grid-animation 15s linear infinite;
+}
+
 @layer base {
   body {
     @apply bg-[#fcfcfc] text-slate-900 antialiased;

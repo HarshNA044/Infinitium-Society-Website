@@ -73,9 +73,22 @@ export function handleFirestoreError(error: unknown, operationType: OperationTyp
 async function testConnection() {
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
-  } catch (error) {
-    if(error instanceof Error && error.message.includes('the client is offline')) {
-      console.error("Please check your Firebase configuration.");
+    console.log("Firestore connection test: Online and accessible.");
+  } catch (error: any) {
+    if (error && (error.code === 'permission-denied' || (error.message && error.message.includes('permission-denied')))) {
+      // If access is denied by security rules, it confirms we successfully connected to the Firebase Firestore backend server!
+      console.log("Firestore connection test: Success (connected and secured by rules).");
+      return;
+    }
+    const isOffline = error && (
+      error.code === 'unavailable' || 
+      (error.message && error.message.toLowerCase().includes('offline')) ||
+      (error.message && error.message.toLowerCase().includes('failed to connect'))
+    );
+    if (isOffline) {
+      console.warn("Firestore is operating in offline/cache mode. Handled gracefully; client will sync as soon as connectivity is established.");
+    } else {
+      console.error("Firestore connection checker received: ", error instanceof Error ? error.message : String(error));
     }
   }
 }

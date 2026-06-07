@@ -8,6 +8,38 @@ import {
 import { Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { collection, getDocs, orderBy, query, limit } from 'firebase/firestore';
+import { cn } from '../lib/utils';
+
+const RetroGrid = ({
+  angle = 65,
+  cellSize = 60,
+  opacity = 0.5,
+  lightLineColor = "gray",
+  darkLineColor = "gray",
+}) => {
+  const gridStyles = {
+    "--grid-angle": `${angle}deg`,
+    "--cell-size": `${cellSize}px`,
+    "--opacity": opacity,
+    "--light-line": lightLineColor,
+    "--dark-line": darkLineColor,
+  } as React.CSSProperties;
+
+  return (
+    <div
+      className={cn(
+        "pointer-events-none absolute h-full w-full overflow-hidden [perspective:200px]",
+        `opacity-[var(--opacity)]`,
+      )}
+      style={gridStyles}
+    >
+      <div className="absolute inset-0 [transform:rotateX(var(--grid-angle))]">
+        <div className="animate-grid [background-image:linear-gradient(to_right,var(--light-line)_1px,transparent_0),linear-gradient(to_bottom,var(--light-line)_1px,transparent_0)] [background-repeat:repeat] [background-size:var(--cell-size)_var(--cell-size)] [height:300vh] [inset:0%_0px] [margin-left:-200%] [transform-origin:100%_0_0] [width:600vw]" />
+      </div>
+      <div className="absolute inset-0 bg-gradient-to-t from-[#fcfcfc] to-transparent to-90%" />
+    </div>
+  )
+}
 
 const SectionHeader = ({ title }: { title: string }) => (
   <div className="flex items-center justify-center gap-4 mb-4">
@@ -108,89 +140,52 @@ export default function Home_Page() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:auto-rows-[minmax(80px,_auto)]">
         
-        {/* Main Hero / Featured Event (Span 12x4) */}
+        {/* Main Hero / Featured Event (Span 12x4) with RetroGrid & Premium Aesthetics */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-12 md:row-span-4 bg-white/90 backdrop-blur-xl rounded-2xl p-8 md:p-12 relative overflow-hidden text-slate-950 flex flex-col justify-end shadow-[0_0_50px_rgba(20,184,166,0.15)] hover:shadow-[0_0_60px_rgba(20,184,166,0.22)] transition-all duration-500 group border border-white/50 transform-gpu"
+          className="md:col-span-12 md:row-span-4 bg-white rounded-3xl relative overflow-hidden text-slate-950 flex flex-col justify-center shadow-lg border border-slate-100 transform-gpu py-12 md:py-16"
         >
-          {/* Decorative Background Elements - Optimized for performance */}
-          <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
-            {/* Subtle Static Blobs instead of animated ones */}
-            <div className="absolute -top-24 -right-24 w-96 h-96 bg-brand-500/5 blur-[80px] rounded-full" />
-            <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-rose-200/5 blur-[80px] rounded-full" />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(94,234,212,0.03)_0%,transparent_70%)]" />
-            
-            {/* Very slow, subtle icon floats - Optimized for performance */}
-            <motion.div 
-              animate={{ 
-                y: [0, -5, 0],
-              }}
-              transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-              className="absolute top-10 right-10 sm:right-20 lg:right-40 text-amber-900/10 transform-gpu"
-            >
-              <Cpu className="w-24 h-24 md:w-32 md:h-32" />
-            </motion.div>
+          <RetroGrid opacity={0.35} lightLineColor="#e2e8f0" />
+          
+          <div className="relative z-10 px-6 sm:px-8 md:px-12 flex flex-col items-center text-center max-w-4xl mx-auto space-y-6">
+            {/* Title Badge representing Legacy */}
+            <h1 className="text-[10px] md:text-xs text-slate-600 group font-sans mx-auto px-5 py-2.5 bg-gradient-to-tr from-zinc-300/20 via-zinc-400/20 to-transparent border-[2.5px] border-black/5 rounded-3xl w-fit flex items-center justify-center gap-1 uppercase tracking-widest font-black">
+              Legacy of ARSD College
+              <ChevronRight className="inline w-3.5 h-3.5 ml-1 group-hover:translate-x-1 duration-300 transition-transform" />
+            </h1>
 
-            <motion.div 
-              animate={{ 
-                y: [0, 5, 0],
-              }}
-              transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-              className="absolute top-40 left-10 md:bottom-20 md:left-40 text-rose-900/10 transform-gpu"
-            >
-              <TestTube2 className="w-16 h-16 md:w-24 md:h-24" />
-            </motion.div>
-
-            <motion.div 
-              animate={{ 
-                rotate: [0, 360]
-              }}
-              transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-              className="absolute top-1/2 -right-10 md:-right-20 lg:-right-10 text-blue-900/10 transform-gpu"
-            >
-              <Monitor className="w-32 h-32 md:w-48 md:h-48" />
-            </motion.div>
-
-            <motion.div 
-              animate={{ 
-                x: [0, 10, 0],
-                y: [0, -10, 0],
-              }}
-              transition={{ duration: 15, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-              className="absolute bottom-1/2 right-1/2 md:bottom-1/4 md:right-1/4 text-violet-900/10 transform-gpu"
-            >
-              <Globe2 className="w-24 h-24 md:w-36 md:h-36" />
-            </motion.div>
-          </div>
-
-          <div className="relative z-10">
-            <div className="absolute top-0 right-8 md:right-16 p-8 opacity-5 group-hover:scale-110 group-hover:rotate-12 transition-transform duration-700">
-              <Zap className="w-64 h-64 text-brand-600" />
-            </div>
-            
-            <div className="mb-6 flex flex-col items-start select-none">
-              <h1 className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tighter uppercase leading-none text-slate-950">
+            <div className="space-y-3">
+              {/* Main Typographic Heading */}
+              <h2 className="text-5xl sm:text-7xl md:text-8xl font-black tracking-tight bg-clip-text text-transparent bg-[linear-gradient(180deg,#090d16,_#2d3748)] uppercase select-none leading-none">
                 INFINITIUM
-              </h1>
-              <p className="whitespace-nowrap text-lg sm:text-3xl md:text-4xl font-black text-brand-600 uppercase tracking-tighter leading-none mt-2">
+              </h2>
+              
+              {/* Tagline showing Inspiring Innovation, text size smaller than INFINITIUM */}
+              <span className="block text-xl sm:text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-brand-600 into-brand-500 to-teal-500 uppercase tracking-widest select-none font-sans leading-none">
                 INSPIRING INNOVATION
-              </p>
+              </span>
             </div>
 
-            <div className="flex flex-wrap gap-6 md:gap-8 items-center mt-4 pt-8 border-t border-slate-900/5">
-              <div className="flex flex-col max-w-lg">
-                <span className="text-[10px] text-slate-400 uppercase font-bold tracking-widest mb-1">Legacy of ARSD College</span>
-                <p className="text-xs md:text-sm font-medium text-slate-600 leading-relaxed tracking-tight text-left">
-                  INFINITIUM stands as the premier scientific hub of Physical Sciences at ARSD College, bringing together students from Chemistry, Computer Science, Electronics, and Applied Sciences to foster innovation, research, creativity, and scientific thinking.
-                </p>
-              </div>
-              <Link 
-                to="/about"
-                className="w-full md:w-auto md:ml-auto bg-brand-600 text-white px-10 py-5 rounded-xl font-black uppercase text-xs tracking-widest hover:bg-brand-950 transition-all shadow-xl shadow-brand-600/20 active:scale-95 text-center cursor-pointer"
-              >
-                Our Story
-              </Link>
+            {/* Description Paragraph */}
+            <p className="max-w-2xl mx-auto text-slate-500 text-xs sm:text-sm font-semibold leading-relaxed tracking-normal">
+              INFINITIUM stands as the premier scientific hub of Physical Sciences at ARSD College, bringing together students from Chemistry, Computer Science, Electronics, and Applied Sciences to foster innovation, research, creativity, and scientific thinking.
+            </p>
+
+            {/* Action Call with Conic Laser Spinning Border */}
+            <div className="items-center justify-center gap-x-3 mt-4">
+              <span className="relative inline-block overflow-hidden rounded-full p-[1.5px]">
+                <span className="absolute inset-[-1000%] animate-[spin_5s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#ccfbf1_0%,#0d9488_50%,#ccfbf1_100%)]" />
+                <div className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-white text-xs font-semibold backdrop-blur-3xl">
+                  <Link
+                    to="/about"
+                    className="inline-flex rounded-full text-center group items-center w-full justify-center bg-gradient-to-tr from-zinc-300/10 via-brand-50/25 to-transparent text-slate-900 border-input border-[1px] hover:bg-gradient-to-tr hover:from-zinc-300/20 hover:via-brand-50/50 hover:to-transparent duration-300 py-3.5 px-10 uppercase font-black tracking-widest text-[11px]"
+                  >
+                    Our Story
+                    <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-0.5 duration-300 transition-transform" />
+                  </Link>
+                </div>
+              </span>
             </div>
           </div>
         </motion.div>
