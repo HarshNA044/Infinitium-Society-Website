@@ -210,13 +210,7 @@ service cloud.firestore {
 
     // --- Temp JSONs Rules ---
     match /temp_jsons/{tempId} {
-      function isValidTempJson(data) {
-        return data.keys().hasAll(['content', 'createdAt'])
-          && data.keys().size() == 2
-          && data.content is string
-          && data.createdAt is timestamp;
-      }
-      allow read, create, delete: if true;
+      allow read, write: if true;
     }
   }
 }

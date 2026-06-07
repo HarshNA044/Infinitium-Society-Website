@@ -275,7 +275,7 @@ function sendRegistrationEmail(data) {
                  '    <p>We look forward to seeing you there!</p>' +
                  '    <p style="margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 20px;">' +
                  '      Warm regards,<br/>' +
-                 '      <strong>Infinitium Society</strong><br/>' +
+                 '      <strong>Infinitium Organizing Committee</strong><br/>' +
                  '      Atma Ram Sanatan Dharma College, University of Delhi' +
                  '    </p>' +
                  '  </div>' +
