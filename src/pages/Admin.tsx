@@ -347,6 +347,10 @@ export default function Admin_Page() {
 
   const handleEventSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!eventImagePreview) {
+      alert("Please upload a poster image.");
+      return;
+    }
     const formData = new FormData(e.currentTarget);
     const sheetId = formData.get('sheetId') as string;
     const data: any = {
@@ -355,15 +359,15 @@ export default function Admin_Page() {
       type: formData.get('type') as string,
       date: formData.get('date') as string,
       location: formData.get('location') as string,
-      image: eventImagePreview || formData.get('image') as string,
+      image: eventImagePreview,
       description: formData.get('description') as string,
       startTime: formData.get('startTime') as string || '',
       whatsappGroup: formData.get('whatsappGroup') as string || '',
       status: editingEvent?.status || 'Upcoming',
       isInterCollege: !!formData.get('isInterCollege'),
       stats: {
-        registrations: parseInt(formData.get('registrations') as string) || 0,
-        attendance: parseInt(formData.get('attendance') as string) || 0
+        registrations: editingEvent?.stats?.registrations || 0,
+        attendance: editingEvent?.stats?.attendance || 0
       }
     };
 
@@ -1022,1140 +1026,718 @@ export default function Admin_Page() {
                </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-               <div className="bento-card lg:col-span-3 bg-white border border-slate-100 shadow-sm text-slate-900">
-                 <h3 className="text-xs font-black uppercase text-slate-400 tracking-[0.3em] mb-8">System Health & Recent Activity</h3>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                   <div className="space-y-6">
-                      {[
-                        { user: "Aryan S.", action: "Registered", time: "2m ago", event: "Pulsar 2026" },
-                        { user: "Ishita M.", action: "Attended", time: "15m ago", event: "AI Seminar" },
-                      ].map((item, i) => (
-                        <div key={i} className="flex gap-4 items-start border-l-2 border-brand-100 pl-4 py-1">
-                          <div className="flex-1">
-                            <p className="text-xs font-bold text-slate-900"><span className="text-brand-600">{item.user}</span> {item.action}</p>
-                            <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1">{item.event} • {item.time}</p>
-                          </div>
-                        </div>
-                      ))}
-                   </div>
-                   <div className="space-y-6">
-                      {[
-                        { user: "Kabir R.", action: "Registered", time: "1h ago", event: "UI Workshop" },
-                        { user: "Mehak P.", action: "Feedback", time: "2h ago", event: "Pulsar 2026" },
-                      ].map((item, i) => (
-                        <div key={i} className="flex gap-4 items-start border-l-2 border-brand-100 pl-4 py-1">
-                          <div className="flex-1">
-                            <p className="text-xs font-bold text-slate-900"><span className="text-brand-600">{item.user}</span> {item.action}</p>
-                            <p className="text-[9px] text-slate-400 uppercase font-black tracking-widest mt-1">{item.event} • {item.time}</p>
-                          </div>
-                        </div>
-                      ))}
-                   </div>
-                 </div>
-               </div>
-            </div>
           </div>
         )}
 
+        {/* Rebuilt Tabs and panels */}
         {activeTab === 'events' && (
-          <div className="bg-white rounded-2xl border border-zinc-100 shadow-sm overflow-x-auto">
-             <table className="w-full text-left border-collapse min-w-[800px]">
-               <thead className="bg-zinc-50">
-                 <tr>
-                   <th className="px-8 py-5 text-sm font-bold text-zinc-500 tracking-wider">EVENT NAME</th>
-                   <th className="px-8 py-5 text-sm font-bold text-zinc-500 tracking-wider">TYPE</th>
-                   <th className="px-8 py-5 text-sm font-bold text-zinc-500 tracking-wider">REGS</th>
-                   <th className="px-8 py-5 text-sm font-bold text-zinc-500 tracking-wider">ATTND</th>
-                   <th className="px-8 py-5 text-sm font-bold text-zinc-500 tracking-wider text-right">ACTION</th>
-                 </tr>
-               </thead>
-               <tbody className="divide-y divide-zinc-100">
-                 {events.map((event: any) => (
-                   <tr key={event.id} className="hover:bg-zinc-50 transition-colors">
-                     <td className="px-8 py-6">
-                        <p className="font-bold text-zinc-900">{event.title}</p>
-                        <p className="text-sm text-zinc-400">{event.date}</p>
-                        {event.sheetId && (
-                          <a 
-                            href={`https://docs.google.com/spreadsheets/d/${event.sheetId}`} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="text-[10px] text-brand-600 font-bold uppercase hover:underline mt-1 block"
-                          >
-                            View Google Sheet
-                          </a>
-                        )}
-                     </td>
-                     <td className="px-8 py-6">
-                        <span className="px-3 py-1 bg-zinc-100 text-zinc-600 rounded-full text-xs font-bold">{event.type}</span>
-                     </td>
-                     <td className="px-8 py-6 font-bold">{event.stats?.registrations || 0}</td>
-                     <td className="px-8 py-6 font-bold text-brand-700">{event.stats?.attendance || 0}</td>
-                     <td className="px-8 py-6 text-right">
-                        <div className="flex justify-end gap-2">
-                          <button 
+          <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl shadow-slate-100/50 overflow-hidden">
+            <div className="px-8 py-6 border-b border-zinc-50 bg-zinc-50/50 flex justify-between items-center">
+              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">All Events ({events.length})</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-100 text-[10px] font-black uppercase text-zinc-400 tracking-widest bg-zinc-50/30">
+                    <th className="px-8 py-5">Event</th>
+                    <th className="px-8 py-5">Type</th>
+                    <th className="px-8 py-5">Date & Time</th>
+                    <th className="px-8 py-5">Location</th>
+                    <th className="px-8 py-5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-50">
+                  {events.map((e: any) => (
+                    <tr key={e.id} className="hover:bg-zinc-50/30 transition-colors">
+                      <td className="px-8 py-5">
+                        <div className="flex items-center gap-4">
+                          {e.image && (
+                            <img src={e.image} className="w-12 h-12 object-cover rounded-xl border border-zinc-100" referrerPolicy="no-referrer" />
+                          )}
+                          <div>
+                            <p className="text-sm font-bold text-zinc-900">{e.title}</p>
+                            <p className="text-xs text-zinc-400 font-medium">{e.subtitle}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="inline-flex px-3 py-1 bg-brand-50 text-brand-600 rounded-full text-xs font-bold uppercase tracking-wider">
+                          {e.type}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5">
+                        <p className="text-sm font-bold text-zinc-700">{e.date}</p>
+                        <p className="text-xs text-zinc-400 font-semibold uppercase">{e.startTime || 'No specific time'}</p>
+                      </td>
+                      <td className="px-8 py-5 text-sm font-bold text-zinc-700">
+                        {e.location}
+                      </td>
+                      <td className="px-8 py-5 text-right">
+                        <div className="flex gap-3 justify-end">
+                          <button
                             onClick={() => {
-                              setEditingEvent(event);
-                              setSelectedEventDate(event.date);
-                              setEventImagePreview(event.image);
+                              setEditingEvent(e);
+                              setEventImagePreview(e.image);
+                              setEventMediaPreviews([]);
                               setShowAddEvent(true);
                             }}
-                            className="px-3 py-1.5 bg-brand-50 text-brand-600 rounded-lg text-xs font-bold hover:bg-brand-100 transition-all flex items-center gap-1 border border-brand-100"
-                            title="Edit Event"
+                            className="p-2.5 bg-zinc-50 hover:bg-zinc-100 rounded-xl text-zinc-600 hover:text-zinc-900 transition-all border border-zinc-100"
                           >
-                            <Edit3 className="w-3.5 h-3.5" /> Edit
+                            <Edit3 className="w-4 h-4" />
                           </button>
-                          <button 
-                            onClick={() => setDeleteConfirm({ id: event.id, type: 'event' })}
-                            className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-bold hover:bg-red-100 transition-all flex items-center gap-1 border border-red-100"
-                            title="Delete Event"
+                          <button
+                            onClick={() => setDeleteConfirm({ id: e.id, type: 'event' })}
+                            className="p-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-red-600 transition-all border border-red-100/50"
                           >
-                            <Trash2 className="w-3.5 h-3.5" /> Delete
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                     </td>
-                   </tr>
-                 ))}
-               </tbody>
-             </table>
-          </div>
-        )}
-
-        {activeTab === 'achievements' && (
-          <div className="space-y-6">
-            {achievements.map((a: any) => (
-              <div key={a.id} className="bg-white p-8 rounded-2xl border border-zinc-100 shadow-sm flex justify-between items-center group">
-                <div>
-                  <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tighter mb-1">{a.title}</h3>
-                  <p className="text-xs text-brand-600 font-bold uppercase tracking-widest mb-4">{a.date}</p>
-                  <p className="text-sm text-zinc-500 font-medium max-w-xl">{a.description}</p>
-                </div>
-                <div className="flex gap-2 flex-shrink-0">
-                  <button 
-                    onClick={() => {
-                      setEditingAchievement(a);
-                      setShowAchievementModal(true);
-                    }}
-                    className="p-3 bg-brand-50 text-brand-600 rounded-xl hover:bg-brand-100 transition-all border border-brand-100"
-                    title="Edit Achievement"
-                  >
-                    <Edit3 className="w-5 h-5" />
-                  </button>
-                  <button 
-                    onClick={() => setDeleteConfirm({ id: a.id, type: 'achievement' })}
-                    className="p-3 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all border border-red-100"
-                    title="Delete Achievement"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'gallery' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {gallery.map((item: any) => (
-              <div key={item.id} className="relative group rounded-2xl overflow-hidden border border-zinc-100 shadow-sm bg-white">
-                <div className="aspect-square overflow-hidden relative">
-                  <img src={item.src} className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" referrerPolicy="no-referrer" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-6 text-center">
-                    <p className="text-white text-[10px] font-black uppercase tracking-widest leading-relaxed line-clamp-4">{item.description}</p>
-                  </div>
-                </div>
-                <div className="p-5 flex flex-col gap-3">
-                  <div>
-                    <h4 className="text-zinc-900 font-bold text-sm line-clamp-1">{item.title}</h4>
-                    <div className="flex gap-2 mt-1">
-                      {item.category && (
-                        <span className="text-brand-600 text-[8px] font-black uppercase tracking-widest bg-brand-50 px-1.5 py-0.5 rounded border border-brand-100">
-                          {item.category}
-                        </span>
-                      )}
-                      {item.eventDate && (
-                        <span className="text-zinc-400 text-[8px] font-bold uppercase tracking-widest bg-zinc-50 px-1.5 py-0.5 rounded border border-zinc-100">
-                          {item.eventDate}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        setEditingGallery(item);
-                        setGalleryImagePreview(item.src);
-                        setShowGalleryModal(true);
-                      }}
-                      className="flex-1 py-2 bg-zinc-50 text-zinc-600 rounded-xl text-xs font-bold hover:bg-brand-50 hover:text-brand-600 transition-all border border-zinc-100 flex items-center justify-center gap-2"
-                    >
-                      <Edit3 className="w-3 h-3" /> Edit
-                    </button>
-                    <button 
-                      onClick={() => setDeleteConfirm({ id: item.id, type: 'gallery' })}
-                      className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all border border-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))}
+                      </td>
+                    </tr>
+                  ))}
+                  {events.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                        No events found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {activeTab === 'members' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-             {members.map((member: any) => (
-               <div key={member.id} className="bg-white rounded-[2rem] p-6 border border-zinc-100 shadow-sm group">
-                  <div className="flex items-center gap-4 mb-6">
-                    <img 
-                      src={member.image} 
-                      alt={member.name} 
-                      className="w-16 h-16 rounded-2xl object-cover transition-all"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div>
-                      <h4 className="font-bold text-zinc-900">{member.name}</h4>
-                      <p className="text-xs text-brand-600 font-bold uppercase tracking-widest">{member.role}</p>
-                      <p className="text-[9px] text-zinc-400 font-bold uppercase mt-1">Tenure: {member.tenure}</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        setEditingMember(member);
-                        setMemberImagePreview(member.image);
-                        setShowMemberModal(true);
-                      }}
-                      className="flex-1 py-2 bg-zinc-100 text-zinc-600 rounded-xl text-xs font-bold hover:bg-zinc-200 transition-all flex items-center justify-center gap-2"
-                    >
-                      <Edit3 className="w-3 h-3" /> Edit
-                    </button>
-                    <button 
-                      onClick={() => setDeleteConfirm({ id: member.id, type: 'member' })}
-                      className="p-2 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    {member.linkedin && (
-                      <a 
-                        href={member.linkedin} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="p-2 bg-blue-50 text-blue-600 rounded-xl hover:bg-blue-100 transition-all"
-                      >
-                        <Linkedin className="w-4 h-4" />
-                      </a>
-                    )}
-                  </div>
-               </div>
-             ))}
+          <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl shadow-slate-100/50 overflow-hidden">
+            <div className="px-8 py-6 border-b border-zinc-50 bg-zinc-50/50 flex justify-between items-center">
+              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">All Team Members ({members.length})</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-100 text-[10px] font-black uppercase text-zinc-400 tracking-widest bg-zinc-50/30">
+                    <th className="px-8 py-5">Profile</th>
+                    <th className="px-8 py-5">Name</th>
+                    <th className="px-8 py-5">Role</th>
+                    <th className="px-8 py-5">Tenure</th>
+                    <th className="px-8 py-5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-50">
+                  {members.map((m: any) => (
+                    <tr key={m.id} className="hover:bg-zinc-50/30 transition-colors">
+                      <td className="px-8 py-5">
+                        {m.image && (
+                          <img src={m.image} className="w-12 h-12 object-cover rounded-full border border-zinc-100" referrerPolicy="no-referrer" />
+                        )}
+                      </td>
+                      <td className="px-8 py-5 text-sm font-bold text-zinc-900">
+                        {m.name}
+                      </td>
+                      <td className="px-8 py-5 text-sm font-semibold text-zinc-600">
+                        {m.role}
+                      </td>
+                      <td className="px-8 py-5 text-sm text-zinc-500 font-bold uppercase tracking-wider">
+                        {m.tenure}
+                      </td>
+                      <td className="px-8 py-5 text-right">
+                        <div className="flex gap-3 justify-end">
+                          <button
+                            onClick={() => {
+                              setEditingMember(m);
+                              setMemberImagePreview(m.image);
+                              setShowMemberModal(true);
+                            }}
+                            className="p-2.5 bg-zinc-50 hover:bg-zinc-100 rounded-xl text-zinc-600 hover:text-zinc-900 transition-all border border-zinc-100"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm({ id: m.id, type: 'member' })}
+                            className="p-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-red-600 transition-all border border-red-100/50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {members.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                        No team members found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'achievements' && (
+          <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl shadow-slate-100/50 overflow-hidden">
+            <div className="px-8 py-6 border-b border-zinc-50 bg-zinc-50/50 flex justify-between items-center">
+              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">All Achievements ({achievements.length})</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-100 text-[10px] font-black uppercase text-zinc-400 tracking-widest bg-zinc-50/30">
+                    <th className="px-8 py-5">Title</th>
+                    <th className="px-8 py-5">Description</th>
+                    <th className="px-8 py-5">Date</th>
+                    <th className="px-8 py-5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-50">
+                  {achievements.map((a: any) => (
+                    <tr key={a.id} className="hover:bg-zinc-50/30 transition-colors">
+                      <td className="px-8 py-5 text-sm font-bold text-zinc-900">
+                        {a.title}
+                      </td>
+                      <td className="px-8 py-5 text-sm text-zinc-500 font-medium max-w-xs truncate">
+                        {a.description}
+                      </td>
+                      <td className="px-8 py-5 text-sm text-zinc-500 font-bold">
+                        {a.date}
+                      </td>
+                      <td className="px-8 py-5 text-right">
+                        <div className="flex gap-3 justify-end">
+                          <button
+                            onClick={() => {
+                              setEditingAchievement(a);
+                              setShowAchievementModal(true);
+                            }}
+                            className="p-2.5 bg-zinc-50 hover:bg-zinc-100 rounded-xl text-zinc-600 hover:text-zinc-900 transition-all border border-zinc-100"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm({ id: a.id, type: 'achievement' })}
+                            className="p-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-red-600 transition-all border border-red-100/50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {achievements.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                        No achievements found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'gallery' && (
+          <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl shadow-slate-100/50 overflow-hidden">
+            <div className="px-8 py-6 border-b border-zinc-50 bg-zinc-50/50 flex justify-between items-center">
+              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">Gallery Directory ({gallery.length})</h2>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-zinc-100 text-[10px] font-black uppercase text-zinc-400 tracking-widest bg-zinc-50/30">
+                    <th className="px-8 py-5">Image</th>
+                    <th className="px-8 py-5">Title/Description</th>
+                    <th className="px-8 py-5">Category</th>
+                    <th className="px-8 py-5">Date</th>
+                    <th className="px-8 py-5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-zinc-50">
+                  {gallery.map((g: any) => (
+                    <tr key={g.id} className="hover:bg-zinc-50/30 transition-colors">
+                      <td className="px-8 py-5">
+                        {g.src && (
+                          <img src={g.src} className="w-14 h-14 object-cover rounded-xl border border-zinc-100" referrerPolicy="no-referrer" />
+                        )}
+                      </td>
+                      <td className="px-8 py-5">
+                        <p className="text-sm font-bold text-zinc-900">{g.title}</p>
+                        <p className="text-xs text-zinc-400 font-medium max-w-xs truncate">{g.description}</p>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className="inline-flex px-3 py-1 bg-zinc-100 text-zinc-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                          {g.category}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5 text-sm text-zinc-500 font-bold">
+                        {g.eventDate || 'N/A'}
+                      </td>
+                      <td className="px-8 py-5 text-right">
+                        <div className="flex gap-3 justify-end">
+                          <button
+                            onClick={() => {
+                              setEditingGallery(g);
+                              setGalleryImagePreview(g.src);
+                              setShowGalleryModal(true);
+                            }}
+                            className="p-2.5 bg-zinc-50 hover:bg-zinc-100 rounded-xl text-zinc-600 hover:text-zinc-900 transition-all border border-zinc-100"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirm({ id: g.id, type: 'gallery' })}
+                            className="p-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-red-600 transition-all border border-red-100/50"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {gallery.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                        No gallery images found
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
         {activeTab === 'about' && aboutData && (
-          <div className="space-y-12">
-            <div className="bento-card p-10 bg-white">
-              <h3 className="text-xl font-bold mb-6 uppercase tracking-tight">Hero Section</h3>
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Title</label>
-                    <input 
-                      value={aboutData.hero.title}
-                      onChange={(e) => setAboutData({ ...aboutData, hero: { ...aboutData.hero, title: e.target.value } })}
-                      className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold" 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Hero Image URL</label>
-                    <input 
-                      value={aboutData.hero.image}
-                      onChange={(e) => setAboutData({ ...aboutData, hero: { ...aboutData.hero, image: e.target.value } })}
-                      className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-mono text-xs" 
-                    />
-                  </div>
+          <div className="space-y-8">
+            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-6">
+              <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tight mb-4">Hero Banner info</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Hero Title</label>
+                  <input
+                    value={aboutData.hero?.title || ''}
+                    onChange={(e) => setAboutData({
+                      ...aboutData,
+                      hero: { ...aboutData.hero, title: e.target.value }
+                    })}
+                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                  />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest pl-2">Paragraph</label>
-                  <textarea 
-                    value={aboutData.hero.paragraph}
-                    onChange={(e) => setAboutData({ ...aboutData, hero: { ...aboutData.hero, paragraph: e.target.value } })}
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-48" 
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Hero Image URL</label>
+                  <input
+                    value={aboutData.hero?.image || ''}
+                    onChange={(e) => setAboutData({
+                      ...aboutData,
+                      hero: { ...aboutData.hero, image: e.target.value }
+                    })}
+                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
                   />
                 </div>
               </div>
-            </div>
-
-            <div className="bento-card p-10 bg-white">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold uppercase tracking-tight">Objectives</h3>
-                <button 
-                  onClick={() => {
-                    const newObjectives = [...aboutData.objectives, { id: Date.now().toString(), title: '', text: '' }];
-                    setAboutData({ ...aboutData, objectives: newObjectives });
-                  }}
-                  className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-brand-100 flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" /> Add Objective
-                </button>
-              </div>
-              <div className="space-y-8">
-                {aboutData.objectives.map((obj: any, idx: number) => (
-                  <div key={obj.id} className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4 relative group">
-                    <button 
-                      onClick={() => {
-                        const newObjectives = aboutData.objectives.filter((_: any, i: number) => i !== idx);
-                        setAboutData({ ...aboutData, objectives: newObjectives });
-                      }}
-                      className="absolute top-4 right-4 p-2 text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <input 
-                      value={obj.title}
-                      onChange={(e) => {
-                        const newObjectives = [...aboutData.objectives];
-                        newObjectives[idx].title = e.target.value;
-                        setAboutData({ ...aboutData, objectives: newObjectives });
-                      }}
-                      className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 font-bold uppercase text-xs tracking-widest"
-                      placeholder="Objective Title"
-                    />
-                    <textarea 
-                      value={obj.text}
-                      onChange={(e) => {
-                        const newObjectives = [...aboutData.objectives];
-                        newObjectives[idx].text = e.target.value;
-                        setAboutData({ ...aboutData, objectives: newObjectives });
-                      }}
-                      className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 h-20 text-sm"
-                      placeholder="Objective Text"
-                    />
-                  </div>
-                ))}
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Hero Paragraph</label>
+                <textarea
+                  value={aboutData.hero?.paragraph || ''}
+                  onChange={(e) => setAboutData({
+                    ...aboutData,
+                    hero: { ...aboutData.hero, paragraph: e.target.value }
+                  })}
+                  className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-medium h-24"
+                />
               </div>
             </div>
 
-            <div className="bento-card p-10 bg-white">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold uppercase tracking-tight">Impact Statistics</h3>
-                <button 
-                  onClick={() => {
-                    const newImpacts = [...aboutData.impacts, { id: Date.now().toString(), title: '', text: '' }];
-                    setAboutData({ ...aboutData, impacts: newImpacts });
-                  }}
-                  className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-brand-100 flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" /> Add Impact
-                </button>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {aboutData.impacts.map((imp: any, idx: number) => (
-                  <div key={imp.id} className="p-6 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4 relative group">
-                    <button 
-                      onClick={() => {
-                        const newImpacts = aboutData.impacts.filter((_: any, i: number) => i !== idx);
-                        setAboutData({ ...aboutData, impacts: newImpacts });
-                      }}
-                      className="absolute top-4 right-4 p-2 text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <input 
-                      value={imp.title}
+            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-6">
+              <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tight mb-4">Society Objectives</h2>
+              {aboutData.objectives?.map((obj: any, idx: number) => (
+                <div key={obj.id || idx} className="p-6 bg-zinc-50 rounded-2xl border-2 border-zinc-100 space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Objective Title</label>
+                    <input
+                      value={obj.title || ''}
                       onChange={(e) => {
-                        const newImpacts = [...aboutData.impacts];
-                        newImpacts[idx].title = e.target.value;
-                        setAboutData({ ...aboutData, impacts: newImpacts });
+                        const flexibleObjs = [...aboutData.objectives];
+                        flexibleObjs[idx] = { ...flexibleObjs[idx], title: e.target.value };
+                        setAboutData({ ...aboutData, objectives: flexibleObjs });
                       }}
-                      className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 font-bold uppercase text-xs tracking-widest text-brand-600"
-                      placeholder="e.g. 1000+"
-                    />
-                    <input 
-                      value={imp.text}
-                      onChange={(e) => {
-                        const newImpacts = [...aboutData.impacts];
-                        newImpacts[idx].text = e.target.value;
-                        setAboutData({ ...aboutData, impacts: newImpacts });
-                      }}
-                      className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 text-sm font-medium"
-                      placeholder="Impact description"
+                      className="w-full px-5 py-4 bg-white rounded-2xl border-2 border-zinc-100 text-sm font-bold"
                     />
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bento-card p-10 bg-white">
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold uppercase tracking-tight">Departments</h3>
-                <button 
-                  onClick={() => {
-                    const newDepts = [...aboutData.departments, { id: Date.now().toString(), title: '', aim: '', tasks: [''] }];
-                    setAboutData({ ...aboutData, departments: newDepts });
-                  }}
-                  className="px-4 py-2 bg-brand-50 text-brand-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-brand-100 flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" /> Add Department
-                </button>
-              </div>
-              <div className="space-y-8">
-                {aboutData.departments.map((dept: any, idx: number) => (
-                  <div key={dept.id} className="p-8 bg-zinc-50 rounded-2xl border border-zinc-100 space-y-4 relative group">
-                    <button 
-                      onClick={() => {
-                        const newDepts = aboutData.departments.filter((_: any, i: number) => i !== idx);
-                        setAboutData({ ...aboutData, departments: newDepts });
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Objective Text</label>
+                    <textarea
+                      value={obj.text || ''}
+                      onChange={(e) => {
+                        const flexibleObjs = [...aboutData.objectives];
+                        flexibleObjs[idx] = { ...flexibleObjs[idx], text: e.target.value };
+                        setAboutData({ ...aboutData, objectives: flexibleObjs });
                       }}
-                      className="absolute top-4 right-4 p-2 text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input 
-                        value={dept.title}
-                        onChange={(e) => {
-                          const newDepts = [...aboutData.departments];
-                          newDepts[idx].title = e.target.value;
-                          setAboutData({ ...aboutData, departments: newDepts });
-                        }}
-                        className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 font-bold uppercase text-xs tracking-widest"
-                        placeholder="Department Title"
-                      />
-                      <input 
-                        value={dept.aim}
-                        onChange={(e) => {
-                          const newDepts = [...aboutData.departments];
-                          newDepts[idx].aim = e.target.value;
-                          setAboutData({ ...aboutData, departments: newDepts });
-                        }}
-                        className="w-full px-4 py-3 bg-white rounded-xl border border-zinc-100 text-xs font-bold uppercase tracking-widest text-brand-600"
-                        placeholder="Aim"
-                      />
-                    </div>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Tasks</label>
-                        <button 
-                          onClick={() => {
-                            const newDepts = [...aboutData.departments];
-                            newDepts[idx].tasks = [...newDepts[idx].tasks, ''];
-                            setAboutData({ ...aboutData, departments: newDepts });
-                          }}
-                          className="text-[9px] font-bold text-brand-600 uppercase hover:underline"
-                        >
-                          + Add Task
-                        </button>
-                      </div>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                        {dept.tasks.map((task: string, tIdx: number) => (
-                          <div key={tIdx} className="flex gap-2">
-                            <input 
-                              value={task}
-                              onChange={(e) => {
-                                const newDepts = [...aboutData.departments];
-                                newDepts[idx].tasks[tIdx] = e.target.value;
-                                setAboutData({ ...aboutData, departments: newDepts });
-                              }}
-                              className="flex-1 px-4 py-2 bg-white rounded-lg border border-zinc-100 text-xs font-medium"
-                              placeholder={`Task ${tIdx + 1}`}
-                            />
-                            <button 
-                              onClick={() => {
-                                const newDepts = [...aboutData.departments];
-                                newDepts[idx].tasks = newDepts[idx].tasks.filter((_: any, i: number) => i !== tIdx);
-                                setAboutData({ ...aboutData, departments: newDepts });
-                              }}
-                              className="text-red-400 hover:text-red-600"
-                            >
-                              <X className="w-3 h-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                      className="w-full px-5 py-4 bg-white rounded-2xl border-2 border-zinc-100 text-sm font-medium h-20"
+                    />
                   </div>
-                ))}
-              </div>
-            </div>
-            
-            <div className="bento-card p-10 bg-white">
-              <h3 className="text-xl font-bold mb-6 uppercase tracking-tight text-brand-600">Pro-Tip</h3>
-              <p className="text-sm text-slate-500 leading-relaxed font-medium">
-                Editing the Departments and Impacts listed here will instantly reflect across the public About page. 
-                Ensure all URLs are accessible and images are high quality.
-              </p>
+                </div>
+              ))}
             </div>
           </div>
-        )}        {activeTab === 'scanner' && (
-          <div className="max-w-xl mx-auto space-y-8">
-            {/* Custom Embedded Stylesheet for Scanner Laser and Tech Effects */}
-            <style>{`
-              @keyframes laser-sweep {
-                0% { top: 0%; opacity: 0.3; }
-                40% { opacity: 1; }
-                60% { opacity: 1; }
-                100% { top: 100%; opacity: 0.3; }
-              }
-              .laser-sweep-line {
-                position: absolute;
-                left: 0;
-                width: 100%;
-                height: 4px;
-                background: linear-gradient(to right, transparent, #14b8a6, #2dd4bf, #14b8a6, transparent);
-                box-shadow: 0 0 10px #14b8a6, 0 0 20px #2dd4bf;
-                animation: laser-sweep 3s infinite ease-in-out;
-                z-index: 10;
-              }
-              .scanner-corner {
-                position: absolute;
-                width: 28px;
-                height: 28px;
-                border-color: #14b8a6;
-                border-width: 4px;
-                z-index: 20;
-              }
-            `}</style>
+        )}
 
-            {!isScanning ? (
-              <div className="space-y-6">
-                <div className="bg-zinc-950 p-8 md:p-12 rounded-[2.5rem] border border-zinc-900 text-center flex flex-col items-center shadow-2xl relative overflow-hidden">
-                  <div className="absolute top-6 left-6 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
-                    <span className="text-[9px] font-black uppercase text-brand-400 tracking-[0.3em]">SYSTEM ACTIVE</span>
+        {activeTab === 'scanner' && (
+          <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-8 max-w-2xl mx-auto">
+            <div className="text-center">
+              <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">QR Ticket Scanner</h2>
+              <p className="text-sm text-zinc-500 font-medium">Verify event tickets and log student attendees instantly.</p>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Select Active Event</label>
+              <select
+                value={selectedScanEventId}
+                onChange={(e) => {
+                  stopScanner();
+                  setIsScanning(false);
+                  setSelectedScanEventId(e.target.value);
+                  setScanResult(null);
+                }}
+                className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold outline-none"
+              >
+                <option value="">-- Choose Event to Check attendance --</option>
+                {events.map((e: any) => (
+                  <option key={e.id} value={e.id}>{e.title}</option>
+                ))}
+              </select>
+            </div>
+
+            {selectedScanEventId && (
+              <div className="text-center space-y-6">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (isScanning) {
+                      stopScanner();
+                      setIsScanning(false);
+                    } else {
+                      setIsScanning(true);
+                      setScanResult(null);
+                    }
+                  }}
+                  className={`px-8 py-4 ${isScanning ? 'bg-zinc-600 hover:bg-zinc-700' : 'bg-brand-600 hover:bg-brand-700'} text-white rounded-3xl font-bold uppercase tracking-widest text-xs transition-all shadow-xl`}
+                >
+                  {isScanning ? 'Stop Camera' : 'Start Ticket Scanner'}
+                </button>
+
+                {isScanning && (
+                  <div className="border border-zinc-100 rounded-3xl overflow-hidden shadow-2xl relative bg-zinc-50">
+                    <div id="reader" className="w-full max-w-md mx-auto aspect-square"></div>
                   </div>
-                  
-                  <div className="w-20 h-20 bg-emerald-500/10 text-emerald-400 rounded-[1.75rem] flex items-center justify-center mb-6 border border-emerald-500/20 shadow-inner">
-                    <Scan className="w-9 h-9 animate-pulse" />
-                  </div>
-                  
-                  <h3 className="text-xl font-extrabold text-white tracking-tight">ATTENDANCE CONTROLLER</h3>
-                  <p className="text-zinc-400 mt-2 text-xs font-semibold leading-relaxed max-w-sm">
-                    Select an upcoming high-priority event below to launch the digital registration checkpoint.
-                  </p>
-                  
-                  <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-brand-600/10 blur-3xl"></div>
-                </div>
-
-                {/* Event Selector Grid (Cards Instead of Native Dropdown List) */}
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-black text-zinc-400 uppercase tracking-widest px-1">Upcoming Events Ready for Check-in</h4>
-                  
-                  {scannableEvents.length > 0 ? (
-                    <div className="grid gap-3">
-                      {scannableEvents.map((e: any) => {
-                        const isSelected = selectedScanEventId === e.id;
-                        return (
-                          <button
-                            key={e.id}
-                            type="button"
-                            onClick={() => setSelectedScanEventId(e.id)}
-                            className={cn(
-                              "w-full text-left p-5 rounded-2xl border transition-all flex items-center justify-between group relative overflow-hidden",
-                              isSelected 
-                                ? "bg-brand-50/70 border-brand-500 shadow-md ring-2 ring-brand-500/10" 
-                                : "bg-white border-zinc-200/80 hover:border-zinc-300 hover:shadow-sm"
-                            )}
-                          >
-                            <div className="flex items-center gap-4 relative z-10">
-                              <div className={cn(
-                                "w-11 h-11 rounded-xl flex items-center justify-center transition-colors",
-                                isSelected ? "bg-brand-500 text-white" : "bg-zinc-100 text-zinc-400 group-hover:bg-zinc-200/50"
-                              )}>
-                                <Calendar className="w-5 h-5" />
-                              </div>
-                              <div>
-                                <h5 className="font-extrabold text-sm text-zinc-900 line-clamp-1">{e.title}</h5>
-                                <div className="flex items-center gap-3 mt-1 text-[11px] text-zinc-500 font-medium">
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="w-3.5 h-3.5" />
-                                    {e.date} {e.time ? `• ${e.time}` : ''}
-                                  </span>
-                                  {e.venue && (
-                                    <span className="text-zinc-400 line-clamp-1">@{e.venue}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 relative z-10">
-                              {isSelected ? (
-                                <div className="px-3 py-1 bg-brand-500 text-white rounded-full text-[9px] font-black uppercase tracking-wider">SELECTED</div>
-                              ) : (
-                                <div className="w-5 h-5 rounded-full border border-zinc-200 group-hover:border-zinc-300 flex items-center justify-center">
-                                  <div className="w-2.5 h-2.5 rounded-full bg-transparent group-hover:bg-zinc-100 transition-colors"></div>
-                                </div>
-                              )}
-                            </div>
-
-                            <div className="absolute inset-x-0 bottom-0 h-1 bg-brand-500/5 hover:bg-brand-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <div className="p-8 text-center bg-zinc-50 border border-zinc-200/60 rounded-2xl">
-                      <div className="w-12 h-12 bg-zinc-100 text-zinc-400 rounded-xl flex items-center justify-center mx-auto mb-3">
-                        <Calendar className="w-5 h-5 text-zinc-400" />
-                      </div>
-                      <p className="text-xs font-bold text-zinc-500 uppercase tracking-wider mb-1">No scannable events available</p>
-                      <p className="text-[11px] text-zinc-400 max-w-xs mx-auto">
-                        To mark attendance, ensure you have newly scheduled events marked as "Upcoming".
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Selected Event Actions */}
-                {selectedScanEventId && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="p-6 bg-zinc-900 text-white rounded-3xl space-y-4 shadow-xl relative overflow-hidden"
-                  >
-                    <div className="relative z-10 flex items-start justify-between">
-                      <div className="space-y-1">
-                        <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-md font-black uppercase tracking-widest">checkpoint ready</span>
-                        <h4 className="text-base font-bold text-white leading-tight">
-                          {scannableEvents.find(e => e.id === selectedScanEventId)?.title}
-                        </h4>
-                      </div>
-                    </div>
-
-                    <div className="h-px bg-zinc-800 relative z-10"></div>
-
-                    <div className="grid grid-cols-2 gap-4 text-xs font-bold uppercase relative z-10">
-                      <div>
-                        <span className="text-[9px] text-zinc-500 block mb-0.5 tracking-wider">TICKET VERIFICATION</span>
-                        <span className="text-white text-xs">QR Digital Code</span>
-                      </div>
-                      <div>
-                        <span className="text-[9px] text-zinc-500 block mb-0.5 tracking-wider font-semibold">METHODOLOGY</span>
-                        <span className="text-emerald-400 text-xs text-nowrap flex items-center gap-1.5">
-                          <CheckCircle className="w-3.5 h-3.5" /> Instant Check-In
-                        </span>
-                      </div>
-                    </div>
-
-                    <button 
-                      onClick={() => setIsScanning(true)}
-                      className="w-full py-4.5 bg-brand-500 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-400 transition-all flex items-center justify-center gap-3 shadow-lg shadow-brand-500/20 relative z-10 active:scale-[0.98]"
-                    >
-                      <Camera className="w-5 h-5" /> Open Visual Scanner
-                    </button>
-
-                    <div className="absolute -right-16 -bottom-16 w-32 h-32 bg-brand-500/10 blur-2xl rounded-full"></div>
-                  </motion.div>
                 )}
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between bg-white border border-zinc-200/80 p-4 rounded-2xl shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <button 
-                      onClick={() => setIsScanning(false)}
-                      className="p-2 hover:bg-zinc-50 rounded-xl transition-all"
-                    >
-                      <ChevronLeft className="w-5 h-5 text-gray-500" />
-                    </button>
-                    <div>
-                      <h4 className="text-xs font-black uppercase text-zinc-400 tracking-wider">CHECKPOINT</h4>
-                      <h5 className="text-xs font-bold text-zinc-800 line-clamp-1 max-w-[200px] sm:max-w-xs">{scannableEvents.find(e => e.id === selectedScanEventId)?.title}</h5>
-                    </div>
-                  </div>
-                  <span className="flex items-center gap-2 text-[10px] font-black uppercase text-brand-650 bg-brand-50 px-3 py-1.5 rounded-full border border-brand-100">
-                    <span className="w-2.5 h-2.5 rounded-full bg-brand-500 animate-ping"></span>
-                    STREAM LIVE
-                  </span>
-                </div>
-
-                <div className="relative bg-slate-950 rounded-[3rem] overflow-hidden border-[6px] border-slate-900 shadow-xl max-w-md mx-auto aspect-square">
-                  {/* Glowing vertical sliding laser line */}
-                  <div className="laser-sweep-line pointer-events-none" />
-                  
-                  {/* High Tech Custom Reticle Bracket Corners */}
-                  <div className="absolute top-8 left-8 scanner-corner border-t-4 border-l-4 rounded-tl-md pointer-events-none" />
-                  <div className="absolute top-8 right-8 scanner-corner border-t-4 border-r-4 rounded-tr-md pointer-events-none" />
-                  <div className="absolute bottom-8 left-8 scanner-corner border-b-4 border-l-4 rounded-bl-md pointer-events-none" />
-                  <div className="absolute bottom-8 right-8 scanner-corner border-b-4 border-r-4 rounded-br-md pointer-events-none" />
-                  
-                  {/* Target frame overlay to prompt the user */}
-                  <div className="absolute inset-0 bg-black/30 pointer-events-none" />
-                  
-                  {/* Central alignment circle guide */}
-                  <div className="absolute inset-[24%] border border-white/10 rounded-full pointer-events-none animate-pulse flex items-center justify-center shadow-inner bg-black/10">
-                    <div className="w-1.5 h-1.5 rounded-full bg-brand-500"></div>
-                  </div>
-
-                  <div id="reader" className="w-full h-full [&_video]:object-cover [&_video]:w-full [&_video]:h-full border-none pointer-events-auto"></div>
-
-                  <button 
-                    onClick={() => setIsScanning(false)}
-                    className="absolute top-4 right-4 p-3 bg-black/60 hover:bg-black/80 backdrop-blur-md rounded-2xl transition-all text-white border border-white/10 z-20"
-                  >
-                    <XCircle className="w-5 h-5" />
-                  </button>
-                </div>
-                
-                <div className="text-center space-y-2">
-                  <p className="text-zinc-500 font-extrabold uppercase text-[10px] tracking-widest">DIAGNOSTIC PROTOCOL ACTIVE</p>
-                  <p className="text-zinc-400 text-xs leading-relaxed max-w-sm mx-auto">
-                    Adjust the alignment by moving the student's digital registration card QR code until locked in the scan box.
-                  </p>
-                </div>
               </div>
             )}
 
-            {/* Scan Result Overlay */}
-            <AnimatePresence>
-              {scanResult && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
-                  <motion.div 
-                    className="absolute inset-0 bg-zinc-950/60 backdrop-blur-sm"
-                    initial={{ opacity: 0 }} 
-                    animate={{ opacity: 1 }} 
-                    exit={{ opacity: 0 }}
-                    onClick={() => setScanResult(null)}
-                  />
-                  <motion.div 
-                    initial={{ opacity: 0, scale: 0.93, y: 15 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.93, y: 15 }}
-                    className="relative bg-white w-full max-w-md rounded-[2.5rem] p-8 text-center shadow-2xl border border-zinc-100 overflow-hidden"
-                  >
-                    {scanResult.success ? (
-                      <div className="space-y-6">
-                        <div className={cn(
-                          "w-20 h-20 rounded-full flex items-center justify-center mx-auto shadow-md",
-                          scanResult.alreadyMarked ? "bg-amber-100 text-amber-600" : "bg-emerald-100 text-emerald-600"
-                        )}>
-                          {scanResult.alreadyMarked ? (
-                            <Award className="w-10 h-10 animate-bounce" />
-                          ) : (
-                            <CheckCircle className="w-10 h-10 animate-bounce" />
-                          )}
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tight">
-                            {scanResult.alreadyMarked ? "Already Verified" : "Verification Succeeded"}
-                          </h3>
-                          <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 inline-block w-full">
-                            <p className="text-zinc-400 text-[10.5px] font-black uppercase tracking-widest mb-1">STUDENT PROFILE</p>
-                            <p className="text-base font-extrabold text-zinc-900">{scanResult.student?.studentName}</p>
-                            <p className="text-zinc-500 font-bold text-xs mt-1">{scanResult.student?.rollNo}</p>
-                          </div>
-                        </div>
-
-                        <div className="space-y-1.5 text-xs text-zinc-500 text-center font-medium bg-brand-50/50 p-4 rounded-xl border border-brand-100/60">
-                          <p className="font-extrabold uppercase text-brand-650 tracking-wider text-[9.5px]">AUTOMATED AUDIT REPORT</p>
-                          <p>Record uploaded database log check list.</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-6">
-                        <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
-                          <XCircle className="w-10 h-10 animate-pulse" />
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <h3 className="text-xl font-black text-zinc-900 uppercase tracking-tight">Verification Rejected</h3>
-                          <p className="text-zinc-500 text-sm max-w-sm mx-auto leading-relaxed">
-                            {scanResult.error || 'The presentation code was unrecognized or expired.'}
-                          </p>
-                        </div>
-
-                        <div className="text-xs text-red-600 font-semibold bg-red-50 p-4 rounded-xl border border-red-100">
-                          Ensure they are showing the correct ticket issued by INFINITIUM.
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-8">
-                      <button 
-                        onClick={() => {
-                          setScanResult(null);
-                          setIsScanning(true); // Restart scanner immediately
-                        }}
-                        className="w-full py-4.5 bg-zinc-900 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-zinc-805 transition-all text-center shadow-lg active:scale-95"
-                      >
-                        scan next ticket
-                      </button>
-                    </div>
-                  </motion.div>
-                </div>
-              )}
-            </AnimatePresence>
+            {scanResult && (
+              <div className={`p-6 rounded-3xl border-2 ${scanResult.loading ? 'bg-zinc-50 border-zinc-100 text-zinc-600' : scanResult.success ? 'bg-emerald-50 border-emerald-100 text-emerald-900' : 'bg-red-50 border-red-100 text-red-900'} transition-all text-center space-y-3`}>
+                {scanResult.loading ? (
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="w-5 h-5 border-2 border-zinc-200 border-t-zinc-600 rounded-full animate-spin"></div>
+                    <span className="font-bold uppercase tracking-widest text-xs">Processing check-in...</span>
+                  </div>
+                ) : scanResult.success ? (
+                  <>
+                    <h3 className="text-lg font-black uppercase text-emerald-800">Success! Checked-In</h3>
+                    <p className="text-sm font-bold">{scanResult.student?.studentName || 'Attendee'} ({scanResult.student?.rollNo || 'N/A'})</p>
+                    <p className="text-xs font-semibold uppercase">{scanResult.alreadyMarked ? '⚠️ Attendance already logged earlier' : '✓ Attendance marked successfully'}</p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-lg font-black uppercase text-red-800">Check-in Failed</h3>
+                    <p className="text-sm font-bold">{scanResult.error}</p>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         )}
 
         {activeTab === 'contacts' && (
-          <div className="space-y-8 animate-fade-in">
-            {/* Contact Settings Card (Spreadsheet + Admin Email) */}
-            <div className="bg-white rounded-[2rem] p-8 border border-zinc-100 shadow-xl shadow-zinc-100/50">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
-                <div>
-                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-                    <Mail className="w-5 h-5 text-brand-600" /> Contact Form Settings
-                  </h2>
-                  <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1 max-w-xl">
-                    Configure where notifications and sheet records are delivered when public users submit the "Contact Us" form on the website.
-                  </p>
-                </div>
-                
-                {contactConfig.sheetId && (
-                  <a 
-                    href={`https://docs.google.com/spreadsheets/d/${contactConfig.sheetId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2.5 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-600/10 transition-all shrink-0"
-                  >
-                    Open Live Sheet &rarr;
-                  </a>
-                )}
-              </div>
-
-              <div className="mt-6">
-                <form 
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    const formData = new FormData(e.currentTarget);
-                    const sheetId = formData.get('contactSheetId') as string;
-                    const adminEmail = formData.get('contactAdminEmail') as string;
-                    handleSaveContactConfig(sheetId, adminEmail);
-                  }}
-                  className="space-y-6 max-w-2xl"
-                >
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
-                        Admin Notification Email
-                      </label>
-                      <input 
-                        type="email" 
-                        name="contactAdminEmail"
-                        required
-                        defaultValue={contactConfig.adminEmail}
-                        placeholder="e.g. admin@infinitiumsociety.com"
-                        className="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 hover:border-slate-200 focus:border-brand-600 focus:bg-white rounded-xl text-xs font-semibold outline-none transition-all"
-                      />
-                      <p className="text-[9px] text-slate-400 font-medium pl-1 leading-relaxed">
-                        Form details will be automatically forwarded to this address upon submission.
-                      </p>
-                    </div>
-
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
-                        Spreadsheet ID or URL
-                      </label>
-                      <input 
-                        type="text" 
-                        name="contactSheetId"
-                        required
-                        defaultValue={contactConfig.sheetId}
-                        placeholder="e.g. 1a2b3c4d5e6f_spreadsheet_id_key"
-                        className="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 hover:border-slate-200 focus:border-brand-600 focus:bg-white rounded-xl text-xs font-semibold outline-none transition-all"
-                      />
-                      <p className="text-[9px] text-slate-400 font-medium pl-1 leading-relaxed">
-                        Data is appended to the first tab of this Google Sheets document in real-time.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end pt-4 border-t border-slate-100">
-                    <button 
-                      type="submit"
-                      disabled={isSavingContactConfig}
-                      className="px-8 py-3.5 bg-brand-950 hover:bg-brand-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-brand-950/10 active:scale-95 flex items-center gap-2 shrink-0 h-[48px]"
-                    >
-                      {isSavingContactConfig ? (
-                        <>
-                          <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                          Saving changes...
-                        </>
-                      ) : (
-                        "Save Settings"
-                      )}
-                    </button>
-                  </div>
-                </form>
-              </div>
+          <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-8 max-w-2xl mx-auto">
+            <div>
+              <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Google Sheets Configuration</h2>
+              <p className="text-sm text-zinc-500 font-medium">Configure where the inquiries, registrations and feedback data are stored in Google Sheets.</p>
             </div>
+
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.currentTarget);
+              handleSaveContactConfig(
+                formData.get('sheetId') as string,
+                formData.get('adminEmail') as string
+              );
+            }} className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Master Spreadsheet Google Sheet ID</label>
+                <input
+                  name="sheetId"
+                  defaultValue={contactConfig.sheetId}
+                  required
+                  className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                  placeholder="e.g. 1a2b3c4d5e6f7g8h9i0j..."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Admin Notification Email</label>
+                <input
+                  name="adminEmail"
+                  type="email"
+                  defaultValue={contactConfig.adminEmail}
+                  required
+                  className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                  placeholder="e.g. teaminfinitium.arsd@gmail.com"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={isSavingContactConfig}
+                className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all disabled:opacity-50"
+              >
+                {isSavingContactConfig ? 'Saving settings...' : 'Save Settings'}
+              </button>
+            </form>
           </div>
         )}
-      </main>
 
-      {/* Event Modal */}
-      <AnimatePresence>
-        {showAddEvent && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={closeEventModal} />
-             <motion.div 
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               exit={{ opacity: 0, scale: 0.9 }}
-               className="relative bg-white w-full max-w-2xl rounded-[3.5rem] p-12 shadow-2xl max-h-[90vh] overflow-y-auto"
-             >
+        {/* Event Modal */}
+        <AnimatePresence>
+          {showAddEvent && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={() => setShowAddEvent(false)} />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="relative bg-white w-full max-w-2xl rounded-[3.5rem] p-12 shadow-2xl max-h-[90vh] overflow-y-auto"
+              >
                 <h2 className="text-3xl font-bold mb-8">{editingEvent ? 'Edit Event' : 'Create New Event'}</h2>
                 <form className="space-y-6" onSubmit={handleEventSubmit}>
-                   <div className="flex flex-col items-center gap-4 mb-8">
-                      <div className="w-full aspect-video rounded-2xl bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group">
-                        {eventImagePreview ? (
-                          <img src={eventImagePreview} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 gap-2">
-                            <Camera className="w-10 h-10" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">No Poster Selected</span>
-                          </div>
-                        )}
-                        <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                          <Plus className="text-white w-10 h-10" />
-                          <input type="file" className="hidden" accept="image/*" onChange={handleEventFileChange} />
-                        </label>
-                      </div>
-                      <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Click to upload poster image</p>
-                   </div>
+                  <div className="flex flex-col items-center gap-4 mb-8">
+                    <div className="w-full aspect-[16/10] max-w-[400px] rounded-2xl bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group mx-auto">
+                      {eventImagePreview ? (
+                        <img src={eventImagePreview} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 gap-2">
+                          <Camera className="w-10 h-10" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">No Poster Selected</span>
+                        </div>
+                      )}
+                      <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" htmlFor="event-upload">
+                        <Plus className="text-white w-10 h-10" />
+                        <input id="event-upload" type="file" className="hidden" accept="image/*" onChange={handleEventFileChange} />
+                      </label>
+                    </div>
+                    <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-center">
+                      Click card to upload a poster image from your device
+                    </p>
+                  </div>
 
-                   <input 
-                    name="title" 
-                    defaultValue={editingEvent?.title}
-                    required 
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 font-bold" 
-                    placeholder="Event Title" 
-                   />
-                   <input 
-                    name="subtitle" 
-                    defaultValue={editingEvent?.subtitle}
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300" 
-                    placeholder="Event Subtitle (e.g. A Journey through Quantum Mechanics)" 
-                   />
-                   <div className="grid grid-cols-2 gap-4">
-                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Event Type</label>
-                        <select 
-                          name="type" 
-                          defaultValue={editingEvent?.type || 'Seminar'}
-                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold"
-                        >
-                          <option>Seminar</option>
-                          <option>Fest</option>
-                          <option>Workshop</option>
-                          <option>Field Trip</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Event Date</label>
-                        <input 
-                          name="date" 
-                          type="date" 
-                          defaultValue={editingEvent?.date}
-                          onChange={(e) => setSelectedEventDate(e.target.value)}
-                          required 
-                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold" 
-                        />
-                      </div>
-                   </div>
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Start Time</label>
-                        <input 
-                          name="startTime" 
-                          type="time"
-                          defaultValue={editingEvent?.startTime}
-                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-sm" 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Location</label>
-                        <input 
-                          name="location" 
-                          defaultValue={editingEvent?.location}
-                          required 
-                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 font-bold" 
-                          placeholder="e.g. Auditorium" 
-                        />
-                      </div>
-                   </div>
-                   {(!selectedEventDate || new Date(selectedEventDate) >= new Date(new Date().setHours(0,0,0,0))) && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Google Sheet ID</label>
-                      <input 
-                        name="sheetId" 
-                        defaultValue={editingEvent?.sheetId}
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Event Title</label>
+                      <input
+                        name="title"
+                        defaultValue={editingEvent?.title || ''}
                         required
-                        className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 font-mono text-xs" 
-                        placeholder="Enter Google Sheet ID (from URL)" 
+                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                        placeholder="e.g. Pulsar 2026"
                       />
                     </div>
-                   )}
-                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">WhatsApp Group Link (Optional)</label>
-                     <input 
-                       name="whatsappGroup" 
-                       defaultValue={editingEvent?.whatsappGroup || ''}
-                       className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 text-sm mb-4" 
-                       placeholder="e.g. https://chat.whatsapp.com/..." 
-                     />
-                   </div>
-                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Or Poster Image URL</label>
-                     <input 
-                       name="image" 
-                       value={eventImagePreview || ''}
-                       onChange={(e) => setEventImagePreview(e.target.value)}
-                       required
-                       className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 transition-all" 
-                       placeholder="https://..." 
-                     />
-                   </div>
-                   <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Sync Registrations</label>
-                        <input 
-                         name="registrations" 
-                         type="number"
-                         defaultValue={editingEvent?.stats?.registrations || 0}
-                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold" 
-                         placeholder="Check from Sheet" 
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Sync Attendance</label>
-                        <input 
-                         name="attendance" 
-                         type="number"
-                         defaultValue={editingEvent?.stats?.attendance || 0}
-                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-emerald-600" 
-                         placeholder="Check from Sheet" 
-                        />
-                      </div>
-                   </div>
-                   <div className="flex items-center justify-between p-5 bg-zinc-50 rounded-2xl border-2 border-zinc-100">
-                     <div className="space-y-0.5">
-                       <label className="text-[10px] font-black text-zinc-900 uppercase tracking-widest pl-1">Inter-College Event</label>
-                       <p className="text-[9px] text-zinc-400 font-medium uppercase tracking-tight pl-1">Allow students from other colleges to register</p>
-                     </div>
-                     <label className="relative inline-flex items-center cursor-pointer">
-                       <input 
-                         type="checkbox" 
-                         name="isInterCollege" 
-                         value="true"
-                         defaultChecked={editingEvent?.isInterCollege}
-                         className="sr-only peer" 
-                       />
-                       <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
-                     </label>
-                   </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Subtitle</label>
+                      <input
+                        name="subtitle"
+                        defaultValue={editingEvent?.subtitle || ''}
+                        required
+                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                        placeholder="e.g. The Science extravaganza"
+                      />
+                    </div>
+                  </div>
 
-                   <textarea 
-                    name="description" 
-                    defaultValue={editingEvent?.description}
-                    required 
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-32 placeholder:text-zinc-300" 
-                    placeholder="Description"
-                   ></textarea>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Event Type</label>
+                      <select
+                        name="type"
+                        defaultValue={editingEvent?.type || 'Seminar'}
+                        required
+                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold outline-none"
+                      >
+                        <option value="Seminar">Seminar</option>
+                        <option value="Workshop">Workshop</option>
+                        <option value="Competition">Competition</option>
+                        <option value="Festival">Festival</option>
+                        <option value="Lecture">Lecture</option>
+                        <option value="Hackathon">Hackathon</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Event Date</label>
+                      <input
+                        name="date"
+                        type="date"
+                        defaultValue={editingEvent?.date || ''}
+                        required
+                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                      />
+                    </div>
+                  </div>
 
-                   <div className="space-y-4">
-                     <div className="flex items-center justify-between">
-                       <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest pl-2">Captured Moments (Additional Media)</label>
-                       <span className="text-[10px] font-bold text-brand-600 bg-brand-50 px-2 py-0.5 rounded uppercase tracking-tighter">New feature</span>
-                     </div>
-                     
-                     <div className="grid grid-cols-4 md:grid-cols-6 gap-3">
-                       {eventMediaPreviews.map((src, idx) => (
-                         <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border-2 border-zinc-100 group">
-                           <img src={src} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                           <button 
-                             type="button"
-                             onClick={() => removeEventMedia(idx)}
-                             className="absolute inset-0 bg-red-500/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
-                           >
-                             <Trash2 className="w-5 h-5" />
-                           </button>
-                         </div>
-                       ))}
-                       <label className="aspect-square rounded-xl border-2 border-dashed border-zinc-200 flex flex-col items-center justify-center text-zinc-400 hover:border-brand-300 hover:text-brand-600 transition-all cursor-pointer bg-zinc-50/50">
-                         {isEventImageProcessing ? (
-                           <div className="w-6 h-6 border-2 border-brand-100 border-t-brand-600 rounded-full animate-spin"></div>
-                         ) : (
-                           <>
-                             <Plus className="w-6 h-6" />
-                             <span className="text-[8px] font-black uppercase mt-1">Add Media</span>
-                           </>
-                         )}
-                         <input 
-                           type="file" 
-                           multiple 
-                           accept="image/*" 
-                           className="hidden" 
-                           onChange={handleEventMediaChange}
-                           disabled={isEventImageProcessing}
-                         />
-                       </label>
-                     </div>
-                     <p className="text-[9px] text-zinc-400 font-medium">Photos uploaded here will appear in the event page and the society gallery.</p>
-                   </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Start Time (Optional)</label>
+                      <input
+                        name="startTime"
+                        defaultValue={editingEvent?.startTime || ''}
+                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                        placeholder="e.g. 10:00 AM"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Location</label>
+                      <input
+                        name="location"
+                        defaultValue={editingEvent?.location || ''}
+                        required
+                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                        placeholder="e.g. Seminar Hall, ARSD College"
+                      />
+                    </div>
+                  </div>
 
-                   <button 
-                     type="submit" 
-                     disabled={isEventSubmitting || isEventImageProcessing}
-                     className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
-                   >
-                     {isEventSubmitting ? (
-                       <>
-                         <div className="w-5 h-5 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                         Processing Protocol...
-                       </>
-                     ) : (
-                       editingEvent ? 'Update Event' : 'Launch Event'
-                     )}
-                   </button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">WhatsApp Group Link (Optional)</label>
+                      <input
+                        name="whatsappGroup"
+                        defaultValue={editingEvent?.whatsappGroup || ''}
+                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                        placeholder="e.g. https://chat.whatsapp.com/..."
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Sync Spreadsheet ID (Optional)</label>
+                      <input
+                        name="sheetId"
+                        defaultValue={editingEvent?.sheetId || ''}
+                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                        placeholder="Google Sheet Spreadsheet ID"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between p-5 bg-zinc-50 rounded-2xl border-2 border-zinc-100">
+                    <div className="space-y-0.5">
+                      <label className="text-[10px] font-black text-zinc-900 uppercase tracking-widest pl-1">Inter-College Event</label>
+                      <p className="text-[9px] text-zinc-400 font-medium uppercase tracking-tight pl-1">Allow students from other colleges to register</p>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        name="isInterCollege"
+                        value="true"
+                        defaultChecked={editingEvent?.isInterCollege}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-600"></div>
+                    </label>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Description</label>
+                    <textarea
+                      name="description"
+                      defaultValue={editingEvent?.description}
+                      required
+                      className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-32 text-sm font-medium"
+                      placeholder="Describe the event details..."
+                    ></textarea>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isEventSubmitting || isEventImageProcessing}
+                    className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {isEventSubmitting ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                        Saving...
+                      </>
+                    ) : (
+                      editingEvent ? 'Update Event' : 'Create Event'
+                    )}
+                  </button>
                 </form>
-             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
-      {/* Achievement Modal */}
-      <AnimatePresence>
-        {showAchievementModal && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={() => { setShowAchievementModal(false); setEditingAchievement(null); }} />
-             <div className="relative bg-white w-full max-w-2xl rounded-[3.5rem] p-12 shadow-2xl">
+        {/* Achievement Modal */}
+        <AnimatePresence>
+          {showAchievementModal && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+              <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={() => setShowAchievementModal(false)} />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="relative bg-white w-full max-w-lg rounded-[3.5rem] p-12 shadow-2xl max-h-[90vh] overflow-y-auto"
+              >
                 <h2 className="text-3xl font-bold mb-8">{editingAchievement ? 'Edit Achievement' : 'Add Achievement'}</h2>
                 <form className="space-y-6" onSubmit={handleAchievementSubmit}>
-                   <input 
-                    name="title" 
-                    defaultValue={editingAchievement?.title}
-                    required 
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300" 
-                    placeholder="Achievement Title" 
-                   />
-                   <input 
-                    name="date" 
-                    type="date" 
-                    defaultValue={editingAchievement?.date}
-                    required 
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100" 
-                   />
-                   <textarea 
-                    name="description" 
-                    defaultValue={editingAchievement?.description}
-                    required 
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-32 placeholder:text-zinc-300" 
-                    placeholder="Description"
-                   ></textarea>
-                   <button type="submit" className="w-full py-5 bg-brand-600 text-white rounded-xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all">
-                    {editingAchievement ? 'Update Achievement' : 'Save Achievement'}
-                   </button>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Title</label>
+                    <input
+                      name="title"
+                      defaultValue={editingAchievement?.title || ''}
+                      required
+                      className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                      placeholder="e.g. Best Society Award 2026"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Date</label>
+                    <input
+                      name="date"
+                      type="date"
+                      defaultValue={editingAchievement?.date || ''}
+                      required
+                      className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Description</label>
+                    <textarea
+                      name="description"
+                      defaultValue={editingAchievement?.description || ''}
+                      required
+                      className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-32 text-sm font-medium"
+                      placeholder="Describe the achievement in detail..."
+                    ></textarea>
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all flex items-center justify-center gap-2"
+                  >
+                    {editingAchievement ? 'Update Achievement' : 'Add Achievement'}
+                  </button>
                 </form>
-             </div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
       {/* Gallery Modal */}
       <AnimatePresence>
@@ -2416,6 +1998,7 @@ export default function Admin_Page() {
           </div>
         )}
       </AnimatePresence>
+      </main>
     </div>
   );
 }

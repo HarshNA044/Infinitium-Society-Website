@@ -254,7 +254,7 @@ function AppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans text-brand-950 selection:bg-brand-100 selection:text-brand-900">
+    <div className="min-h-screen bg-white font-sans text-brand-950 selection:bg-brand-100 selection:text-brand-900 overflow-x-hidden">
       {!isAdminPath && <Navigation />}
       <main className={cn(!isAdminPath && location.pathname !== '/' && "pt-20")}>
         <Routes>
