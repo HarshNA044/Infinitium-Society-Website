@@ -351,7 +351,6 @@ function sendRegistrationEmail(data) {
       console.error("Failed to send email to " + data.email + ": " + e.toString());
     }
   }
-}
 
 function sendContactEmailToAdmin(adminEmail, contactData) {
   var subject = "New Infinitium Contact Form Inquiry: " + (contactData.subject || "Direct Inquiry");
