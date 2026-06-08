@@ -89,6 +89,7 @@ export default function Admin_Page() {
     } catch (e) {
       console.error("Failed to save contact config:", e);
       alert("Failed to save configuration: " + (e instanceof Error ? e.message : String(e)));
+      handleFirestoreError(e, OperationType.WRITE, 'settings/contact_config');
     } finally {
       setIsSavingContactConfig(false);
     }

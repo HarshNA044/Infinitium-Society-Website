@@ -17,7 +17,7 @@ service cloud.firestore {
 
     function isAdmin() {
       // Bootstrapped admin using the known email from runtime metadata
-      return isEmailVerified() && request.auth.token.email == 'teaminfinitium.arsd@gmail.com';
+      return isSignedIn() && request.auth.token.email == 'teaminfinitium.arsd@gmail.com';
     }
 
     function isValidId(id) {
