@@ -203,9 +203,7 @@ const Footer = () => (
             <li><a href="https://www.linkedin.com/company/infinitium-arsd/" target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors flex items-center gap-2">
               <span className="p-1.5 bg-blue-500/10 rounded-lg"><Linkedin className="w-3 h-3 text-blue-400" /></span> LinkedIn
             </a></li>
-            <li><a href="mailto:teaminfinitium.arsd@gmail.com" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors flex items-center gap-2">
-              <span className="p-1.5 bg-brand-500/10 rounded-lg"><Mail className="w-3 h-3 text-brand-400" /></span> Email
-            </a></li>
+
           </ul>
         </div>
       </div>
