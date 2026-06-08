@@ -39,19 +39,19 @@ export default function Team_Page() {
   return (
     <div className="pt-10 pb-24 px-4 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto">
+        <header className="mb-12 text-center max-w-2xl mx-auto flex flex-col items-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-brand-100">
+            <Users className="w-3 h-3" /> Core Team
+          </div>
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tighter leading-none mb-4 uppercase text-center">
+            The Minds Behind <br /> <span className="text-brand-600">INFINITIUM</span>
+          </h1>
+        </header>
+
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar */}
           <aside className="lg:w-72 flex-shrink-0">
              <div className="sticky top-32 space-y-6">
-                <div>
-                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-brand-100">
-                    <Users className="w-3 h-3" /> Core Team
-                  </div>
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tighter leading-none uppercase mb-4 text-left">
-                    The Minds Behind <br /> <span className="text-brand-600">INFINITIUM</span>
-                  </h1>
-                </div>
-
                 <div className="p-8 bg-zinc-50 rounded-xl border border-zinc-100 shadow-sm transition-all hover:shadow-xl hover:shadow-brand-600/5">
                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-4 pl-1">Select Tenure</h3>
                    <div className="relative">

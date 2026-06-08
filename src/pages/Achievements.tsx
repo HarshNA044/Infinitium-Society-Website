@@ -28,15 +28,13 @@ export default function Achievements_Page() {
   return (
     <div className="pt-10 pb-24 px-4 min-h-screen bg-white">
       <div className="max-w-7xl mx-auto">
-        <header className="mb-10 flex flex-col md:flex-row justify-between items-start gap-6">
-          <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-brand-100">
-              <Trophy className="w-3 h-3" /> Hall of Fame
-            </div>
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-4 uppercase text-left">
-              Our Success <br /> <span className="text-brand-600">Stories</span>
-            </h1>
+        <header className="mb-10 text-center max-w-2xl mx-auto flex flex-col items-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-brand-50 text-brand-600 rounded-lg text-[10px] font-black uppercase tracking-[0.2em] mb-4 border border-brand-100">
+            <Trophy className="w-3 h-3" /> Hall of Fame
           </div>
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter leading-none mb-4 uppercase text-center">
+            Our Success <br /> <span className="text-brand-600">Stories</span>
+          </h1>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
