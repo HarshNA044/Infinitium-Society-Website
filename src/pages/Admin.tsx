@@ -298,6 +298,10 @@ export default function Admin_Page() {
 
   const handleMemberSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!memberImagePreview) {
+      alert("Please upload a profile photo.");
+      return;
+    }
     const formData = new FormData(e.currentTarget);
     const startYear = formData.get('startYear');
     const endYear = formData.get('endYear');
@@ -306,8 +310,10 @@ export default function Admin_Page() {
     const data = {
       name: formData.get('name') as string,
       role: formData.get('role') as string,
-      image: memberImagePreview || formData.get('image') as string,
+      image: memberImagePreview,
       linkedin: formData.get('linkedin') as string || '',
+      course: formData.get('course') as string || '',
+      year: formData.get('year') as string || '',
       tenure: tenure,
     };
 
@@ -1120,6 +1126,7 @@ export default function Admin_Page() {
                     <th className="px-8 py-5">Profile</th>
                     <th className="px-8 py-5">Name</th>
                     <th className="px-8 py-5">Role</th>
+                    <th className="px-8 py-5">Course & Year</th>
                     <th className="px-8 py-5">Tenure</th>
                     <th className="px-8 py-5 text-right">Actions</th>
                   </tr>
@@ -1137,6 +1144,9 @@ export default function Admin_Page() {
                       </td>
                       <td className="px-8 py-5 text-sm font-semibold text-zinc-600">
                         {m.role}
+                      </td>
+                      <td className="px-8 py-5 text-sm text-zinc-600 select-none">
+                        {m.course ? `${m.course} (${m.year})` : '—'}
                       </td>
                       <td className="px-8 py-5 text-sm text-zinc-500 font-bold uppercase tracking-wider">
                         {m.tenure}
@@ -1967,16 +1977,35 @@ export default function Admin_Page() {
                         </div>
                       </div>
                    </div>
-                   <div className="space-y-2">
-                     <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">Or Profile Image URL</label>
-                     <input 
-                       name="image" 
-                       value={memberImagePreview || ''}
-                       onChange={(e) => setMemberImagePreview(e.target.value)}
-                       required
-                       className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all" 
-                       placeholder="https://..." 
-                     />
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="space-y-2">
+                       <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">Course Name</label>
+                       <select 
+                         name="course" 
+                         defaultValue={editingMember?.course || 'B.Sc. Physical Science with Computer Science'}
+                         required
+                         className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all cursor-pointer"
+                       >
+                         <option value="B.Sc. Physical Science with Computer Science">B.Sc. Physical Science with Computer Science</option>
+                         <option value="B.Sc. Physical Science with Chemistry">B.Sc. Physical Science with Chemistry</option>
+                         <option value="B.Sc. Physical Science with Electronics">B.Sc. Physical Science with Electronics</option>
+                         <option value="B.Sc. Applied Physical Science with Industrial Chemistry">B.Sc. Applied Physical Science with Industrial Chemistry</option>
+                       </select>
+                     </div>
+                     <div className="space-y-2">
+                       <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">Academic Year / Status</label>
+                       <select 
+                         name="year" 
+                         defaultValue={editingMember?.year || 'I Year'}
+                         required
+                         className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all cursor-pointer"
+                       >
+                         <option value="I Year">I Year</option>
+                         <option value="II Year">II Year</option>
+                         <option value="III Year">III Year</option>
+                         <option value="IV Year">IV Year</option>
+                       </select>
+                     </div>
                    </div>
                    <div className="space-y-2">
                      <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">LinkedIn URL</label>

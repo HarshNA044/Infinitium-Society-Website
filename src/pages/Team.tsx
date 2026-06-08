@@ -33,6 +33,22 @@ export default function Team_Page() {
     fetchTeam();
   }, []);
 
+  const getAbbreviatedCourse = (course: string) => {
+    if (!course) return '';
+    switch (course.trim()) {
+      case 'B.Sc. Physical Science with Computer Science':
+        return 'B.Sc. Phy. Sci. CS';
+      case 'B.Sc. Physical Science with Chemistry':
+        return 'B.Sc. Phy. Sci. Chemistry';
+      case 'B.Sc. Physical Science with Electronics':
+        return 'B.Sc. Phy. Sci. Electronics';
+      case 'B.Sc. Applied Physical Science with Industrial Chemistry':
+        return 'B.Sc. Applied Phy. Sci. IC';
+      default:
+        return course;
+    }
+  };
+
   const tenures = Array.from(new Set(allMembers.map((m: any) => m.tenure))).sort().reverse() as string[];
   const filteredMembers = allMembers.filter((m: any) => m.tenure === tenure);
 
@@ -86,49 +102,72 @@ export default function Team_Page() {
                 </span>
              </div>
 
-             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-               {filteredMembers.map((member: any, idx: number) => (
-                 <motion.div
-                   key={member.id}
-                   initial={{ opacity: 0, y: 10 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   transition={{ delay: idx * 0.05 }}
-                   className="group"
-                 >
-                   <div className="relative overflow-hidden rounded-xl bg-zinc-50 aspect-square mb-4 border border-zinc-100 shadow-sm transition-all hover:shadow-xl hover:shadow-brand-600/10">
-                     <img 
-                       src={member.image} 
-                       alt={member.name} 
-                       className="w-full h-full object-cover group-hover:scale-110 transition-all duration-700" 
-                       referrerPolicy="no-referrer"
-                     />
-                     
-                     <div className="absolute top-3 right-3 z-20">
-                       {member.linkedin && (
-                         <a 
-                           href={member.linkedin} 
-                           target="_blank" 
-                           rel="noopener noreferrer"
-                           className="w-8 h-8 bg-white/90 backdrop-blur-md text-brand-600 rounded-lg flex items-center justify-center hover:bg-brand-600 hover:text-white transition-all border border-white/50 shadow-lg"
-                         >
-                           <Linkedin className="w-4 h-4" />
-                         </a>
-                       )}
-                     </div>
-                   </div>
-                   <div className="px-1 text-center">
-                     <h3 className="text-sm font-black text-slate-900 group-hover:text-brand-600 transition-all uppercase tracking-tighter leading-tight truncate">
-                       {member.name}
-                     </h3>
-                     <p className="text-[8px] text-brand-600 font-black uppercase tracking-[0.2em] mt-1 bg-brand-50 inline-block px-2 py-0.5 rounded-full">
-                       {member.role}
-                     </p>
-                   </div>
-                 </motion.div>
-               ))}
-             </div>
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {filteredMembers.map((member: any, idx: number) => (
+                  <motion.div
+                    key={member.id}
+                    initial={{ opacity: 0, y: 15 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                    className="group flex flex-col bg-white rounded-xl border border-zinc-200/60 p-3 transition-all duration-300 shadow-[0_4px_14px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.22)] hover:border-brand-500/20 relative"
+                  >
+                    <div className="relative overflow-hidden rounded-lg bg-zinc-100 aspect-square mb-2.5">
+                      <img 
+                        src={member.image} 
+                        alt={member.name} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500" 
+                        referrerPolicy="no-referrer"
+                      />
+                      {member.linkedin && (
+                        <a 
+                          href={member.linkedin} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="absolute bottom-2 right-2 w-6 h-6 bg-white/95 backdrop-blur-sm text-brand-600 rounded flex items-center justify-center hover:bg-brand-600 hover:text-white transition-all shadow-md z-10"
+                          title="LinkedIn Profile"
+                        >
+                          <Linkedin className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-col flex-grow text-center">
+                      <h3 className="text-xs font-black text-slate-900 group-hover:text-brand-600 transition-colors uppercase tracking-tight leading-snug line-clamp-2">
+                        {member.name}
+                      </h3>
+                      
+                      <div className="mt-1 mb-1.5">
+                        <span className="text-[8px] text-brand-600 font-extrabold uppercase tracking-[0.15em] bg-brand-50 border border-brand-100 px-2 py-0.5 rounded-full inline-block">
+                          {member.role}
+                        </span>
+                      </div>
 
-             {filteredMembers.length === 0 && (
+                      <div className="mt-auto space-y-0.5">
+                        {member.year ? (
+                          <p className="text-[9px] text-slate-600 font-bold tracking-wider uppercase">
+                            {member.year}
+                          </p>
+                        ) : (
+                          <p className="text-[9px] text-zinc-300 font-bold tracking-wider uppercase select-none">
+                            —
+                          </p>
+                        )}
+                        {member.course ? (
+                          <p className="text-[9px] text-zinc-400 font-semibold tracking-wide truncate uppercase" title={member.course}>
+                            {getAbbreviatedCourse(member.course)}
+                          </p>
+                        ) : (
+                          <p className="text-[9px] text-zinc-300 font-semibold tracking-wide uppercase select-none">
+                            —
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+
+              {filteredMembers.length === 0 && (
                <div className="py-20 bg-zinc-50 rounded-2xl border-2 border-dashed border-zinc-100 text-center flex flex-col items-center">
                   <Users className="w-12 h-12 text-zinc-200 mb-4" />
                   <p className="text-slate-400 font-black uppercase text-xs tracking-widest">No team members found for this tenure.</p>

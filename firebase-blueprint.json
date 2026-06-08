@@ -89,6 +89,8 @@
         "tenure": { "type": "string", "description": "e.g. 2024-25" },
         "image": { "type": "string", "description": "Avatar URL" },
         "linkedin": { "type": "string" },
+        "course": { "type": "string", "description": "Member's course of study" },
+        "year": { "type": "string", "description": "Member's academic year" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "role", "tenure", "image"]

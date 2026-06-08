@@ -99,19 +99,22 @@ service cloud.firestore {
     match /members/{memberId} {
       function isValidMember(data) {
         return data.keys().hasAll(['name', 'role', 'tenure', 'image'])
-          && data.keys().size() >= 4 && data.keys().size() <= 6
-          && data.name is string && data.name.size() <= 100
-          && data.role is string && data.role.size() <= 100
-          && data.tenure is string && data.tenure.matches('^[0-9]{4}-[0-9]{2}$')
-          && data.image is string && data.image.size() <= 1000000
+          && data.keys().size() >= 4 && data.keys().size() <= 12
+          && data.name is string && data.name.size() <= 200
+          && data.role is string && data.role.size() <= 200
+          && data.tenure is string && data.tenure.size() <= 50
+          && data.image is string && data.image.size() <= 2500000
           && (!data.keys().hasAll(['linkedin']) || data.linkedin is string)
-          && (!data.keys().hasAll(['createdAt']) || data.createdAt is timestamp);
+          && (!data.keys().hasAll(['course']) || data.course is string && data.course.size() <= 500)
+          && (!data.keys().hasAll(['year']) || data.year is string && data.year.size() <= 200)
+          && (!data.keys().hasAll(['createdAt']) || data.createdAt is timestamp || data.createdAt is string || data.createdAt == null)
+          && (!data.keys().hasAll(['id']) || data.id is string);
       }
 
       allow read: if true;
-      allow create: if isAdmin() && isValidId(memberId) && isValidMember(incoming()) && incoming().createdAt == request.time;
+      allow create: if isAdmin() && isValidId(memberId) && isValidMember(incoming()) && (incoming().createdAt == request.time || incoming().createdAt is string || incoming().createdAt == null);
       allow update: if isAdmin() && isValidId(memberId) && isValidMember(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'tenure', 'image', 'linkedin', 'createdAt'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['name', 'role', 'tenure', 'image', 'linkedin', 'createdAt', 'course', 'year', 'id'])
       );
       allow delete: if isAdmin();
     }
