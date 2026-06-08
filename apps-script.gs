@@ -26,6 +26,52 @@ function doPost(e) {
     var spreadsheet = SpreadsheetApp.openById(sheetId);
     var sheet = spreadsheet.getSheets()[0]; // Get first sheet/tab explicitly (foolproof)
     
+    if (data.type === 'contact') {
+      var maxCols = sheet.getMaxColumns();
+      if (maxCols < 5) {
+        sheet.insertColumnsAfter(maxCols, 5 - maxCols);
+      }
+      var lastRow = sheet.getLastRow();
+      var headers = ["Date", "Name", "Email Address", "Subject", "Message"];
+      var firstRowValues = lastRow > 0 ? sheet.getRange(1, 1, 1, 5).getValues()[0] : [];
+      var hasHeaders = firstRowValues[0] && (firstRowValues[0].toString().trim().toLowerCase() === "date" || firstRowValues[0].toString().trim().toLowerCase() === "timestamp");
+
+      if (!hasHeaders) {
+        if (lastRow === 0) {
+          sheet.appendRow(headers);
+        } else {
+          sheet.insertRowBefore(1);
+          sheet.getRange(1, 1, 1, 5).setValues([headers]);
+        }
+        sheet.getRange(1, 1, 1, 5).setFontWeight("bold").setBackground("#f3f3f3");
+      }
+
+      var rowData = [
+        new Date().toLocaleString(),
+        data.name || "",
+        data.email || "",
+        data.subject || "",
+        data.message || ""
+      ];
+      sheet.appendRow(rowData);
+
+      // Send details to the admin email if configured
+      if (data.adminEmail) {
+        try {
+          sendContactEmailToAdmin(data.adminEmail, {
+            name: data.name || "N/A",
+            email: data.email || "N/A",
+            subject: data.subject || "No Subject",
+            message: data.message || "No Message"
+          });
+        } catch (emailErr) {
+          console.error("Failed to send contact email to admin: " + emailErr.toString());
+        }
+      }
+
+      return ContentService.createTextOutput("Success");
+    }
+    
     // Ensure the sheet has at least 12 columns to prevent range exception errors when getting values
     var maxCols = sheet.getMaxColumns();
     if (maxCols < 12) {
@@ -305,3 +351,49 @@ function sendRegistrationEmail(data) {
       console.error("Failed to send email to " + data.email + ": " + e.toString());
     }
   }
+}
+
+function sendContactEmailToAdmin(adminEmail, contactData) {
+  var subject = "New Infinitium Contact Form Inquiry: " + (contactData.subject || "Direct Inquiry");
+  
+  var body = '<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">' +
+             '  <div style="background-color: #0f0c29; border-top: 4px solid #14b8a6; padding: 25px; text-align: center;">' +
+             '    <h1 style="color: white; margin: 0; font-size: 24px; letter-spacing: 2px;">INFINITIUM</h1>' +
+             '    <p style="color: #14b8a6; margin: 5px 0 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;">Atma Ram Sanatan Dharma College</p>' +
+             '  </div>' +
+             '  <div style="padding: 30px; line-height: 1.6; color: #334155; background-color: #ffffff;">' +
+             '    <h2 style="color: #0f0c29; margin-top: 0; font-size: 18px; text-transform: uppercase;">New Contact Inquiry</h2>' +
+             '    <p>A user has submitted a new message through the public "Contact Us" form on the INFINITIUM website.</p>' +
+             '    ' +
+             '    <table style="width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px;">' +
+             '      <tr style="border-bottom: 1px solid #e2e8f0;">' +
+             '        <td style="padding: 10px 0; font-weight: bold; width: 120px; color: #64748b;">Sender Name:</td>' +
+             '        <td style="padding: 10px 0; font-weight: bold; color: #0f0c29;">' + contactData.name + '</td>' +
+             '      </tr>' +
+             '      <tr style="border-bottom: 1px solid #e2e8f0;">' +
+             '        <td style="padding: 10px 0; font-weight: bold; color: #64748b;">Sender Email:</td>' +
+             '        <td style="padding: 10px 0;"><a href="mailto:' + contactData.email + '" style="color: #14b8a6; font-weight: bold;">' + contactData.email + '</a></td>' +
+             '      </tr>' +
+             '      <tr style="border-bottom: 1px solid #e2e8f0;">' +
+             '        <td style="padding: 10px 0; font-weight: bold; color: #64748b;">Subject:</td>' +
+             '        <td style="padding: 10px 0; font-weight: bold; color: #0f0c29;">' + contactData.subject + '</td>' +
+             '      </tr>' +
+             '      <tr>' +
+             '        <td style="padding: 10px 0; font-weight: bold; color: #64748b; vertical-align: top;">Message:</td>' +
+             '        <td style="padding: 10px; white-space: pre-wrap; font-family: monospace; font-size: 12px; background-color: #f8fafc; border-radius: 6px; border: 1px solid #f1f5f9; color: #0f0c29;">' + contactData.message + '</td>' +
+             '      </tr>' +
+             '    </table>' +
+             '    <p style="margin-top: 30px;">To reply directly to the sender, please click their email address listed above.</p>' +
+             '  </div>' +
+             '  <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">' +
+             '    This is an automated report forwarded from Google Apps Script.' +
+             '  </div>' +
+             '</div>';
+
+  MailApp.sendEmail({
+    to: adminEmail,
+    replyTo: contactData.email,
+    subject: subject,
+    htmlBody: body
+  });
+}

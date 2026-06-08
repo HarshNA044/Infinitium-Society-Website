@@ -6,7 +6,7 @@ import {
   Trash2, CheckCircle, XCircle, ChevronLeft,
   LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
   Trophy, Download, LogIn, Github, Menu, X, MessageSquare,
-  Globe, Award, Target, Handshake, Lightbulb, Clock
+  Globe, Award, Target, Handshake, Lightbulb, Clock, Mail
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -72,6 +72,27 @@ export default function Admin_Page() {
   // About management state
   const [aboutData, setAboutData] = useState<any>(null);
   const [isSavingAbout, setIsSavingAbout] = useState(false);
+
+  // Contact management state
+  const [contactConfig, setContactConfig] = useState<{ sheetId: string; adminEmail: string }>({ sheetId: '', adminEmail: '' });
+  const [isSavingContactConfig, setIsSavingContactConfig] = useState(false);
+
+  const handleSaveContactConfig = async (sheetId: string, adminEmail: string) => {
+    setIsSavingContactConfig(true);
+    try {
+      await setDoc(doc(db, 'settings', 'contact_config'), {
+        sheetId: sheetId.trim(),
+        adminEmail: adminEmail.trim()
+      }, { merge: true });
+      setContactConfig({ sheetId: sheetId.trim(), adminEmail: adminEmail.trim() });
+      alert("Contact settings (spreadsheets & admin email) saved successfully!");
+    } catch (e) {
+      console.error("Failed to save contact config:", e);
+      alert("Failed to save configuration: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIsSavingContactConfig(false);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -190,6 +211,20 @@ export default function Admin_Page() {
         });
       } catch (e) {
         handleFirestoreError(e, OperationType.GET, 'events');
+      }
+
+      // Load Contact Config
+      try {
+        const contactConfigDoc = await getDoc(doc(db, 'settings', 'contact_config'));
+        if (contactConfigDoc.exists()) {
+          const cfg = contactConfigDoc.data() || {};
+          setContactConfig({
+            sheetId: cfg.sheetId || '',
+            adminEmail: cfg.adminEmail || ''
+          });
+        }
+      } catch (e) {
+        console.warn("Could not load contact config:", e);
       }
     } catch (error: any) {
       console.error("Error loading Firebase data", error);
@@ -772,6 +807,7 @@ export default function Admin_Page() {
             { id: 'gallery', icon: Camera, label: 'Gallery' },
             { id: 'about', icon: LayoutDashboard, label: 'About Page' },
             { id: 'scanner', icon: Scan, label: 'QR Scanner' },
+            { id: 'contacts', icon: Mail, label: 'Contacts' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -1752,6 +1788,101 @@ export default function Admin_Page() {
                 </div>
               )}
             </AnimatePresence>
+          </div>
+        )}
+
+        {activeTab === 'contacts' && (
+          <div className="space-y-8 animate-fade-in">
+            {/* Contact Settings Card (Spreadsheet + Admin Email) */}
+            <div className="bg-white rounded-[2rem] p-8 border border-zinc-100 shadow-xl shadow-zinc-100/50">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+                <div>
+                  <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
+                    <Mail className="w-5 h-5 text-brand-600" /> Contact Form Settings
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1 max-w-xl">
+                    Configure where notifications and sheet records are delivered when public users submit the "Contact Us" form on the website.
+                  </p>
+                </div>
+                
+                {contactConfig.sheetId && (
+                  <a 
+                    href={`https://docs.google.com/spreadsheets/d/${contactConfig.sheetId}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-[10px] font-black uppercase tracking-widest rounded-xl shadow-lg shadow-emerald-600/10 transition-all shrink-0"
+                  >
+                    Open Live Sheet &rarr;
+                  </a>
+                )}
+              </div>
+
+              <div className="mt-6">
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const formData = new FormData(e.currentTarget);
+                    const sheetId = formData.get('contactSheetId') as string;
+                    const adminEmail = formData.get('contactAdminEmail') as string;
+                    handleSaveContactConfig(sheetId, adminEmail);
+                  }}
+                  className="space-y-6 max-w-2xl"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                        Admin Notification Email
+                      </label>
+                      <input 
+                        type="email" 
+                        name="contactAdminEmail"
+                        required
+                        defaultValue={contactConfig.adminEmail}
+                        placeholder="e.g. admin@infinitiumsociety.com"
+                        className="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 hover:border-slate-200 focus:border-brand-600 focus:bg-white rounded-xl text-xs font-semibold outline-none transition-all"
+                      />
+                      <p className="text-[9px] text-slate-400 font-medium pl-1 leading-relaxed">
+                        Form details will be automatically forwarded to this address upon submission.
+                      </p>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                        Spreadsheet ID or URL
+                      </label>
+                      <input 
+                        type="text" 
+                        name="contactSheetId"
+                        required
+                        defaultValue={contactConfig.sheetId}
+                        placeholder="e.g. 1a2b3c4d5e6f_spreadsheet_id_key"
+                        className="w-full px-5 py-3.5 bg-slate-50 border-2 border-slate-100 hover:border-slate-200 focus:border-brand-600 focus:bg-white rounded-xl text-xs font-semibold outline-none transition-all"
+                      />
+                      <p className="text-[9px] text-slate-400 font-medium pl-1 leading-relaxed">
+                        Data is appended to the first tab of this Google Sheets document in real-time.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end pt-4 border-t border-slate-100">
+                    <button 
+                      type="submit"
+                      disabled={isSavingContactConfig}
+                      className="px-8 py-3.5 bg-brand-950 hover:bg-brand-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-md shadow-brand-950/10 active:scale-95 flex items-center gap-2 shrink-0 h-[48px]"
+                    >
+                      {isSavingContactConfig ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                          Saving changes...
+                        </>
+                      ) : (
+                        "Save Settings"
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
           </div>
         )}
       </main>

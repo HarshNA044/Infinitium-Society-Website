@@ -833,21 +833,18 @@ export default function EventDetail_Page() {
                   </p>
                   
                   {event?.whatsappGroup && (
-                    <div className="mb-8 p-4 bg-emerald-50 border border-emerald-100/80 text-emerald-800 rounded-2xl text-left max-w-sm mx-auto flex items-center gap-3">
-                      <div className="p-2 bg-emerald-600/10 text-emerald-600 rounded-xl">
-                        <MessageSquare className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-600">Official updates</p>
-                        <a 
-                          href={event.whatsappGroup} 
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-xs font-black hover:underline inline-flex items-center gap-1 text-emerald-950 mt-0.5"
-                        >
-                          Join WhatsApp Group &rarr;
-                        </a>
-                      </div>
+                    <div className="mb-8">
+                      <a 
+                        href={event.whatsappGroup} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="inline-flex items-center justify-center gap-2.5 px-6 py-4 bg-[#25D366] hover:bg-[#20ba5a] text-white font-extrabold rounded-2xl text-sm transition-all shadow-lg shadow-emerald-500/20 active:scale-95 hover:shadow-xl hover:shadow-emerald-500/35 w-full max-w-sm mx-auto tracking-wide"
+                      >
+                        <svg className="w-5 h-5 fill-current shrink-0" viewBox="0 0 24 24">
+                          <path d="M12.004 2C6.48 2 2 6.48 2 12c0 1.81.48 3.51 1.34 5L2 22l5.12-1.34C8.59 21.52 10.25 22 12.004 22 17.52 22 22 17.52 22 12S17.52 2 12.004 2zm5.72 13.92c-.22.61-1.28 1.17-1.77 1.22-.45.05-.9-.12-2.88-.9-2.54-1-4.17-3.59-4.3-3.76-.12-.17-1.04-1.38-1.04-2.63 0-1.25.65-1.87.88-2.12.23-.25.5-.31.67-.31h.41c.14 0 .33-.05.51.38.19.45.65 1.58.71 1.7.06.12.1.27.02.43-.08.16-.18.27-.3.41-.12.14-.26.31-.37.42-.12.12-.25.26-.1.52.15.26.66 1.09 1.42 1.76.98.87 1.8 1.14 2.06 1.27.26.13.41.11.56-.06.15-.17.65-.76.82-1.02.17-.26.34-.22.57-.14.23.08 1.48.7 1.73.82.25.12.41.18.47.28.06.1.06.59-.16 1.2z"/>
+                        </svg>
+                        Join WhatsApp Group
+                      </a>
                     </div>
                   )}
                   

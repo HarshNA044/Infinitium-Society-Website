@@ -74,6 +74,7 @@ const Navigation = () => {
     { name: 'Gallery', path: '/gallery', icon: ImageIcon },
     { name: 'Achievements', path: '/achievements', icon: Trophy },
     { name: 'Team', path: '/team', icon: Users },
+    { name: 'Contact', path: '/contact', icon: MessageSquare },
   ];
 
   return (
@@ -188,6 +189,7 @@ const Footer = () => (
             <li><Link to="/about" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">About Us</Link></li>
             <li><Link to="/events" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Our Events</Link></li>
             <li><Link to="/team" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Team</Link></li>
+            <li><Link to="/contact" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Contact Us</Link></li>
             <li><Link to="/admin" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">Admin Login</Link></li>
           </ul>
         </div>
@@ -229,6 +231,7 @@ import Achievements_Page from './pages/Achievements';
 import Team_Page from './pages/Team';
 import Admin_Page from './pages/Admin';
 import EventDetail_Page from './pages/EventDetail';
+import Contact_Page from './pages/Contact';
 
 function AppContent() {
   const location = useLocation();
@@ -264,6 +267,7 @@ function AppContent() {
           <Route path="/gallery" element={<Gallery_Page />} />
           <Route path="/achievements" element={<Achievements_Page />} />
           <Route path="/team" element={<Team_Page />} />
+          <Route path="/contact" element={<Contact_Page />} />
           <Route path="/admin/*" element={<Admin_Page />} />
         </Routes>
       </main>

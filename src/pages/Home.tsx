@@ -58,6 +58,7 @@ const navItems = [
   { name: 'Gallery', path: '/gallery' },
   { name: 'Achievements', path: '/achievements' },
   { name: 'Team', path: '/team' },
+  { name: 'Contact', path: '/contact' },
 ];
 
 const backgroundIcons = [
