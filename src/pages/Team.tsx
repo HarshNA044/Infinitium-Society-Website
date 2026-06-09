@@ -109,9 +109,21 @@ export default function Team_Page() {
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}
-                    className="group flex flex-col bg-white rounded-xl border border-zinc-200/60 p-3 transition-all duration-300 shadow-[0_4px_14px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.22)] hover:border-brand-500/20 relative"
+                    className="group flex flex-col bg-white rounded-xl border border-zinc-200/60 p-3 transition-all duration-300 shadow-[0_4px_14px_rgba(0,0,0,0.12)] hover:shadow-[0_8px_24px_rgba(0,0,0,0.22)] hover:border-brand-500/20 relative overflow-hidden"
                   >
-                    <div className="relative overflow-hidden rounded-lg bg-zinc-100 aspect-square mb-2.5">
+                    {/* Decorative gradient semi-circle corner patterns with increased opacity */}
+                    {/* Top-left corners */}
+                    <div className="absolute top-0 left-0 w-12 h-12 bg-gradient-to-br from-brand-500/32 via-brand-500/12 to-transparent rounded-br-full pointer-events-none group-hover:scale-115 transition-all duration-500 origin-top-left z-0" />
+                    <div className="absolute -top-6 -left-6 w-14 h-14 rounded-full bg-brand-500/20 blur-[5px] pointer-events-none group-hover:scale-125 transition-all duration-500 z-0" />
+                    
+                    {/* Bottom-right corners */}
+                    <div className="absolute bottom-0 right-0 w-12 h-12 bg-gradient-to-tl from-brand-600/28 via-brand-500/10 to-transparent rounded-tl-full pointer-events-none group-hover:scale-115 transition-all duration-500 origin-bottom-right z-0" />
+                    <div className="absolute -bottom-6 -right-6 w-14 h-14 rounded-full bg-brand-600/18 blur-[5px] pointer-events-none group-hover:scale-125 transition-all duration-500 z-0" />
+                    
+                    {/* Soft ambient inner card background overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-brand-500/[0.02] to-brand-500/[0.05] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-0" />
+
+                    <div className="relative overflow-hidden rounded-lg bg-zinc-100 aspect-square mb-2.5 z-10">
                       <img 
                         src={member.image} 
                         alt={member.name} 
@@ -131,7 +143,7 @@ export default function Team_Page() {
                       )}
                     </div>
                     
-                    <div className="flex flex-col flex-grow text-center">
+                    <div className="flex flex-col flex-grow text-center z-10">
                       <h3 className="text-xs font-black text-slate-900 group-hover:text-brand-600 transition-colors uppercase tracking-tight leading-snug line-clamp-2">
                         {member.name}
                       </h3>
