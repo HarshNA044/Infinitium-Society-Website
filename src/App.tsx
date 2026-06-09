@@ -244,7 +244,7 @@ const Footer = () => (
 
       <div className="text-center">
         <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]">
-          © 2026 INFINITIUM Society ARSD College, University of Delhi.
+          © {new Date().getFullYear()} INFINITIUM Society ARSD College, University of Delhi.
         </p>
         <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mt-2">
           Designed & Developed by <a href="https://linkedin.com/in/harsh044/" id="dev-credit" target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:text-brand-400">Harsh</a>
@@ -351,12 +351,27 @@ function AppContent() {
     const verifyIntegrity = () => {
       if (isAdminPath) return;
       const credit = document.getElementById('dev-credit');
-      if (!credit || !credit.textContent?.includes('Harsh') || !(credit as HTMLAnchorElement).href.includes('harsh044')) {
+      if (!credit) {
+        setIsSecure(false);
+        return;
+      }
+
+      const text = credit.textContent || '';
+      const href = (credit as HTMLAnchorElement).href || '';
+      const parentHTML = credit.parentElement?.innerHTML || '';
+
+      const isOk = 
+        text.includes('Harsh') && 
+        href.includes('harsh044') && 
+        parentHTML.includes('Designed & Developed by');
+
+      if (!isOk) {
         setIsSecure(false);
       }
     };
     
-    const interval = setInterval(verifyIntegrity, 3000);
+    verifyIntegrity();
+    const interval = setInterval(verifyIntegrity, 1000);
     return () => clearInterval(interval);
   }, [isAdminPath]);
 
