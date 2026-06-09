@@ -17,11 +17,11 @@ export const Logo = ({ className = "" }: { className?: string }) => {
   const customLogo = React.useContext(LogoContext);
   if (customLogo) {
     return (
-      <div className={cn("relative w-12 h-12 flex items-center justify-center bg-[#0d1b1b] rounded-full shadow-lg shadow-cyan-500/10 group-hover:scale-105 transition-transform overflow-hidden border border-cyan-500/20 shrink-0", className)}>
+      <div className={cn("relative w-12 h-12 flex items-center justify-center bg-[#041a1a] rounded-full shadow-lg shadow-cyan-500/10 group-hover:scale-105 transition-transform overflow-hidden border border-cyan-500/20 shrink-0", className)}>
         <img 
           src={customLogo} 
           alt="INFINITIUM Logo" 
-          className="w-full h-full object-cover p-1 bg-[#0d1b1b]"
+          className="w-full h-full object-cover p-1 bg-[#041a1a]"
           referrerPolicy="no-referrer"
         />
       </div>
@@ -30,20 +30,39 @@ export const Logo = ({ className = "" }: { className?: string }) => {
 
   // Pure vector inline fallback of the attached logo. Scalable, high contrast, instantly loaded, and robust.
   return (
-    <div className={cn("relative w-12 h-12 flex items-center justify-center bg-[#0d1b1b] rounded-full shadow-lg shadow-cyan-500/10 group-hover:scale-105 transition-transform overflow-hidden border border-cyan-500/20 shrink-0", className)}>
-      <svg viewBox="0 0 120 120" className="w-full h-full p-1 bg-[#0d1b1b]">
-        <circle cx="60" cy="60" r="56" fill="#081414" />
-        <g transform="translate(60, 50) scale(1.05)">
-          <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2.2" transform="rotate(0)" />
-          <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2.2" transform="rotate(60)" />
-          <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2.2" transform="rotate(120)" />
-          <circle cx="0" cy="0" r="8.5" fill="#22d3ee" />
-          <circle cx="36" cy="0" r="3.5" fill="#22d3ee" />
-          <circle cx="-18" cy="31.2" r="3.5" fill="#22d3ee" />
-          <circle cx="-18" cy="-31.2" r="3.5" fill="#22d3ee" />
+    <div className={cn("relative w-12 h-12 flex items-center justify-center bg-[#041a1a] rounded-full shadow-lg shadow-cyan-500/10 group-hover:scale-105 transition-transform overflow-hidden border border-cyan-500/20 shrink-0", className)}>
+      <svg viewBox="0 0 500 500" className="w-full h-full p-1 bg-[#041a1a]">
+        <circle cx="250" cy="250" r="245" fill="#041a1a" />
+
+        <g transform="translate(250, 180)">
+          <ellipse cx="0" cy="0" rx="115" ry="53" fill="none" stroke="#5ce1e6" strokeWidth="5.5" transform="rotate(22.5)" />
+          <ellipse cx="0" cy="0" rx="115" ry="53" fill="none" stroke="#5ce1e6" strokeWidth="5.5" transform="rotate(67.5)" />
+          <ellipse cx="0" cy="0" rx="115" ry="53" fill="none" stroke="#5ce1e6" strokeWidth="5.5" transform="rotate(112.5)" />
+          <ellipse cx="0" cy="0" rx="115" ry="53" fill="none" stroke="#5ce1e6" strokeWidth="5.5" transform="rotate(157.5)" />
+
+          <circle cx="0" cy="0" r="30" fill="#5ce1e6" />
+
+          <circle cx="-104" cy="-53" r="13" fill="#5ce1e6" />
+          <circle cx="85" cy="-75" r="13" fill="#5ce1e6" />
+          <circle cx="45" cy="93" r="13" fill="#5ce1e6" />
         </g>
-        <text x="60" y="87" textAnchor="middle" fontSize="11.5" fontWeight="900" fill="#22d3ee" className="font-sans" style={{ letterSpacing: '0.04em' }}>INFINITIUM</text>
-        <text x="60" y="97" textAnchor="middle" fontSize="5" fontWeight="800" fill="#22d3ee" className="font-sans" style={{ letterSpacing: '0.16em', opacity: 0.9 }}>INSPIRING INNOVATION</text>
+
+        <text x="250" y="375" 
+              textAnchor="middle" 
+              fill="#5ce1e6" 
+              className="font-sans"
+              fontSize="58" 
+              fontWeight="900" 
+              style={{ letterSpacing: '0.05em' }}>INFINITIUM</text>
+
+        <text x="250" y="425" 
+              textAnchor="middle" 
+              fill="#5ce1e6" 
+              className="font-sans"
+              fontSize="24" 
+              fontWeight="500" 
+              opacity="0.85"
+              style={{ letterSpacing: '0.15em' }}>INSPIRING INNOVATION</text>
       </svg>
     </div>
   );
@@ -254,6 +273,78 @@ function AppContent() {
   // Automatically scroll to the top of the page on route transition
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  // Dynamically update document title and meta description tags for robust SEO
+  useEffect(() => {
+    let pageTitle = "INFINITIUM | Society of Physical Sciences, ARSD College";
+    let metaDescription = "Infinitium is the premier Society of Physical Sciences at Atma Ram Sanatan Dharma (ARSD) College, University of Delhi. Cultivating innovation, research, scientific excellence, and physical sciences events.";
+
+    const path = location.pathname;
+
+    if (path === '/') {
+      pageTitle = "INFINITIUM | Home | Society of Physical Sciences, ARSD College";
+      metaDescription = "Welcome to Infinitium, the premier Physical Sciences society of Atma Ram Sanatan Dharma College (ARSD), University of Delhi. join us to explore physics, chemistry, mathematics, and inspire innovation.";
+    } else if (path === '/about') {
+      pageTitle = "About Us | INFINITIUM ARSD - Physical Sciences Society";
+      metaDescription = "Learn more about the Infinitium Society, our academic roots, executive members, physical sciences lab culture, and activities at ARSD College, DU.";
+    } else if (path === '/events') {
+      pageTitle = "Events, Seminars & Workshops | INFINITIUM ARSD";
+      metaDescription = "Explore physical science exhibitions, webinars, hands-on physics workshops, and guest lectures organized by Infinitium Society, ARSD College.";
+    } else if (path.startsWith('/events/')) {
+      pageTitle = "Event Details | INFINITIUM ARSD";
+      metaDescription = "View specialized event details, schedules, speakers, registration links, and photographs for events organized by Infinitium Society.";
+    } else if (path === '/gallery') {
+      pageTitle = "Gallery & Creative Memories | INFINITIUM ARSD";
+      metaDescription = "Cherish the physical science exhibitions, lab experiments, classroom moments, fests, and milestones captured in images.";
+    } else if (path === '/achievements') {
+      pageTitle = "Innovations & Achievements | INFINITIUM ARSD";
+      metaDescription = "Explore the major milestones, stellar academic scores, tech projects, research publications, and societal awards garnered by Infinitium members.";
+    } else if (path === '/team') {
+      pageTitle = "Meet Our Team & Mentors | INFINITIUM ARSD";
+      metaDescription = "Get to know the passionate executives, physical science department leaders, faculty advisors, and members of Infinitium Society, ARSD.";
+    } else if (path === '/contact') {
+      pageTitle = "Contact Us & Collaborate | INFINITIUM ARSD";
+      metaDescription = "Reach out to Infinitium Society of Physical Sciences, Atma Ram Sanatan Dharma College, DU. Fill out our contact form or drop us an email.";
+    } else if (path.startsWith('/admin')) {
+      pageTitle = "Admin Panel Dashboard | INFINITIUM ARSD";
+      metaDescription = "Control room for managing events, team roles, gallery uploads, registrations, and general platform content.";
+    }
+
+    // Apply Document Title
+    document.title = pageTitle;
+
+    // Find or create description tag
+    let metaEl = document.querySelector('meta[name="description"]');
+    if (!metaEl) {
+      metaEl = document.createElement('meta');
+      metaEl.setAttribute('name', 'description');
+      document.head.appendChild(metaEl);
+    }
+    metaEl.setAttribute('content', metaDescription);
+
+    // Apply dynamic keywords to optimize searches for "Infinitium society" and "infinitium arsd"
+    let keywordsEl = document.querySelector('meta[name="keywords"]');
+    if (!keywordsEl) {
+      keywordsEl = document.createElement('meta');
+      keywordsEl.setAttribute('name', 'keywords');
+      document.head.appendChild(keywordsEl);
+    }
+    keywordsEl.setAttribute('content', "Infinitium, Infinitium society, infinitium arsd, Infinitium ARSD College, Society of Physical Sciences, ARSD College, Physics, Chemistry, Physical Sciences Society Delhi University, ARSD fests, science events, harish, academic societies DU");
+
+    // Dynamic OpenGraph titles
+    const ogTitleEl = document.querySelector('meta[property="og:title"]');
+    if (ogTitleEl) ogTitleEl.setAttribute('content', pageTitle);
+
+    const ogDescEl = document.querySelector('meta[property="og:description"]');
+    if (ogDescEl) ogDescEl.setAttribute('content', metaDescription);
+
+    const twitterTitleEl = document.querySelector('meta[property="twitter:title"]');
+    if (twitterTitleEl) twitterTitleEl.setAttribute('content', pageTitle);
+
+    const twitterDescEl = document.querySelector('meta[property="twitter:description"]');
+    if (twitterDescEl) twitterDescEl.setAttribute('content', metaDescription);
+
   }, [location.pathname]);
 
   useEffect(() => {

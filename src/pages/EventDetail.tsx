@@ -71,6 +71,26 @@ export default function EventDetail_Page() {
     }
   }, [event]);
 
+  useEffect(() => {
+    if (event && event.title) {
+      const displayTitle = `${event.title} | INFINITIUM ARSD`;
+      document.title = displayTitle;
+
+      const eventDesc = event.shortDescription || event.description || "View details of events, workshops, guest lectures and fests organized by Infinitium Society, ARSD.";
+      
+      const metaEl = document.querySelector('meta[name="description"]');
+      if (metaEl) {
+        metaEl.setAttribute('content', eventDesc.substring(0, 160));
+      }
+      
+      const ogTitleEl = document.querySelector('meta[property="og:title"]');
+      if (ogTitleEl) ogTitleEl.setAttribute('content', displayTitle);
+      
+      const ogDescEl = document.querySelector('meta[property="og:description"]');
+      if (ogDescEl) ogDescEl.setAttribute('content', eventDesc.substring(0, 160));
+    }
+  }, [event]);
+
   const validate = () => {
     const newErrors: any = {};
     if (!formData.studentName.trim()) newErrors.studentName = "Name is required";
