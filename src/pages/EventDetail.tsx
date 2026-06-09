@@ -487,10 +487,10 @@ export default function EventDetail_Page() {
               <img 
                 src={event.image} 
                 alt=""
-                className="w-full h-full object-cover blur-2xl opacity-20 scale-110"
+                className="w-full h-full object-cover blur-sm opacity-25 scale-110"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-white/40" />
+              <div className="absolute inset-0 bg-white/50" />
             </div>
 
             <motion.div 
@@ -509,10 +509,7 @@ export default function EventDetail_Page() {
           </div>
 
           {/* About this Event section */}
-          <div className="bg-white rounded-2xl border border-zinc-200/60 p-6 md:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.06)] relative overflow-hidden">
-            {/* Premium subtle backgrounds */}
-            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-brand-500/5 to-transparent rounded-full blur-xl pointer-events-none" />
-            
+          <div className="relative">
             <h3 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2">
               <span className="w-1.5 h-3 bg-brand-500 rounded-full" /> About The Event
             </h3>
@@ -630,6 +627,7 @@ export default function EventDetail_Page() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               onClick={() => {
                 if (!registrationSuccess) setIsRegistering(false);
               }}
@@ -637,9 +635,10 @@ export default function EventDetail_Page() {
             />
             
             <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              exit={{ opacity: 0, scale: 0.96, y: 12 }}
+              transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
               className="relative bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden border border-slate-200 mx-4 md:mx-0 max-h-[90vh] flex flex-col"
             >
               {!registrationSuccess ? (
