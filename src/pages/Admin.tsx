@@ -72,6 +72,7 @@ export default function Admin_Page() {
   // About management state
   const [aboutData, setAboutData] = useState<any>(null);
   const [isSavingAbout, setIsSavingAbout] = useState(false);
+  const [isSavingLogo, setIsSavingLogo] = useState(false);
 
   // Contact management state
   const [contactConfig, setContactConfig] = useState<{ sheetId: string; adminEmail: string }>({ sheetId: '', adminEmail: '' });
@@ -299,15 +300,40 @@ export default function Admin_Page() {
   const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setIsSavingLogo(true);
       try {
         const compressed = await compressImage(file, 256, 256, 0.8);
+        const updatedAbout = {
+          ...aboutData,
+          logo: compressed
+        };
+        setAboutData(updatedAbout);
+        await setDoc(doc(db, 'about', 'current'), updatedAbout);
+        alert("Website custom logo set and saved to the database successfully! The header navbar logo, bottom footer logo, and browser favicon will now be updated in real-time.");
+      } catch (err) {
+        console.error("Logo upload/save failed", err);
+        alert("Failed to process and save logo image: " + (err instanceof Error ? err.message : String(err)));
+      } finally {
+        setIsSavingLogo(false);
+      }
+    }
+  };
+
+  const handleAboutHeroImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      try {
+        const compressed = await compressImage(file, 1000, 600, 0.7);
         setAboutData((prev: any) => ({
           ...prev,
-          logo: compressed
+          hero: {
+            ...prev.hero,
+            image: compressed
+          }
         }));
       } catch (err) {
-        console.error("Logo compression failed", err);
-        alert("Failed to process logo image.");
+        console.error("Hero image compression failed", err);
+        alert("Failed to process hero image.");
       }
     }
   };
@@ -1336,79 +1362,7 @@ export default function Admin_Page() {
 
         {activeTab === 'about' && aboutData && (
           <div className="space-y-8">
-            {/* Website Logo Settings */}
-            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-6 animate-fadeIn">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-100 pb-6">
-                <div>
-                  <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tight">Website Logo Settings</h2>
-                  <p className="text-xs text-zinc-400 font-semibold uppercase tracking-wider mt-1">Upload a custom logo to change the Navbar, Footer, and Favicon icon dynamically</p>
-                </div>
-                {aboutData.logo && (
-                  <button 
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm("Are you sure you want to reset the logo to default?")) {
-                        setAboutData((prev: any) => ({
-                          ...prev,
-                          logo: ""
-                        }));
-                      }
-                    }}
-                    className="text-[10px] font-black text-red-500 hover:text-red-600 uppercase tracking-widest flex items-center gap-1.5 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Remove Logo
-                  </button>
-                )}
-              </div>
-              
-              <div className="flex flex-col sm:flex-row items-center gap-8 bg-zinc-50 rounded-2xl p-6 border-2 border-dashed border-zinc-200">
-                <div className="flex flex-col items-center shrink-0">
-                  <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-2 pl-1">Logo Preview</span>
-                  <div className="relative w-24 h-24 flex items-center justify-center bg-[#0d1b1b] rounded-full shadow-lg border border-cyan-500/20 overflow-hidden">
-                    {aboutData.logo ? (
-                      <img 
-                        src={aboutData.logo} 
-                        alt="Uploaded Logo" 
-                        className="w-full h-full object-cover p-2 bg-[#0d1b1b]" 
-                        referrerPolicy="no-referrer"
-                      />
-                    ) : (
-                      <div className="text-center p-2 text-cyan-400 font-black text-[10px] uppercase leading-tight select-none">
-                        Default Logo
-                      </div>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex-1 space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-1 block">Upload New Logo (JPEG, PNG, SVG)</label>
-                    <div className="relative">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleLogoFileChange}
-                        className="hidden"
-                        id="logo-upload-input"
-                      />
-                      <label 
-                        htmlFor="logo-upload-input"
-                        className="inline-flex items-center gap-2 px-5 py-4 bg-white hover:bg-zinc-100/50 border border-zinc-200 rounded-xl text-xs font-black uppercase tracking-wider cursor-pointer shadow-sm transition-all text-zinc-700"
-                      >
-                        <Camera className="w-4 h-4 text-zinc-500" /> Select Logo Image
-                      </label>
-                    </div>
-                  </div>
-                  <p className="text-[10.5px] text-zinc-400 leading-normal font-semibold">
-                    We recommend uploading a high quality square image (at least 256x256px). 
-                    Your logo will automatically be optimized, scaled, and updated live across the entire 
-                    Infinitium website, including the floating Navigation menu, bottom Footer, page headers, 
-                    and browser address bar (favicon) in real-time!
-                  </p>
-                </div>
-              </div>
-            </div>
-
+            {/* Hero Banner info */}
             <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-6">
               <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tight mb-4">Hero Banner info</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1424,15 +1378,37 @@ export default function Admin_Page() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Hero Image URL</label>
-                  <input
-                    value={aboutData.hero?.image || ''}
-                    onChange={(e) => setAboutData({
-                      ...aboutData,
-                      hero: { ...aboutData.hero, image: e.target.value }
-                    })}
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
-                  />
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2 block">Hero Banner Image</label>
+                  <div className="flex items-center gap-4 bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
+                    <div className="relative w-16 h-16 rounded-xl border border-zinc-200 overflow-hidden bg-zinc-100 flex items-center justify-center shrink-0">
+                      {aboutData.hero?.image ? (
+                        <img 
+                          src={aboutData.hero.image} 
+                          alt="Hero Preview" 
+                          className="w-full h-full object-cover" 
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="text-[9px] text-zinc-400 font-bold uppercase text-center p-1">No Image</div>
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAboutHeroImageChange}
+                        className="hidden"
+                        id="hero-image-upload-input"
+                      />
+                      <label 
+                        htmlFor="hero-image-upload-input"
+                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white hover:bg-zinc-100 border border-zinc-200 rounded-xl text-[11px] font-black uppercase tracking-wider cursor-pointer shadow-sm transition-all text-zinc-700"
+                      >
+                        <Camera className="w-3.5 h-3.5 text-zinc-500" /> Upload Image
+                      </label>
+                      <p className="text-[9.5px] text-zinc-400 font-medium mt-1 uppercase tracking-wider">JPEG or PNG, scaled to 1000x600px</p>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="space-y-2">

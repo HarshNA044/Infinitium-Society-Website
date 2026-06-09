@@ -36,20 +36,21 @@ service cloud.firestore {
     match /about/{docId} {
       function isValidAbout(data) {
         return data.keys().hasAll(['hero', 'objectives', 'impacts', 'departments']) 
-          && data.keys().size() == 4
+          && data.keys().size() >= 4 && data.keys().size() <= 5
           && data.hero is map
           && data.hero.title is string && data.hero.title.size() <= 200
           && data.hero.paragraph is string && data.hero.paragraph.size() <= 4000
           && data.hero.image is string && data.hero.image.size() <= 1000000
           && data.objectives is list
           && data.impacts is list
-          && data.departments is list;
+          && data.departments is list
+          && (!data.keys().hasAll(['logo']) || data.logo is string && data.logo.size() <= 2500000);
       }
 
       allow read: if true;
       allow create: if isAdmin() && isValidAbout(incoming());
       allow update: if isAdmin() && isValidAbout(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['hero', 'objectives', 'impacts', 'departments'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['hero', 'objectives', 'impacts', 'departments', 'logo'])
       );
       allow delete: if isAdmin();
     }

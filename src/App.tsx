@@ -15,37 +15,36 @@ export const LogoContext = React.createContext<string | null>(null);
 
 export const Logo = ({ className = "" }: { className?: string }) => {
   const customLogo = React.useContext(LogoContext);
-  return (
-    <div className={cn("relative w-12 h-12 flex items-center justify-center bg-[#0d1b1b] rounded-full shadow-lg shadow-cyan-500/10 group-hover:scale-105 transition-transform overflow-hidden border border-cyan-500/20 shrink-0", className)}>
-      {customLogo ? (
+  if (customLogo) {
+    return (
+      <div className={cn("relative w-12 h-12 flex items-center justify-center bg-[#0d1b1b] rounded-full shadow-lg shadow-cyan-500/10 group-hover:scale-105 transition-transform overflow-hidden border border-cyan-500/20 shrink-0", className)}>
         <img 
           src={customLogo} 
           alt="INFINITIUM Logo" 
           className="w-full h-full object-cover p-1 bg-[#0d1b1b]"
           referrerPolicy="no-referrer"
         />
-      ) : (
-        <svg viewBox="0 0 100 100" className="w-full h-full p-2">
-          {/* Background Circle */}
-          <circle cx="50" cy="50" r="48" fill="#0d1b1b" />
-          
-          {/* Atom Symbol (Cyan) */}
-          <g transform="translate(50, 42) scale(0.85)">
-            <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2" transform="rotate(0)" />
-            <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2" transform="rotate(60)" />
-            <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2" transform="rotate(120)" />
-            <circle cx="0" cy="0" r="8" fill="#22d3ee" />
-            {/* Electrons */}
-            <circle cx="36" cy="0" r="3.5" fill="#22d3ee" />
-            <circle cx="-18" cy="31.2" r="3.5" fill="#22d3ee" />
-            <circle cx="-18" cy="-31.2" r="3.5" fill="#22d3ee" />
-          </g>
+      </div>
+    );
+  }
 
-          {/* Text Branding */}
-          <text x="50" y="73" textAnchor="middle" fontSize="12" fontWeight="900" fill="#22d3ee" className="font-sans" style={{ letterSpacing: '-0.02em' }}>INFINITIUM</text>
-          <text x="50" y="83" textAnchor="middle" fontSize="5" fontWeight="700" fill="#22d3ee" className="font-sans uppercase" style={{ letterSpacing: '0.15em', opacity: 0.9 }}>Inspiring Innovation</text>
-        </svg>
-      )}
+  // Pure vector inline fallback of the attached logo. Scalable, high contrast, instantly loaded, and robust.
+  return (
+    <div className={cn("relative w-12 h-12 flex items-center justify-center bg-[#0d1b1b] rounded-full shadow-lg shadow-cyan-500/10 group-hover:scale-105 transition-transform overflow-hidden border border-cyan-500/20 shrink-0", className)}>
+      <svg viewBox="0 0 120 120" className="w-full h-full p-1 bg-[#0d1b1b]">
+        <circle cx="60" cy="60" r="56" fill="#081414" />
+        <g transform="translate(60, 50) scale(1.05)">
+          <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2.2" transform="rotate(0)" />
+          <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2.2" transform="rotate(60)" />
+          <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2.2" transform="rotate(120)" />
+          <circle cx="0" cy="0" r="8.5" fill="#22d3ee" />
+          <circle cx="36" cy="0" r="3.5" fill="#22d3ee" />
+          <circle cx="-18" cy="31.2" r="3.5" fill="#22d3ee" />
+          <circle cx="-18" cy="-31.2" r="3.5" fill="#22d3ee" />
+        </g>
+        <text x="60" y="87" textAnchor="middle" fontSize="11.5" fontWeight="900" fill="#22d3ee" className="font-sans" style={{ letterSpacing: '0.04em' }}>INFINITIUM</text>
+        <text x="60" y="97" textAnchor="middle" fontSize="5" fontWeight="800" fill="#22d3ee" className="font-sans" style={{ letterSpacing: '0.16em', opacity: 0.9 }}>INSPIRING INNOVATION</text>
+      </svg>
     </div>
   );
 };
@@ -65,7 +64,7 @@ const Navigation = () => {
 
     const handleScroll = () => {
       const heroEl = document.getElementById('hero-section');
-      const threshold = heroEl ? heroEl.offsetHeight - 80 : 500;
+      const threshold = heroEl ? heroEl.offsetHeight - (window.innerWidth < 768 ? 56 : 80) : 500;
       const parsedScrolled = window.scrollY >= threshold;
       
       setIsScrolled((prev) => {
@@ -101,19 +100,19 @@ const Navigation = () => {
         : "bg-transparent border-b border-transparent shadow-none pointer-events-none"
     )}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-20 items-center">
+        <div className="flex justify-between h-14 md:h-20 items-center">
           <Link 
             to="/" 
             className={cn(
-              "flex items-center gap-3 group transition-all duration-150 ease-out origin-left",
+               "flex items-center gap-3 group transition-all duration-150 ease-out origin-left",
               showBranding 
                 ? "opacity-100 translate-y-0 scale-100 pointer-events-auto" 
                 : "opacity-0 -translate-y-2 scale-95 pointer-events-none"
             )}
           >
-            <Logo />
+            <Logo className="w-10 h-10 md:w-12 md:h-12" />
             <div>
-              <h1 className="text-xl font-black leading-none tracking-tight text-brand-950 uppercase">INFINITIUM</h1>
+              <h1 className="text-lg md:text-xl font-black leading-none tracking-tight text-brand-950 uppercase">INFINITIUM</h1>
               <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.15em] mt-1 hidden sm:block">Society of Physical Sciences, ARSD College</p>
             </div>
           </Link>
@@ -277,7 +276,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-white font-sans text-brand-950 selection:bg-brand-100 selection:text-brand-900 overflow-x-hidden">
       {!isAdminPath && <Navigation />}
-      <main className={cn(!isAdminPath && location.pathname !== '/' && "pt-20")}>
+      <main className={cn(!isAdminPath && location.pathname !== '/' && "pt-14 md:pt-20")}>
         <Routes>
           <Route path="/" element={<Home_Page />} />
           <Route path="/about" element={<About_Page />} />
@@ -309,6 +308,8 @@ export default function App() {
           } else {
             setCustomLogo(null);
           }
+        } else {
+          setCustomLogo(null);
         }
       },
       (error) => {
@@ -319,27 +320,27 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (customLogo) {
-      const favicons = document.querySelectorAll("link[rel*='icon']");
-      if (favicons.length > 0) {
-        favicons.forEach((fav: any) => {
-          fav.href = customLogo;
-          if (customLogo.startsWith('data:image/svg')) {
-            fav.type = 'image/svg+xml';
-          } else if (customLogo.startsWith('data:image/png')) {
-            fav.type = 'image/png';
-          } else if (customLogo.startsWith('data:image/jpeg') || customLogo.startsWith('data:image/jpg')) {
-            fav.type = 'image/jpeg';
-          } else {
-            fav.type = 'image/x-icon';
-          }
-        });
-      } else {
-        const link = document.createElement('link');
-        link.rel = 'icon';
-        link.href = customLogo;
-        document.head.appendChild(link);
-      }
+    const faviconHref = customLogo || "/logo.svg";
+    const favicons = document.querySelectorAll("link[rel*='icon']");
+    if (favicons.length > 0) {
+      favicons.forEach((fav: any) => {
+        fav.href = faviconHref;
+        if (faviconHref.startsWith('data:image/svg') || faviconHref.endsWith('.svg')) {
+          fav.type = 'image/svg+xml';
+        } else if (faviconHref.startsWith('data:image/png') || faviconHref.endsWith('.png')) {
+          fav.type = 'image/png';
+        } else if (faviconHref.startsWith('data:image/jpeg') || faviconHref.startsWith('data:image/jpg') || faviconHref.endsWith('.jpg') || faviconHref.endsWith('.jpeg')) {
+          fav.type = 'image/jpeg';
+        } else {
+          fav.type = 'image/x-icon';
+        }
+      });
+    } else {
+      const link = document.createElement('link');
+      link.rel = 'icon';
+      link.href = faviconHref;
+      link.type = faviconHref.endsWith('.svg') ? 'image/svg+xml' : faviconHref.endsWith('.png') ? 'image/png' : 'image/x-icon';
+      document.head.appendChild(link);
     }
   }, [customLogo]);
 

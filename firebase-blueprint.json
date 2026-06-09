@@ -5,6 +5,7 @@
       "description": "Information for the internal About page",
       "type": "object",
       "properties": {
+        "logo": { "type": "string", "description": "Dynamic custom website logo base64 data URL" },
         "hero": {
           "type": "object",
           "properties": {
