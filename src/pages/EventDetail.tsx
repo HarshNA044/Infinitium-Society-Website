@@ -420,121 +420,177 @@ export default function EventDetail_Page() {
   const isPast = event.status === 'Past';
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* Hero Section */}
-      <div className="relative h-[40vh] md:h-[50vh] bg-zinc-950 overflow-hidden">
-        <img 
-          src={event.image} 
-          alt={event.title}
-          className="absolute inset-0 w-full h-full object-cover opacity-50 scale-105"
-          referrerPolicy="no-referrer"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>
-        <div className="absolute inset-0 bg-black/40"></div>
-        
-        <div className="absolute bottom-0 left-0 right-0 p-8 md:p-20">
-          <div className="max-w-7xl mx-auto text-center">
-             <div className="flex flex-wrap justify-center gap-4 mb-8">
-                <span className="px-4 py-1.5 bg-brand-500 text-brand-950 text-[10px] font-black uppercase tracking-widest rounded-full">
-                  {event.type}
-                </span>
-                <span className={cn(
-                  "px-4 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full border",
-                  isPast ? "bg-slate-100 text-slate-500 border-slate-200" : "bg-emerald-100 text-emerald-600 border-emerald-200"
-                )}>
-                  {event.status}
-                </span>
-             </div>
-             <h1 className="text-3xl sm:text-5xl md:text-6xl font-black text-white tracking-tighter leading-none uppercase mb-4">
-               {event.title}
-             </h1>
-          </div>
+    <div className="min-h-screen bg-slate-50/50 pb-16">
+      {/* Action Bar (Static, non-sticky, no overlap, centered buttons) */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="flex items-center justify-start">
+          <Link
+            to="/events"
+            className="flex items-center justify-center gap-2 w-28 sm:w-36 h-8 sm:h-10 text-zinc-600 hover:text-brand-600 transition-all font-black text-[8px] sm:text-[10px] uppercase tracking-widest bg-white hover:bg-zinc-50 rounded-lg border border-zinc-200/60 shadow-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Events
+          </Link>
         </div>
       </div>
 
-      {/* Content Section */}
-      <div className="max-w-4xl mx-auto px-8 py-10 md:py-12">
-        <div className="space-y-12">
-            <div>
-               <h2 className="text-xl md:text-2xl font-black tracking-tighter uppercase text-slate-900 mb-2">
-                 {event.subtitle || "Exploring the Frontiers of Physics"}
-               </h2>
-               <div className="flex flex-wrap gap-4 md:gap-8 items-center mt-6 py-6 border-y border-slate-100">
-                  <div className="flex items-center gap-2 text-slate-900">
-                     <Calendar className="w-4 h-4 text-brand-600" />
-                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">When: {event.date} {event.startTime && `@ ${formatTime(event.startTime)}`}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-900">
-                     <MapPin className="w-4 h-4 text-brand-600" />
-                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">{event.location}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-slate-900">
-                     <Tag className="w-4 h-4 text-brand-600" />
-                     <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">{event.type}</span>
-                  </div>
-               </div>
-            </div>
+      {/* Main Container */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
 
-            <div className="prose prose-slate max-w-none">
-               <p className="text-lg md:text-xl text-slate-900 font-medium leading-relaxed">
-                 {event.description}
-               </p>
-               
-               <div className="mt-12 pt-12 border-t border-slate-100">
-                 {isPast ? (
-                   <div className="inline-block px-8 py-4 bg-slate-100 text-slate-500 rounded-2xl font-black uppercase text-[10px] tracking-widest border border-slate-200">
-                      Registration Closed
-                   </div>
-                 ) : (
-                   <button 
-                     onClick={() => setIsRegistering(true)}
-                     className="px-10 py-5 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-[0.2em] hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20 active:scale-95 flex items-center gap-3"
-                   >
-                     Register for Event <ArrowRight className="w-4 h-4" />
-                   </button>
-                 )}
-               </div>
-            </div>
+        {/* Content & Details Stack */}
+        <div className="max-w-3xl mx-auto space-y-8">
+          
+          <div className="space-y-4">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-900 uppercase tracking-tighter leading-none">
+              {event.title}
+            </h1>
+            
+            {event.subtitle && (
+              <h2 className="text-base sm:text-lg font-bold text-brand-600 uppercase tracking-wider">
+                {event.subtitle}
+              </h2>
+            )}
 
-            <div className="flex items-center gap-4 pt-10">
-               <button 
-                onClick={handleShare}
-                className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-400 rounded-xl hover:bg-slate-100 hover:text-slate-900 transition-all text-[10px] font-black uppercase tracking-widest"
-               >
-                  <Share2 className="w-4 h-4" /> Share
-               </button>
-            </div>
-
-            {photos.length > 0 && (
-              <div className="pt-20 border-t border-slate-100">
-                <div className="flex items-end justify-between mb-12">
-                  <div>
-                    <h2 className="text-2xl md:text-3xl font-black tracking-tighter uppercase text-slate-900 leading-none">Event Highlights</h2>
-                    <p className="text-[9px] md:text-[10px] font-black text-brand-600 uppercase tracking-[0.3em] mt-3">Moments in Motion</p>
-                  </div>
+            {/* Event Meta Details row directly below sub title */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-start gap-y-3 sm:gap-x-4 md:gap-x-6 py-4 border-y border-zinc-200/60 mt-4 text-slate-900">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-y-3 sm:gap-x-4 md:gap-x-6">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">When: {event.date} {event.startTime && `@ ${formatTime(event.startTime)}`}</span>
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {photos.map((photo) => (
-                    <motion.div 
-                      key={photo.id}
-                      initial={{ opacity: 0 }}
-                      whileInView={{ opacity: 1 }}
-                      viewport={{ once: true }}
-                      onClick={() => setSelectedPhoto(photo.src)}
-                      className="aspect-square rounded-2xl overflow-hidden bg-slate-50 border border-slate-100 group cursor-pointer"
-                    >
-                      <img 
-                        src={photo.src} 
-                        alt="Event Highlight" 
-                        className="w-full h-full object-cover transition-all duration-500 group-hover:scale-110"
-                        referrerPolicy="no-referrer"
-                      />
-                    </motion.div>
-                  ))}
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">{event.location}</span>
                 </div>
               </div>
+              
+              {/* On mobile, Category and Share are on the same line with a small gap */}
+              <div className="flex items-center justify-start sm:justify-start gap-x-4 w-full sm:w-auto">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">{event.type}</span>
+                </div>
+                
+                <button
+                  onClick={handleShare}
+                  className="flex items-center gap-1.5 text-zinc-600 hover:text-brand-600 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-widest shrink-0"
+                >
+                  <Share2 className="w-3.5 h-3.5" /> Share
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* EVENT IMAGE - Enclosed inside a card box of matching width on tablet/desktop, keeping 1:1 aspect ratio scaled cleanly */}
+          <div className="sm:bg-white sm:rounded-2xl sm:border sm:border-zinc-200/60 p-0 sm:p-6 md:p-8 sm:shadow-[0_4px_16px_rgba(0,0,0,0.06)] relative overflow-hidden">
+            {/* Blurred ambient event image background glow inside the enclosure - laptop and tablet devices only */}
+            <div className="hidden sm:block absolute inset-0 pointer-events-none select-none overflow-hidden">
+              <img 
+                src={event.image} 
+                alt=""
+                className="w-full h-full object-cover blur-2xl opacity-20 scale-110"
+                referrerPolicy="no-referrer"
+              />
+              <div className="absolute inset-0 bg-white/40" />
+            </div>
+
+            <motion.div 
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="relative rounded-xl overflow-hidden bg-white aspect-square w-full max-w-sm sm:max-w-md mx-auto shadow-md border border-zinc-200/60 z-10"
+            >
+              <img 
+                src={event.image} 
+                alt={event.title}
+                className="w-full h-full object-cover object-center"
+                referrerPolicy="no-referrer"
+              />
+            </motion.div>
+          </div>
+
+          {/* About this Event section */}
+          <div className="bg-white rounded-2xl border border-zinc-200/60 p-6 md:p-8 shadow-[0_4px_16px_rgba(0,0,0,0.06)] relative overflow-hidden">
+            {/* Premium subtle backgrounds */}
+            <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-brand-500/5 to-transparent rounded-full blur-xl pointer-events-none" />
+            
+            <h3 className="text-xs font-black uppercase tracking-[0.2em] text-zinc-400 mb-4 flex items-center gap-2">
+              <span className="w-1.5 h-3 bg-brand-500 rounded-full" /> About The Event
+            </h3>
+            
+            <p className="text-slate-700 text-base md:text-lg font-normal leading-relaxed whitespace-pre-line">
+              {event.description}
+            </p>
+          </div>
+
+          {/* Register Now Action Block directly below About the Event */}
+          <div className="pt-2">
+            {isPast ? (
+              <div className="w-full text-center py-4 bg-zinc-100 text-zinc-400 rounded-xl font-black uppercase text-[10px] tracking-widest border border-zinc-200">
+                Registration Closed
+              </div>
+            ) : (
+              <button 
+                onClick={() => setIsRegistering(true)}
+                className="w-full py-4 bg-brand-600 text-white rounded-xl font-black uppercase text-xs tracking-[0.18em] hover:bg-brand-700 hover:shadow-xl hover:shadow-brand-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-3 shadow-[0_8px_20px_rgba(20,184,166,0.15)] group/btn"
+              >
+                Register Now <ArrowRight className="w-3.5 h-3.5 group-hover/btn:translate-x-1 transition-transform" />
+              </button>
             )}
+          </div>
+
+          {/* Entry Pass Notice Info Card directly below Register button */}
+          <div className="bg-zinc-50 rounded-2xl border border-zinc-200/40 p-5 flex gap-4 items-start shadow-sm">
+            <div className="w-8 h-8 rounded-lg bg-white border border-zinc-200 flex items-center justify-center shrink-0">
+              <Info className="w-4 h-4 text-brand-600" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-[10px] font-black uppercase tracking-wider text-slate-900">
+                Entry Pass Notice
+              </h4>
+              <p className="text-[10px] text-zinc-500 font-medium leading-snug">
+                Please keep your registration pass with QR Code saved or downloaded. It will be required for entry verification at the registration counter.
+              </p>
+            </div>
+          </div>
+
         </div>
+
+        {/* Highlights Gallery (Full Width under details) */}
+        {photos.length > 0 && (
+          <div className="max-w-3xl mx-auto mt-16 pt-8 border-t border-zinc-200/60">
+            <div className="mb-6 flex flex-col items-center">
+              <h3 className="text-lg md:text-xl font-black tracking-tighter uppercase text-slate-900 leading-none">
+                Event Highlights
+              </h3>
+              <p className="text-[9px] font-black text-brand-600 uppercase tracking-[0.3em] mt-2">
+                Captured Memories
+              </p>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {photos.map((photo) => (
+                <motion.div 
+                  key={photo.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  onClick={() => setSelectedPhoto(photo.src)}
+                  className="aspect-square rounded-xl overflow-hidden bg-white border border-zinc-200/60 p-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.08)] hover:shadow-[0_12px_24px_rgba(0,0,0,0.18)] hover:-translate-y-1 transition-all duration-300 group cursor-pointer"
+                >
+                  <div className="w-full h-full rounded-lg overflow-hidden relative">
+                    <img 
+                      src={photo.src} 
+                      alt="Event Highlight" 
+                      className="w-full h-full object-cover transition-all duration-500 group-hover:scale-108"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 pointer-events-none" />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Photo Lightbox */}

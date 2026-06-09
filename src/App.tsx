@@ -236,6 +236,11 @@ function AppContent() {
   const isAdminPath = location.pathname.startsWith('/admin');
   const [isSecure, setIsSecure] = useState(true);
 
+  // Automatically scroll to the top of the page on route transition
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
   useEffect(() => {
     const verifyIntegrity = () => {
       if (isAdminPath) return;
