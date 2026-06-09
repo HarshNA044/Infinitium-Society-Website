@@ -205,8 +205,8 @@ const Navigation = () => {
 const Footer = () => (
   <footer className="mt-24 bg-slate-950 text-white pt-20 pb-10">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 border-b border-white/5 pb-16">
-        <div className="col-span-1 md:col-span-2">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-16 border-b border-white/5 pb-16">
+        <div className="col-span-2 md:col-span-2">
           <div className="flex items-center gap-3 mb-6">
             <Logo />
             <h1 className="text-2xl font-black tracking-tighter uppercase">INFINITIUM</h1>
@@ -217,7 +217,7 @@ const Footer = () => (
           </p>
         </div>
         
-        <div>
+        <div className="col-span-1">
           <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-500 mb-6">Quick Links</h4>
           <ul className="space-y-4">
             <li><Link to="/about" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors">About Us</Link></li>
@@ -228,8 +228,8 @@ const Footer = () => (
           </ul>
         </div>
 
-        <div>
-          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-500 mb-6">Connect</h4>
+        <div className="col-span-1">
+          <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-brand-500 mb-6">SOCIAL LINKS</h4>
           <ul className="space-y-4">
             <li><a href="https://www.instagram.com/infinitium_arsd/" target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors flex items-center gap-2">
               <span className="p-1.5 bg-rose-500/10 rounded-lg"><Image_Instagram className="w-3 h-3 text-rose-400" /></span> Instagram
@@ -350,6 +350,13 @@ function AppContent() {
   useEffect(() => {
     const verifyIntegrity = () => {
       if (isAdminPath) return;
+      
+      // Prevent false positives: only check if the footer element is actually present in the DOM
+      const footer = document.querySelector('footer');
+      if (!footer) {
+        return;
+      }
+
       const credit = document.getElementById('dev-credit');
       if (!credit) {
         setIsSecure(false);
@@ -358,15 +365,17 @@ function AppContent() {
 
       const text = credit.textContent || '';
       const href = (credit as HTMLAnchorElement).href || '';
-      const parentHTML = credit.parentElement?.innerHTML || '';
+      const parentText = credit.parentElement?.textContent || '';
 
       const isOk = 
         text.includes('Harsh') && 
         href.includes('harsh044') && 
-        parentHTML.includes('Designed & Developed by');
+        parentText.includes('Designed & Developed by');
 
       if (!isOk) {
         setIsSecure(false);
+      } else {
+        setIsSecure(true);
       }
     };
     
