@@ -7,32 +7,48 @@ import {
   ArrowRight, Github, ExternalLink, Download, UserCheck, Instagram as Image_Instagram, Linkedin 
 } from 'lucide-react';
 import { cn } from './lib/utils';
+import { db } from './lib/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
-// --- Components ---
-export const Logo = ({ className = "" }: { className?: string }) => (
-  <div className={cn("relative w-12 h-12 flex items-center justify-center bg-[#0d1b1b] rounded-full shadow-lg shadow-cyan-500/10 group-hover:scale-105 transition-transform overflow-hidden border border-cyan-500/20 shrink-0", className)}>
-    <svg viewBox="0 0 100 100" className="w-full h-full p-2">
-      {/* Background Circle */}
-      <circle cx="50" cy="50" r="48" fill="#0d1b1b" />
-      
-      {/* Atom Symbol (Cyan) */}
-      <g transform="translate(50, 42) scale(0.85)">
-        <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2" transform="rotate(0)" />
-        <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2" transform="rotate(60)" />
-        <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2" transform="rotate(120)" />
-        <circle cx="0" cy="0" r="8" fill="#22d3ee" />
-        {/* Electrons */}
-        <circle cx="36" cy="0" r="3.5" fill="#22d3ee" />
-        <circle cx="-18" cy="31.2" r="3.5" fill="#22d3ee" />
-        <circle cx="-18" cy="-31.2" r="3.5" fill="#22d3ee" />
-      </g>
+// --- Context & Components ---
+export const LogoContext = React.createContext<string | null>(null);
 
-      {/* Text Branding */}
-      <text x="50" y="73" textAnchor="middle" fontSize="12" fontWeight="900" fill="#22d3ee" className="font-sans" style={{ letterSpacing: '-0.02em' }}>INFINITIUM</text>
-      <text x="50" y="83" textAnchor="middle" fontSize="5" fontWeight="700" fill="#22d3ee" className="font-sans uppercase" style={{ letterSpacing: '0.15em', opacity: 0.9 }}>Inspiring Innovation</text>
-    </svg>
-  </div>
-);
+export const Logo = ({ className = "" }: { className?: string }) => {
+  const customLogo = React.useContext(LogoContext);
+  return (
+    <div className={cn("relative w-12 h-12 flex items-center justify-center bg-[#0d1b1b] rounded-full shadow-lg shadow-cyan-500/10 group-hover:scale-105 transition-transform overflow-hidden border border-cyan-500/20 shrink-0", className)}>
+      {customLogo ? (
+        <img 
+          src={customLogo} 
+          alt="INFINITIUM Logo" 
+          className="w-full h-full object-cover p-1 bg-[#0d1b1b]"
+          referrerPolicy="no-referrer"
+        />
+      ) : (
+        <svg viewBox="0 0 100 100" className="w-full h-full p-2">
+          {/* Background Circle */}
+          <circle cx="50" cy="50" r="48" fill="#0d1b1b" />
+          
+          {/* Atom Symbol (Cyan) */}
+          <g transform="translate(50, 42) scale(0.85)">
+            <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2" transform="rotate(0)" />
+            <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2" transform="rotate(60)" />
+            <ellipse cx="0" cy="0" rx="36" ry="13" fill="none" stroke="#22d3ee" strokeWidth="2" transform="rotate(120)" />
+            <circle cx="0" cy="0" r="8" fill="#22d3ee" />
+            {/* Electrons */}
+            <circle cx="36" cy="0" r="3.5" fill="#22d3ee" />
+            <circle cx="-18" cy="31.2" r="3.5" fill="#22d3ee" />
+            <circle cx="-18" cy="-31.2" r="3.5" fill="#22d3ee" />
+          </g>
+
+          {/* Text Branding */}
+          <text x="50" y="73" textAnchor="middle" fontSize="12" fontWeight="900" fill="#22d3ee" className="font-sans" style={{ letterSpacing: '-0.02em' }}>INFINITIUM</text>
+          <text x="50" y="83" textAnchor="middle" fontSize="5" fontWeight="700" fill="#22d3ee" className="font-sans uppercase" style={{ letterSpacing: '0.15em', opacity: 0.9 }}>Inspiring Innovation</text>
+        </svg>
+      )}
+    </div>
+  );
+};
 
 const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -280,9 +296,58 @@ function AppContent() {
 }
 
 export default function App() {
+  const [customLogo, setCustomLogo] = useState<string | null>(null);
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(
+      doc(db, 'about', 'current'),
+      (snapshot) => {
+        if (snapshot.exists()) {
+          const data = snapshot.data();
+          if (data && data.logo) {
+            setCustomLogo(data.logo);
+          } else {
+            setCustomLogo(null);
+          }
+        }
+      },
+      (error) => {
+        console.error("Failed to load real-time about data for logo:", error);
+      }
+    );
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (customLogo) {
+      const favicons = document.querySelectorAll("link[rel*='icon']");
+      if (favicons.length > 0) {
+        favicons.forEach((fav: any) => {
+          fav.href = customLogo;
+          if (customLogo.startsWith('data:image/svg')) {
+            fav.type = 'image/svg+xml';
+          } else if (customLogo.startsWith('data:image/png')) {
+            fav.type = 'image/png';
+          } else if (customLogo.startsWith('data:image/jpeg') || customLogo.startsWith('data:image/jpg')) {
+            fav.type = 'image/jpeg';
+          } else {
+            fav.type = 'image/x-icon';
+          }
+        });
+      } else {
+        const link = document.createElement('link');
+        link.rel = 'icon';
+        link.href = customLogo;
+        document.head.appendChild(link);
+      }
+    }
+  }, [customLogo]);
+
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <LogoContext.Provider value={customLogo}>
+      <Router>
+        <AppContent />
+      </Router>
+    </LogoContext.Provider>
   );
 }
