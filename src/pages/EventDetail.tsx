@@ -487,10 +487,10 @@ export default function EventDetail_Page() {
               <img 
                 src={event.image} 
                 alt=""
-                className="w-full h-full object-cover blur-sm opacity-25 scale-110"
+                className="w-full h-full object-cover blur-md opacity-70 scale-110"
                 referrerPolicy="no-referrer"
               />
-              <div className="absolute inset-0 bg-white/50" />
+              <div className="absolute inset-0 bg-white/30" />
             </div>
 
             <motion.div 
