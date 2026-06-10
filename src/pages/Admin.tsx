@@ -31,6 +31,8 @@ export default function Admin_Page() {
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [fetchedStats, setFetchedStats] = useState<Record<string, { registrations: number; attendance: number; societyAttendance?: number }>>({});
+  const [isFetchingStats, setIsFetchingStats] = useState(false);
   const [selectedEventDate, setSelectedEventDate] = useState<string>('');
   const [events, setEvents] = useState([]);
   const [members, setMembers] = useState<any[]>([]);
@@ -106,6 +108,194 @@ export default function Admin_Page() {
     });
     return () => unsubscribe();
   }, []);
+
+  // Manage dynamic statistics loader and temporary JSON cache in Firestore
+  useEffect(() => {
+    let active = true;
+    
+    const fetchAllEventStats = async () => {
+      if ((activeTab !== 'overview' && activeTab !== 'events') || events.length === 0) return;
+      
+      setIsFetchingStats(true);
+      const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+      if (!appsScriptUrl) {
+        console.warn("Apps Script URL is not configured. Please define VITE_APPS_SCRIPT_URL.");
+        setIsFetchingStats(false);
+        return;
+      }
+
+      const tempStatsMap: Record<string, { registrations: number; attendance: number; societyAttendance: number }> = {};
+
+      // Initialize with existing values
+      events.forEach((e: any) => {
+        tempStatsMap[e.id] = {
+          registrations: e.stats?.registrations || 0,
+          attendance: e.stats?.attendance || 0,
+          societyAttendance: e.stats?.societyAttendance || 0
+        };
+      });
+
+      try {
+        await Promise.all(
+          events.map(async (e: any) => {
+            if (!e.sheetId) return;
+
+            try {
+              const response = await fetch(appsScriptUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                  type: 'get_registrations',
+                  sheetId: e.sheetId
+                })
+              });
+
+              const resultObj = await response.json();
+              if (resultObj.status === "success" && Array.isArray(resultObj.registrations)) {
+                const list = resultObj.registrations;
+                const totalReg = list.length;
+                
+                // Count present students strictly by counting 'yes' in 'attendance/attended/present' fields
+                let totalAtt = 0;
+                let totalSocietyAtt = 0;
+                list.forEach((reg: any) => {
+                  let hasAttended = false;
+
+                  // 1. Check direct 'attended' boolean mapping from row[11] === "Yes" in Apps Script
+                  if (reg.attended === true || String(reg.attended).toLowerCase() === 'true') {
+                    hasAttended = true;
+                  } else {
+                    // 2. Fallback check: look for any keys related to attendance, and verify value equals 'yes'
+                    const keys = Object.keys(reg);
+                    for (const k of keys) {
+                      const kLower = k.toLowerCase().trim();
+                      if (kLower === 'attendance' || kLower === 'attended' || kLower === 'present' || kLower === 'status' || kLower.includes('attendance') || kLower.includes('attended')) {
+                        const val = String(reg[k]).toLowerCase().trim();
+                        if (val === 'yes' || val === 'present' || val === 'checked' || val === 'checked-in' || val === 'attended' || val === 'true') {
+                          hasAttended = true;
+                          break;
+                        }
+                      }
+                    }
+                  }
+
+                  if (hasAttended) {
+                    totalAtt += 1;
+
+                    // Check "part of society" field of Excel file
+                    let isPart = false;
+                    const rKeys = Object.keys(reg);
+                    for (const rk of rKeys) {
+                      const rkLower = rk.toLowerCase().trim().replace(/[\s_-]/g, '');
+                      if (rkLower === 'ispartofsociety' || rkLower === 'partofsociety' || rkLower === 'society' || rkLower.includes('partof') || rkLower.includes('society')) {
+                        const val = String(reg[rk]).toLowerCase().trim();
+                        if (val === 'yes' || val === 'true' || val === '1') {
+                          isPart = true;
+                          break;
+                        }
+                      }
+                    }
+                    if (isPart) {
+                      totalSocietyAtt += 1;
+                    }
+                  }
+                });
+
+                tempStatsMap[e.id] = {
+                  registrations: totalReg,
+                  attendance: totalAtt,
+                  societyAttendance: totalSocietyAtt
+                };
+              }
+            } catch (err) {
+              console.error(`Error loading registration list for event ${e.title || e.id}:`, err);
+            }
+          })
+        );
+
+        if (!active) return;
+
+        // Cache in local storage for instant rendering
+        localStorage.setItem('temp_events_stats_json', JSON.stringify(tempStatsMap));
+        setFetchedStats(tempStatsMap);
+
+        // Upload JSON file with full stats to Firestore temp_jsons to satisfy criteria
+        const docId = `temp_events_stats_${user?.uid || 'default'}`;
+        await setDoc(doc(db, 'temp_jsons', docId), {
+          content: JSON.stringify(tempStatsMap),
+          createdAt: serverTimestamp()
+        });
+        console.log("Cached event stats JSON inside Firebase Firestore successfully.");
+
+      } catch (err) {
+        console.error("Failed to fetch or cache event stats:", err);
+      } finally {
+        if (active) {
+          setIsFetchingStats(false);
+        }
+      }
+    };
+
+    fetchAllEventStats();
+
+    return () => {
+      active = false;
+    };
+  }, [activeTab, events, user?.uid]);
+
+  // Clean up and delete Firestore stats JSON to minimize Database storage on tab-switch or component unmount
+  useEffect(() => {
+    if (activeTab !== 'overview' && activeTab !== 'events' && user?.uid) {
+      const docId = `temp_events_stats_${user.uid}`;
+      deleteDoc(doc(db, 'temp_jsons', docId))
+        .then(() => console.log("Removed stats JSON from Firestore on tab switch"))
+        .catch(err => console.error("Error deleting stats JSON from Firestore:", err));
+      
+      localStorage.removeItem('temp_events_stats_json');
+      setFetchedStats({});
+    }
+
+    return () => {
+      // Upon unmounting (switching page completely), delete the temp JSON
+      if (user?.uid) {
+        const docId = `temp_events_stats_${user.uid}`;
+        deleteDoc(doc(db, 'temp_jsons', docId))
+          .then(() => console.log("Removed stats JSON from Firestore on component unmount"))
+          .catch(err => console.error("Error deleting stats JSON from Firestore on unmount:", err));
+      }
+      localStorage.removeItem('temp_events_stats_json');
+    };
+  }, [activeTab, user?.uid]);
+
+  // Handle unload, tab closes or pagehide cleanup to satisfy storage minimization of firebase
+  useEffect(() => {
+    const cleanUpTempJson = () => {
+      localStorage.removeItem('temp_events_stats_json');
+      if (user?.uid) {
+        const docId = `temp_events_stats_${user.uid}`;
+        // Fire of standard delete doc
+        deleteDoc(doc(db, 'temp_jsons', docId)).catch(console.error);
+      }
+    };
+
+    window.addEventListener('beforeunload', cleanUpTempJson);
+    window.addEventListener('unload', cleanUpTempJson);
+    window.addEventListener('pagehide', cleanUpTempJson);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        cleanUpTempJson();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', cleanUpTempJson);
+      window.removeEventListener('unload', cleanUpTempJson);
+      window.removeEventListener('pagehide', cleanUpTempJson);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user?.uid]);
 
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
@@ -718,19 +908,86 @@ export default function Admin_Page() {
 
   const COLORS = ['#14b8a6', '#0d9488', '#0f766e', '#115e59']; // brand-500, 600, 700, 800
 
-  const chartData = events.map((e: any) => ({
-    name: e.title?.split(':')[0]?.substring(0, 15) || 'Event',
-    registrations: e.stats?.registrations || 0,
-    attendance: e.stats?.attendance || 0,
-  }));
+  const liveStats = React.useMemo(() => {
+    let totalRegistrations = 0;
+    let totalAttendance = 0;
+    let totalSocietyAttendance = 0;
+    let hasLive = false;
+
+    events.forEach((e: any) => {
+      let reg = e.stats?.registrations || 0;
+      let att = e.stats?.attendance || 0;
+      let soc = e.stats?.societyAttendance || 0;
+      if (fetchedStats[e.id] !== undefined) {
+        reg = fetchedStats[e.id].registrations;
+        att = fetchedStats[e.id].attendance;
+        soc = fetchedStats[e.id].societyAttendance || 0;
+        hasLive = true;
+      } else {
+        try {
+          const raw = localStorage.getItem('temp_events_stats_json');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed[e.id] !== undefined) {
+              reg = parsed[e.id].registrations;
+              att = parsed[e.id].attendance;
+              soc = parsed[e.id].societyAttendance || 0;
+              hasLive = true;
+            }
+          }
+        } catch (_) {}
+      }
+      totalRegistrations += reg;
+      totalAttendance += att;
+      totalSocietyAttendance += soc;
+    });
+
+    return {
+      totalRegistrations: hasLive ? totalRegistrations : stats.totalRegistrations,
+      totalAttendance: hasLive ? totalAttendance : stats.totalAttendance,
+      totalSocietyAttendance,
+      completionRate: (hasLive ? totalRegistrations : stats.totalRegistrations) > 0 
+        ? Math.round(((hasLive ? totalAttendance : stats.totalAttendance) / (hasLive ? totalRegistrations : stats.totalRegistrations)) * 100) 
+        : 0
+    };
+  }, [events, fetchedStats, stats]);
+
+  const chartData = events.map((e: any) => {
+    let reg = e.stats?.registrations || 0;
+    let att = e.stats?.attendance || 0;
+    if (fetchedStats[e.id] !== undefined) {
+      reg = fetchedStats[e.id].registrations;
+      att = fetchedStats[e.id].attendance;
+    } else {
+      try {
+        const raw = localStorage.getItem('temp_events_stats_json');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed[e.id] !== undefined) {
+            reg = parsed[e.id].registrations;
+            att = parsed[e.id].attendance;
+          }
+        }
+      } catch (_) {}
+    }
+    return {
+      name: e.title?.split(':')[0]?.substring(0, 15) || 'Event',
+      registrations: reg,
+      attendance: att,
+    };
+  });
 
   const typeData = events.reduce((acc: any, e: any) => {
     const type = e.type || 'Other';
+    const eventName = e.title || 'Untitled Event';
     const existing = acc.find((item: any) => item.name === type);
     if (existing) {
       existing.value += 1;
+      if (!existing.events.includes(eventName)) {
+        existing.events.push(eventName);
+      }
     } else {
-      acc.push({ name: type, value: 1 });
+      acc.push({ name: type, value: 1, events: [eventName] });
     }
     return acc;
   }, []);
@@ -889,8 +1146,16 @@ export default function Admin_Page() {
       <main className="flex-1 p-6 md:p-12 overflow-y-auto">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
-            <h1 className="text-3xl font-bold text-zinc-900 mb-2 capitalize">{activeTab === 'members' ? 'Team' : activeTab} Panel</h1>
-            <p className="text-zinc-500 font-medium">Manage INFINITIUM's backend operations.</p>
+            <div className="flex items-center gap-4 flex-wrap">
+              <h1 className="text-3xl font-bold text-zinc-900 capitalize">{activeTab === 'members' ? 'Team' : activeTab} Panel</h1>
+              {(activeTab === 'overview' || activeTab === 'events') && isFetchingStats && (
+                <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-extrabold text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-full animate-pulse select-none self-center">
+                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping" />
+                  Syncing Live Sheets Stats...
+                </div>
+              )}
+            </div>
+            <p className="text-zinc-500 font-medium mt-1">Manage INFINITIUM's backend operations.</p>
           </div>
           <div className="flex gap-4">
             {activeTab === 'events' && (
@@ -969,7 +1234,7 @@ export default function Admin_Page() {
 
         {activeTab === 'overview' && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bento-card bg-white p-8 border border-zinc-100 shadow-sm relative overflow-hidden group hover:border-brand-350 transition-all duration-300">
                 <div className="flex justify-between items-start mb-2">
                   <p className="text-zinc-400 font-extrabold text-[10px] uppercase tracking-[0.2em]">Total Registrations</p>
@@ -977,9 +1242,15 @@ export default function Admin_Page() {
                     <Users className="w-4.5 h-4.5" />
                   </div>
                 </div>
-                <p className="text-4xl font-black text-zinc-900 tracking-tighter mt-1">{stats.totalRegistrations}</p>
+                <p className="text-4xl font-black text-zinc-900 tracking-tighter mt-1">
+                  {isFetchingStats ? (
+                    <span className="text-2xl font-bold text-zinc-400 animate-pulse">Fetching...</span>
+                  ) : (
+                    liveStats.totalRegistrations
+                  )}
+                </p>
                 <div className="mt-6 h-1 w-full bg-zinc-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand-500 transition-all duration-1000" style={{ width: `${stats.totalRegistrations > 0 ? 80 : 0}%` }}></div>
+                  <div className="h-full bg-brand-500 transition-all duration-1000" style={{ width: `${liveStats.totalRegistrations > 0 ? 80 : 0}%` }}></div>
                 </div>
               </div>
 
@@ -990,9 +1261,35 @@ export default function Admin_Page() {
                     <Scan className="w-4.5 h-4.5" />
                   </div>
                 </div>
-                <p className="text-4xl font-black tracking-tighter mt-1">{stats.totalAttendance}</p>
+                <p className="text-4xl font-black tracking-tighter mt-1">
+                  {isFetchingStats ? (
+                    <span className="text-2xl font-bold text-brand-100 animate-pulse">Fetching...</span>
+                  ) : (
+                    liveStats.totalAttendance
+                  )}
+                </p>
                 <div className="mt-6 h-1 w-full bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white transition-all duration-1000" style={{ width: `${stats.totalRegistrations > 0 ? (stats.totalAttendance / stats.totalRegistrations) * 100 : 0}%` }}></div>
+                  <div className="h-full bg-white transition-all duration-1000" style={{ width: `${liveStats.totalRegistrations > 0 ? (liveStats.totalAttendance / liveStats.totalRegistrations) * 100 : 0}%` }}></div>
+                </div>
+                <div className="absolute right-0 top-0 w-24 h-24 bg-white/[0.03] rounded-full blur-xl pointer-events-none"></div>
+              </div>
+
+              <div className="bento-card bg-gradient-to-br from-teal-500 to-teal-600 p-8 text-white border-none shadow-xl shadow-teal-500/10 hover:shadow-teal-500/20 transition-all duration-300 relative overflow-hidden group">
+                <div className="flex justify-between items-start mb-2">
+                  <p className="text-teal-100/90 font-extrabold text-[10px] uppercase tracking-[0.2em]">Present Society Members</p>
+                  <div className="p-2 bg-white/10 rounded-xl text-white transition-transform group-hover:scale-105">
+                    <Award className="w-4.5 h-4.5" />
+                  </div>
+                </div>
+                <p className="text-4xl font-black tracking-tighter mt-1">
+                  {isFetchingStats ? (
+                    <span className="text-2xl font-bold text-teal-100 animate-pulse">Fetching...</span>
+                  ) : (
+                    liveStats.totalSocietyAttendance
+                  )}
+                </p>
+                <div className="mt-6 h-1 w-full bg-white/20 rounded-full overflow-hidden">
+                  <div className="h-full bg-white transition-all duration-1000" style={{ width: `${liveStats.totalAttendance > 0 ? (liveStats.totalSocietyAttendance / liveStats.totalAttendance) * 100 : 0}%` }}></div>
                 </div>
                 <div className="absolute right-0 top-0 w-24 h-24 bg-white/[0.03] rounded-full blur-xl pointer-events-none"></div>
               </div>
@@ -1005,16 +1302,20 @@ export default function Admin_Page() {
                   </div>
                 </div>
                 <p className="text-4xl font-black tracking-tighter mt-1">
-                  {stats.totalRegistrations > 0 ? Math.round((stats.totalAttendance / stats.totalRegistrations) * 100) : 0}%
+                  {isFetchingStats ? (
+                    <span className="text-2xl font-bold text-amber-950/70 animate-pulse">Fetching...</span>
+                  ) : (
+                    `${liveStats.completionRate}%`
+                  )}
                 </p>
                 <div className="mt-6 h-1 w-full bg-amber-950/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-950 transition-all duration-1000" style={{ width: `${stats.totalRegistrations > 0 ? (stats.totalAttendance / stats.totalRegistrations) * 100 : 0}%` }}></div>
+                  <div className="h-full bg-amber-950 transition-all duration-1000" style={{ width: `${liveStats.completionRate}%` }}></div>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-               <div className="bento-card lg:col-span-2 h-[400px]">
+               <div className="bento-card lg:col-span-2 h-[410px]">
                  <div className="flex justify-between items-center mb-8">
                    <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest">Event Statistics (Reg vs Att)</h3>
                    <div className="flex gap-4">
@@ -1028,7 +1329,7 @@ export default function Admin_Page() {
                       </div>
                    </div>
                  </div>
-                 <ResponsiveContainer width="100%" height="100%">
+                 <ResponsiveContainer width="100%" height="80%">
                    <BarChart data={chartData}>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} />
@@ -1043,31 +1344,61 @@ export default function Admin_Page() {
                  </ResponsiveContainer>
                </div>
                
-               <div className="bento-card h-[400px]">
-                 <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-8">Event Distribution</h3>
-                 <ResponsiveContainer width="100%" height="100%">
-                   <PieChart>
-                     <Pie
-                       data={typeData}
-                       innerRadius={60}
-                       outerRadius={80}
-                       paddingAngle={5}
-                       dataKey="value"
-                     >
-                       {typeData.map((_, index) => (
-                         <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                       ))}
-                     </Pie>
-                     <Tooltip 
-                       contentStyle={{borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px'}}
-                     />
-                   </PieChart>
-                 </ResponsiveContainer>
-                 <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
+               <div className="bento-card min-h-[410px] flex flex-col justify-between">
+                 <div>
+                   <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-4">Event Distribution</h3>
+                   <div className="h-[180px]">
+                     <ResponsiveContainer width="100%" height="100%">
+                       <PieChart>
+                         <Pie
+                           data={typeData}
+                           innerRadius={50}
+                           outerRadius={70}
+                           paddingAngle={5}
+                           dataKey="value"
+                         >
+                           {typeData.map((_, index) => (
+                             <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                           ))}
+                         </Pie>
+                         <Tooltip 
+                           content={({ active, payload }) => {
+                             if (active && payload && payload.length) {
+                               const data = payload[0].payload;
+                               return (
+                                 <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-xl text-[11px] font-bold">
+                                   <p className="text-slate-800 uppercase mb-1.5">{data.name}: {data.value}</p>
+                                   <div className="flex flex-col gap-1 border-t border-slate-50 pt-1.5 max-w-[200px]">
+                                     {(data.events || []).map((evt: string, i: number) => (
+                                       <span key={i} className="text-[9px] text-zinc-500 font-medium capitalize truncate block" title={evt}>
+                                         • {evt}
+                                       </span>
+                                     ))}
+                                   </div>
+                                 </div>
+                               );
+                             }
+                             return null;
+                           }}
+                         />
+                       </PieChart>
+                     </ResponsiveContainer>
+                   </div>
+                 </div>
+                 <div className="mt-4 flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
                     {typeData.map((item, index) => (
-                      <div key={item.name} className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></div>
-                        <span className="text-[9px] font-bold text-slate-500 uppercase">{item.name}: {item.value}</span>
+                      <div key={item.name} className="flex flex-col gap-1 p-2 rounded-xl bg-slate-50 border border-slate-100 text-left w-full">
+                        <div className="flex items-center gap-1.5">
+                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></div>
+                          <span className="text-[9px] font-black text-slate-700 uppercase">{item.name}: {item.value}</span>
+                        </div>
+                        <div className="pl-3 flex flex-col gap-0.5">
+                          {(item.events || []).map((evt: string, i: number) => (
+                            <span key={i} className="text-[8px] font-bold text-slate-400 capitalize block truncate" title={evt}>
+                              • {evt}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     ))}
                  </div>
@@ -1081,7 +1412,15 @@ export default function Admin_Page() {
         {activeTab === 'events' && (
           <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl shadow-slate-100/50 overflow-hidden">
             <div className="px-8 py-6 border-b border-zinc-50 bg-zinc-50/50 flex justify-between items-center">
-              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">All Events ({events.length})</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">All Events ({events.length})</h2>
+                {isFetchingStats && (
+                  <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-extrabold text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-full animate-pulse select-none">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping" />
+                    Syncing Live Sheets Stats...
+                  </div>
+                )}
+              </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -1091,6 +1430,7 @@ export default function Admin_Page() {
                     <th className="px-8 py-5">Type</th>
                     <th className="px-8 py-5">Date & Time</th>
                     <th className="px-8 py-5">Location</th>
+                    <th className="px-8 py-5 text-center">Present / Registered</th>
                     <th className="px-8 py-5 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -1120,6 +1460,47 @@ export default function Admin_Page() {
                       <td className="px-8 py-5 text-sm font-bold text-zinc-700">
                         {e.location}
                       </td>
+                      <td className="px-8 py-5">
+                        <div className="flex justify-center items-center">
+                          {isFetchingStats ? (
+                            <span className="text-xs font-black text-cyan-500 animate-pulse uppercase tracking-wider font-mono">Fetching...</span>
+                          ) : (
+                            <div className="w-14 h-14 rounded-full bg-[#041a1a] border-2 border-[#5ce1e6] flex flex-col items-center justify-center text-center shadow-md shadow-[#5ce1e6]/10 shrink-0 select-none">
+                              <span className="block text-xs font-black text-[#5ce1e6] leading-none" title="Total Present">
+                                {(() => {
+                                  if (fetchedStats[e.id] !== undefined) {
+                                    return fetchedStats[e.id].attendance;
+                                  }
+                                  try {
+                                    const raw = localStorage.getItem('temp_events_stats_json');
+                                    if (raw) {
+                                      const parsed = JSON.parse(raw);
+                                      if (parsed[e.id] !== undefined) return parsed[e.id].attendance;
+                                    }
+                                  } catch (_) {}
+                                  return e.stats?.attendance || 0;
+                                })()}
+                              </span>
+                              <div className="w-6 h-[1px] bg-[#5ce1e6]/40 my-0.5" />
+                              <span className="block text-[10px] font-black text-cyan-200/70 leading-none" title="Total Registered">
+                                {(() => {
+                                  if (fetchedStats[e.id] !== undefined) {
+                                    return fetchedStats[e.id].registrations;
+                                  }
+                                  try {
+                                    const raw = localStorage.getItem('temp_events_stats_json');
+                                    if (raw) {
+                                      const parsed = JSON.parse(raw);
+                                      if (parsed[e.id] !== undefined) return parsed[e.id].registrations;
+                                    }
+                                  } catch (_) {}
+                                  return e.stats?.registrations || 0;
+                                })()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-8 py-5 text-right">
                         <div className="flex gap-3 justify-end">
                           <button
@@ -1145,7 +1526,7 @@ export default function Admin_Page() {
                   ))}
                   {events.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                      <td colSpan={6} className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
                         No events found
                       </td>
                     </tr>
