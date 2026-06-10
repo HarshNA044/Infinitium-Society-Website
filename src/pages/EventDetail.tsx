@@ -11,6 +11,7 @@ import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, getDoc, collection, getDocs, orderBy, query, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 import QRCode from 'qrcode';
+import { ShareModal } from '../components/ShareModal';
 
 export default function EventDetail_Page() {
   const { id } = useParams();
@@ -21,6 +22,7 @@ export default function EventDetail_Page() {
   const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState<any>(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
   const [formData, setFormData] = useState({
     studentName: '',
     rollNo: '',
@@ -411,24 +413,7 @@ export default function EventDetail_Page() {
   };
 
   const handleShare = async () => {
-    const shareData = {
-      title: event.title,
-      url: `https://infinitium-arsd.vercel.app/events/${event.id}`,
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(`https://infinitium-arsd.vercel.app/events/${event.id}`);
-        alert('Link copied to clipboard!');
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') {
-        return; // User cancelled, ignore
-      }
-      console.error('Error sharing:', err);
-    }
+    setIsShareOpen(true);
   };
 
   if (!event) return (
@@ -971,6 +956,12 @@ export default function EventDetail_Page() {
           </div>
         )}
       </AnimatePresence>
+
+      <ShareModal 
+        isOpen={isShareOpen} 
+        onClose={() => setIsShareOpen(false)} 
+        event={event} 
+      />
     </div>
   );
 }

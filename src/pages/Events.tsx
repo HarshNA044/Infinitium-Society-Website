@@ -11,6 +11,7 @@ import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { cn } from '../lib/utils';
 import { Logo } from '../App';
+import { ShareModal } from '../components/ShareModal';
 
 export default function Events_Page() {
   const [searchParams] = useSearchParams();
@@ -22,6 +23,8 @@ export default function Events_Page() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState<any>(null);
   const [filter, setFilter] = useState('All');
+  const [sharedEvent, setSharedEvent] = useState<any>(null);
+  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     studentName: '',
@@ -198,22 +201,8 @@ export default function Events_Page() {
   const handleShare = async (e: React.MouseEvent, event: any) => {
     e.preventDefault();
     e.stopPropagation();
-    const shareData = {
-      title: event.title,
-      url: `https://infinitium-arsd.vercel.app/events/${event.id}`,
-    };
-
-    try {
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        await navigator.clipboard.writeText(`https://infinitium-arsd.vercel.app/events/${event.id}`);
-        alert('Link copied to clipboard!');
-      }
-    } catch (err) {
-      if (err instanceof Error && err.name === 'AbortError') return;
-      console.error('Error sharing:', err);
-    }
+    setSharedEvent(event);
+    setIsShareOpen(true);
   };
 
   const filteredEvents = events.filter((e: any) => filter === 'All' || e.type === filter);
@@ -460,6 +449,12 @@ export default function Events_Page() {
           </div>
         )}
       </AnimatePresence>
+
+      <ShareModal 
+        isOpen={isShareOpen} 
+        onClose={() => setIsShareOpen(false)} 
+        event={sharedEvent} 
+      />
     </div>
   );
 }
