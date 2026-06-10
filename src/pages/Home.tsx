@@ -11,7 +11,6 @@ import { Link } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { collection, getDocs, orderBy, query, limit } from 'firebase/firestore';
 import { cn } from '../lib/utils';
-import { ShareModal } from '../components/ShareModal';
 
 const RetroGrid = ({
   angle = 65,
@@ -104,8 +103,6 @@ export default function Home_Page() {
   const [galleryImages, setGalleryImages] = useState<any[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [sharedEvent, setSharedEvent] = useState<any>(null);
-  const [isShareOpen, setIsShareOpen] = useState(false);
 
   const formatTime = (timeStr: string) => {
     if (!timeStr) return '';
@@ -133,8 +130,22 @@ export default function Home_Page() {
   const handleShare = async (e: React.MouseEvent, event: any) => {
     e.preventDefault();
     e.stopPropagation();
-    setSharedEvent(event);
-    setIsShareOpen(true);
+    const shareData = {
+      title: event.title,
+      url: `https://infinitium-arsd.vercel.app/events/${event.id}`,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(`https://infinitium-arsd.vercel.app/events/${event.id}`);
+        alert('Link copied to clipboard!');
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === 'AbortError') return;
+      console.error('Error sharing:', err);
+    }
   };
 
   useEffect(() => {
@@ -539,11 +550,6 @@ export default function Home_Page() {
       </div>
     </div>
     
-    <ShareModal 
-      isOpen={isShareOpen} 
-      onClose={() => setIsShareOpen(false)} 
-      event={sharedEvent} 
-    />
   </div>
   );
 }

@@ -1502,7 +1502,7 @@ export default function Admin_Page() {
                         </div>
                       </td>
                       <td className="px-8 py-5 text-right">
-                        <div className="flex gap-3 justify-end">
+                        <div className="flex gap-3 justify-end items-center">
                           <button
                             onClick={() => {
                               setEditingEvent(e);

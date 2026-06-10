@@ -72,6 +72,15 @@ function doPost(e) {
       return ContentService.createTextOutput("Success");
     }
     
+    if (data.type === 'send_email') {
+      MailApp.sendEmail({
+        to: data.email,
+        subject: data.subject || "Event Reminder",
+        htmlBody: data.message || ""
+      });
+      return ContentService.createTextOutput("Success");
+    }
+    
     // Ensure the sheet has at least 12 columns to prevent range exception errors when getting values
     var maxCols = sheet.getMaxColumns();
     if (maxCols < 12) {

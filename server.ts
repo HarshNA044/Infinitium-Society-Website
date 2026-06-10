@@ -1,9 +1,231 @@
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
+import { initializeApp } from 'firebase/app';
+import { initializeFirestore, doc, getDocs, getDoc, setDoc, updateDoc, deleteDoc, collection, serverTimestamp } from 'firebase/firestore';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Firebase initialization for server-side automatic email reminders
+let db: any;
+try {
+  const firebaseConfigFile = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'firebase-applet-config.json'), 'utf8'));
+  const firebaseApp = initializeApp({
+    apiKey: process.env.VITE_FIREBASE_API_KEY || firebaseConfigFile.apiKey,
+    authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigFile.authDomain,
+    projectId: process.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigFile.projectId,
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigFile.storageBucket,
+    messagingSenderId: process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigFile.messagingSenderId,
+    appId: process.env.VITE_FIREBASE_APP_ID || firebaseConfigFile.appId,
+  });
+  db = initializeFirestore(firebaseApp, {
+    experimentalForceLongPolling: true,
+  }, process.env.VITE_FIREBASE_DATABASE_ID || firebaseConfigFile.firestoreDatabaseId);
+  console.log("[SERVER-FIREBASE] Initialized server-side Firestore connection.");
+} catch (error) {
+  console.error("[SERVER-FIREBASE] Failed to initialize Firestore:", error);
+}
+
+// Check tomorrow date logic
+function isEventTomorrow(dateStr: string) {
+  if (!dateStr) return false;
+  try {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    const eventDate = new Date(dateStr);
+    eventDate.setHours(0, 0, 0, 0);
+
+    return eventDate.getTime() === tomorrow.getTime();
+  } catch (_) {
+    return false;
+  }
+}
+
+// Core automated function
+async function checkAndSendReminders() {
+  if (!db) {
+    console.warn("[AUTOMATED REMINDERS] Firestore db not initialized. Skipping check.");
+    return;
+  }
+
+  const appsScriptUrl = process.env.VITE_APPS_SCRIPT_URL;
+  if (!appsScriptUrl) {
+    console.warn("[AUTOMATED REMINDERS] VITE_APPS_SCRIPT_URL is not configured. Skipping check.");
+    return;
+  }
+
+  try {
+    console.log("[AUTOMATED REMINDERS] Initiating daily automated check...");
+    const eventsSnap = await getDocs(collection(db, 'events'));
+    const allEvents: any[] = [];
+    eventsSnap.forEach((doc) => {
+      allEvents.push({ id: doc.id, ...doc.data() });
+    });
+
+    for (const event of allEvents) {
+      if (event.status === 'Upcoming' && !event.remindersSent && isEventTomorrow(event.date) && event.sheetId) {
+        console.log(`[AUTOMATED REMINDERS] Tomorrow's event found: "${event.title}" [ID: ${event.id}]. Dispatching automatic reminders...`);
+        
+        let tempDocRef: any = null;
+        const tempId = `temp_reminders_auto_${event.id}_${Date.now()}`;
+
+        try {
+          // 1. Fetch registrations from Excel Sheet via Apps Script
+          const response = await fetch(appsScriptUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain' },
+            body: JSON.stringify({
+              type: 'get_registrations',
+              sheetId: event.sheetId
+            })
+          });
+
+          const result = (await response.json()) as any;
+          if (result.status !== "success" || !Array.isArray(result.registrations)) {
+            throw new Error(`Failed to load registration data from excel sheet for event ${event.id}`);
+          }
+
+          const registrants = result.registrations;
+          if (registrants.length === 0) {
+            console.log(`[AUTOMATED REMINDERS] No registrants to notify for event "${event.title}"`);
+            
+            // Still mark as sent to avoid continuous loops
+            const eventRef = doc(db, 'events', event.id);
+            await updateDoc(eventRef, {
+              remindersSent: true,
+              remindersSentAt: serverTimestamp()
+            });
+            continue;
+          }
+
+          // 2. Upload to temporary JSON in Firebase Firestore (as requested)
+          tempDocRef = doc(db, 'temp_jsons', tempId);
+          await setDoc(tempDocRef, {
+            content: JSON.stringify(registrants),
+            eventId: event.id,
+            createdAt: serverTimestamp()
+          });
+
+          // 3. Read it back
+          const tempSnap = await getDoc(tempDocRef);
+          const snapData = tempSnap.data() as any;
+          const cacheData = JSON.parse(snapData ? snapData.content : "[]");
+
+          // 4. Send emails
+          let sentCount = 0;
+          for (let i = 0; i < cacheData.length; i++) {
+            const student = cacheData[i];
+
+            // Extract email address
+            let email = student.email || student.Email || student['Email ID'] || student['Email Address'];
+            if (!email) {
+              const keys = Object.keys(student);
+              for (const k of keys) {
+                if (k.toLowerCase().includes('email')) {
+                  email = student[k];
+                  break;
+                }
+              }
+            }
+
+            // Extract name
+            let name = student.studentName || student.Name || student['Student Name'] || student['Full Name'];
+            if (!name) {
+              const keys = Object.keys(student);
+              for (const k of keys) {
+                if (k.toLowerCase().includes('name')) {
+                  name = student[k];
+                  break;
+                }
+              }
+            }
+            if (!name) name = "Student";
+
+            if (email && email.trim()) {
+              const targetEmail = email.trim();
+              const emailSubject = `⏰ REMINDER: ${event.title} is Tomorrow!`;
+              const emailBody = `
+<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+  <div style="background-color: #0f0c29; border-top: 4px solid #14b8a6; padding: 25px; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px; letter-spacing: 2px;">INFINITIUM</h1>
+    <p style="color: #14b8a6; margin: 5px 0 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;">Atma Ram Sanatan Dharma College</p>
+  </div>
+  <div style="padding: 30px; line-height: 1.6; color: #334155; background-color: #ffffff;">
+    <h2 style="color: #0f0c29; margin-top: 0; font-size: 18px;">Event Reminder Notice</h2>
+    <p>Dear <strong>${name}</strong>,</p>
+    <p>This is a friendly reminder that you have registered for our upcoming event:</p>
+    
+    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; padding: 20px; border-radius: 8px; margin: 20px 0;">
+      <p style="margin: 0; font-size: 15px;"><strong>Event:</strong> ${event.title}</p>
+      <p style="margin: 5px 0 0 0; font-size: 13px; color: #64748b;"><strong>Happening on:</strong> Tomorrow, ${event.date}</p>
+      <p style="margin: 5px 0 0 0; font-size: 13px; color: #64748b;"><strong>Venue:</strong> ${event.location || 'College Premises'}</p>
+      ${event.startTime ? `<p style="margin: 5px 0 0 0; font-size: 13px; color: #64748b;"><strong>Time:</strong> ${event.startTime}</p>` : ''}
+    </div>
+    
+    <p>Please remember to bring your ticket PDF pass which was attached to your confirmation email. Alternatively, have your ticket ID handy at the entry gate desk.</p>
+    
+    <p>We look forward to hosting you for an interactive physical science experience!</p>
+    
+    <p style="margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+      Warm regards,<br/>
+      <strong>Infinitium Organizing Committee</strong><br/>
+      Atma Ram Sanatan Dharma College, University of Delhi
+    </p>
+  </div>
+  <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+    This is an automated reminder. Please do not reply directly to this message.
+  </div>
+</div>
+              `;
+
+              // Call Webhook to send email
+              await fetch(appsScriptUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({
+                  type: 'send_email',
+                  email: targetEmail,
+                  subject: emailSubject,
+                  message: emailBody
+                })
+              });
+              sentCount++;
+            }
+          }
+
+          console.log(`[AUTOMATED REMINDERS] Dispatched ${sentCount} reminder emails for event "${event.title}".`);
+
+          // 5. Update Firestore event doc that reminders have been sent
+          const eventRef = doc(db, 'events', event.id);
+          await updateDoc(eventRef, {
+            remindersSent: true,
+            remindersSentAt: serverTimestamp()
+          });
+
+        } catch (eventErr: any) {
+          console.error(`[AUTOMATED REMINDERS] Error sending reminders for event ${event.id}:`, eventErr);
+        } finally {
+          // Delete temporary JSON from Firestore
+          if (tempDocRef) {
+            try {
+              await deleteDoc(tempDocRef);
+              console.log(`[AUTOMATED REMINDERS] Deleted temporary JSON cache with ID: ${tempId}`);
+            } catch (delErr) {
+              console.error("[AUTOMATED REMINDERS] Error deleting temporary JSON cache document:", delErr);
+            }
+          }
+        }
+      }
+    }
+  } catch (err: any) {
+    console.error("[AUTOMATED REMINDERS] Failed to fetch events from Firestore:", err.message || err);
+  }
+}
 
 async function startServer() {
   const app = express();
@@ -239,6 +461,12 @@ async function startServer() {
 
   app.get('/api/contact-messages', (req, res) => res.json(contactMessages));
 
+  app.post('/api/send-email', (req, res) => {
+    const { email, subject, message } = req.body;
+    console.log(`[EMAIL DISPATCH] To: ${email} | Subject: ${subject} | Body: ${message}`);
+    res.json({ success: true, message: 'Simulated email sent successfully' });
+  });
+
   app.post('/api/register', (req, res) => {
     const { eventId, studentName, rollNo, email } = req.body;
     const event = events.find(e => e.id === eventId);
@@ -367,6 +595,20 @@ async function startServer() {
 
   app.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    
+    // Kickstart automatic reminders check 15 seconds after startup to ensure everything is online,
+    // and run it periodically (every 6 hours)
+    setTimeout(() => {
+      checkAndSendReminders().catch(err => {
+        console.error("Critical error in start-up automated reminders worker:", err);
+      });
+    }, 15000);
+
+    setInterval(() => {
+      checkAndSendReminders().catch(err => {
+        console.error("Critical error in recurrent automated reminders worker:", err);
+      });
+    }, 6 * 60 * 60 * 1000);
   });
 }
 
