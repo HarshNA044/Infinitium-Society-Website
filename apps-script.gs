@@ -80,6 +80,30 @@ function doPost(e) {
       });
       return ContentService.createTextOutput("Success");
     }
+
+    if (data.type === 'send_certificate') {
+      var blob;
+      var fileName = data.fileName || "Certificate.pdf";
+      if (data.pdfBase64) {
+        var base64Data = data.pdfBase64;
+        if (base64Data.indexOf("base64,") !== -1) {
+          base64Data = base64Data.split("base64,")[1];
+        }
+        var decodedBytes = Utilities.base64Decode(base64Data);
+        blob = Utilities.newBlob(decodedBytes, "application/pdf", fileName);
+      }
+      
+      var mailOptions = {
+        to: data.email,
+        subject: data.subject || "Event Certificate",
+        htmlBody: data.message || "Please find your certificate attached."
+      };
+      if (blob) {
+        mailOptions.attachments = [blob];
+      }
+      MailApp.sendEmail(mailOptions);
+      return ContentService.createTextOutput("Success");
+    }
     
     // Ensure the sheet has at least 12 columns to prevent range exception errors when getting values
     var maxCols = sheet.getMaxColumns();

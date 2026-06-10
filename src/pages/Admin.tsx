@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { 
@@ -75,6 +76,405 @@ export default function Admin_Page() {
   const [aboutData, setAboutData] = useState<any>(null);
   const [isSavingAbout, setIsSavingAbout] = useState(false);
   const [isSavingLogo, setIsSavingLogo] = useState(false);
+
+  // Certificate generation states
+  const [selectedCertEvent, setSelectedCertEvent] = useState<any>(null);
+  const [pdfTemplateBytes, setPdfTemplateBytes] = useState<Uint8Array | null>(null);
+  const [pdfTemplateName, setPdfTemplateName] = useState<string>('');
+  const [selectedPlaceholders, setSelectedPlaceholders] = useState({ name: true, course: true, college: true, year: true });
+  const [textPositions, setTextPositions] = useState({
+    name: { y: 300, fontSize: 28 },
+    course: { y: 250, fontSize: 14 },
+    college: { y: 210, fontSize: 12 },
+    year: { y: 175, fontSize: 12 }
+  });
+  const [loadingRegistrants, setLoadingRegistrants] = useState(false);
+  const [registrantsForCert, setRegistrantsForCert] = useState<any[]>([]);
+  const [generatingPreviews, setGeneratingPreviews] = useState(false);
+  const [previewBlobUrls, setPreviewBlobUrls] = useState<string[]>([]);
+  const [sendingCertificates, setSendingCertificates] = useState(false);
+  const [certSendingProgress, setCertSendingProgress] = useState({ total: 0, sent: 0, currentStudentName: '' });
+  const [certError, setCertError] = useState<string | null>(null);
+  const [certSuccessMessage, setCertSuccessMessage] = useState<string | null>(null);
+
+  const uint8ToBase64 = (uint8: Uint8Array): string => {
+    let binary = '';
+    const len = uint8.byteLength;
+    for (let i = 0; i < len; i++) {
+      binary += String.fromCharCode(uint8[i]);
+    }
+    return window.btoa(binary);
+  };
+
+  const drawCenteredText = (page: any, text: string, y: number, maxSize: number, font: any, color: any, padding = 80) => {
+    const pageWidth = page.getWidth();
+    let size = maxSize;
+    let textWidth = font.widthOfTextAtSize(text, size);
+    const maxAllowedWidth = pageWidth - padding;
+    
+    // Dynamically scale down font size if it exceeds the boundary
+    while (textWidth > maxAllowedWidth && size > 8) {
+      size -= 1;
+      textWidth = font.widthOfTextAtSize(text, size);
+    }
+    
+    const x = (pageWidth - textWidth) / 2;
+    page.drawText(text, { x, y: y + (maxSize - size) / 3, size, font, color });
+  };
+
+  const generateSingleCertificate = async (
+    student: any,
+    templateBytes: Uint8Array | null,
+    enabledFields: { name: boolean; course: boolean; college: boolean; year: boolean },
+    positions: { name: { y: number; fontSize: number }; course: { y: number; fontSize: number }; college: { y: number; fontSize: number }; year: { y: number; fontSize: number } },
+    eventTitle: string,
+    eventDate: string
+  ): Promise<Uint8Array> => {
+    let pdfDoc;
+    if (templateBytes) {
+      pdfDoc = await PDFDocument.load(templateBytes);
+    } else {
+      pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([842, 595]); // landscape A4
+      const { width, height } = page.getSize();
+      
+      // Draw professional double borders
+      page.drawRectangle({
+        x: 20,
+        y: 20,
+        width: width - 40,
+        height: height - 40,
+        borderColor: rgb(15/255, 12/255, 41/255), // #0f0c29 Deep Navy/Purple
+        borderWidth: 4,
+        color: rgb(254/255, 254/255, 254/255),
+      });
+      
+      page.drawRectangle({
+        x: 28,
+        y: 28,
+        width: width - 56,
+        height: height - 56,
+        borderColor: rgb(20/255, 184/255, 166/255), // Teal inner border
+        borderWidth: 2,
+      });
+
+      // Draw elegant corner accents
+      const corners = [
+        { x: 32, y: 32 },
+        { x: width - 42, y: 32 },
+        { x: 32, y: height - 42 },
+        { x: width - 42, y: height - 42 }
+      ];
+      corners.forEach(c => {
+        page.drawRectangle({
+          x: c.x,
+          y: c.y,
+          width: 10,
+          height: 10,
+          color: rgb(20/255, 184/255, 166/255), // Teal
+        });
+      });
+
+      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+      // --- Draw Elegant Scientific Orbit Logo ---
+      const logoX = 421;
+      const logoY = 495;
+      
+      // Outer orbit circle (thin line)
+      page.drawCircle({
+        x: logoX,
+        y: logoY,
+        size: 24,
+        borderColor: rgb(15/255, 12/255, 41/255),
+        borderWidth: 1.5,
+      });
+
+      // Secondary nested orbit path
+      page.drawCircle({
+        x: logoX,
+        y: logoY,
+        size: 16,
+        borderColor: rgb(20/255, 184/255, 166/255),
+        borderWidth: 1,
+      });
+
+      // Core nucleus (glowing teal spot)
+      page.drawCircle({
+        x: logoX,
+        y: logoY,
+        size: 8,
+        color: rgb(20/255, 184/255, 166/255),
+      });
+
+      // Electron dots
+      page.drawCircle({
+        x: logoX - 18,
+        y: logoY - 10,
+        size: 3.5,
+        color: rgb(15/255, 12/255, 41/255),
+      });
+      page.drawCircle({
+        x: logoX + 16,
+        y: logoY + 12,
+        size: 3.5,
+        color: rgb(20/255, 184/255, 166/255),
+      });
+      page.drawCircle({
+        x: logoX - 4,
+        y: logoY + 20,
+        size: 3,
+        color: rgb(15/255, 12/255, 41/255),
+      });
+
+      // Header texts
+      drawCenteredText(page, "INFINITIUM SOCIETY", 440, 22, fontBold, rgb(15/255, 12/255, 41/255));
+      drawCenteredText(page, "ATMA RAM SANATAN DHARMA COLLEGE | UNIVERSITY OF DELHI", 418, 9.5, fontRegular, rgb(100/255, 116/255, 139/255));
+      
+      drawCenteredText(page, "CERTIFICATE OF PARTICIPATION", 365, 24, fontBold, rgb(20/255, 184/255, 166/255));
+      drawCenteredText(page, "PROUDLY AWARDED TO", 335, 9, fontRegular, rgb(100/255, 116/255, 139/255));
+
+      // Draw elegant signatures at bottom
+      page.drawLine({
+        start: { x: 120, y: 85 },
+        end: { x: 280, y: 85 },
+        color: rgb(100/255, 116/255, 139/255),
+        thickness: 1,
+      });
+      page.drawText("Faculty Advisor", { x: 160, y: 67, size: 9, font: fontRegular, color: rgb(100/255, 116/255, 139/255) });
+
+      page.drawLine({
+        start: { x: 562, y: 85 },
+        end: { x: 722, y: 85 },
+        color: rgb(100/255, 116/255, 139/255),
+        thickness: 1,
+      });
+      page.drawText("President, Infinitium", { x: 595, y: 67, size: 9, font: fontRegular, color: rgb(100/255, 116/255, 139/255) });
+    }
+
+    const pages = pdfDoc.getPages();
+    const firstPage = pages[0];
+    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+
+    if (enabledFields.name && student.studentName) {
+      drawCenteredText(firstPage, student.studentName.toUpperCase(), positions.name.y, positions.name.fontSize, fontBold, rgb(15/255, 12/255, 41/255));
+    }
+
+    if (enabledFields.course && student.course) {
+      drawCenteredText(firstPage, `for active and successful contribution in the curriculum of ${student.course}`, positions.course.y, positions.course.fontSize, fontRegular, rgb(51/255, 65/255, 85/255));
+    }
+
+    if (enabledFields.college && student.collegeName) {
+      drawCenteredText(firstPage, `representing ${student.collegeName}`, positions.college.y, positions.college.fontSize, fontRegular, rgb(100/255, 116/255, 139/255));
+    }
+
+    if (enabledFields.year && student.year) {
+      const yearStr = student.year.toString().toLowerCase().includes('year') ? student.year : `${student.year} Year Student`;
+      drawCenteredText(firstPage, `enrolled as a ${yearStr}`, positions.year.y, positions.year.fontSize, fontRegular, rgb(100/255, 116/255, 139/255));
+    }
+
+    if (!templateBytes) {
+      drawCenteredText(firstPage, `for successful participation and attendance in the event "${eventTitle}"`, 145, 11, fontRegular, rgb(51/255, 65/255, 85/255));
+      drawCenteredText(firstPage, `conducted on ${eventDate}`, 125, 9.5, fontRegular, rgb(100/255, 116/255, 139/255));
+    }
+
+    return await pdfDoc.save();
+  };
+
+  const loadRegistralsForCert = async (event: any) => {
+    if (!event || !event.sheetId) {
+      setCertError("This event does not have an associated Google Sheet ID configured.");
+      return;
+    }
+    setLoadingRegistrants(true);
+    setCertError(null);
+    setRegistrantsForCert([]);
+    
+    const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+    if (!appsScriptUrl) {
+      setCertError("Apps Script URL is not configured. Please define VITE_APPS_SCRIPT_URL.");
+      setLoadingRegistrants(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(appsScriptUrl, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: JSON.stringify({
+          type: "get_registrations",
+          sheetId: event.sheetId
+        })
+      });
+      
+      const res = await response.json();
+      if (res.status === "success" && Array.isArray(res.registrations)) {
+        setRegistrantsForCert(res.registrations);
+      } else {
+        setCertError("Could not retrieve registrations. Make sure sheetId is correct and Webhook is active.");
+      }
+    } catch (err: any) {
+      console.error("Error loading registrations for certificate:", err);
+      setCertError(err.message || "Failed to query attendee registration data.");
+    } finally {
+      setLoadingRegistrants(false);
+    }
+  };
+
+  const generatePreviews = async () => {
+    if (!selectedCertEvent) return;
+    setGeneratingPreviews(true);
+    
+    // Revoke previous URLs to prevent memory leaks
+    previewBlobUrls.forEach(url => URL.revokeObjectURL(url));
+    setPreviewBlobUrls([]);
+
+    const attendedList = registrantsForCert.filter(r => r.attended);
+    
+    // If we have none retrieved yet, create mock students to show instant previews
+    const studentsToPreview = attendedList.length > 0 
+      ? attendedList.slice(0, 5) 
+      : [
+          { studentName: "John Doe", course: "B.Sc. (Hons) Computer Science", collegeName: "ARSD College", year: "III" },
+          { studentName: "Jane Smith", course: "B.Sc. (Hons) Physics", collegeName: "Hansraj College", year: "II" },
+          { studentName: "Alex Dev", course: "B.Sc. (Hons) Chemistry", collegeName: "Kirori Mal College", year: "I" }
+        ].slice(0, 5);
+
+    try {
+      const urls: string[] = [];
+      for (const s of studentsToPreview) {
+        const bytes = await generateSingleCertificate(
+          s,
+          pdfTemplateBytes,
+          selectedPlaceholders,
+          textPositions,
+          selectedCertEvent.title,
+          selectedCertEvent.date
+        );
+        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        urls.push(url);
+      }
+      setPreviewBlobUrls(urls);
+    } catch (err: any) {
+      console.error("Failed to generate previews:", err);
+    } finally {
+      setGeneratingPreviews(false);
+    }
+  };
+
+  const handleSendCertificates = async () => {
+    if (!selectedCertEvent) return;
+    const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+    if (!appsScriptUrl) {
+      setCertError("Apps Script URL is not configured (VITE_APPS_SCRIPT_URL is missing).");
+      return;
+    }
+
+    const attendedList = registrantsForCert.filter(r => r.attended);
+    if (attendedList.length === 0) {
+      setCertError("There are no registered students marked as present (attended) for this event.");
+      return;
+    }
+
+    setSendingCertificates(true);
+    setCertError(null);
+    setCertSuccessMessage(null);
+    setCertSendingProgress({ total: attendedList.length, sent: 0, currentStudentName: '' });
+
+    try {
+      let sentCount = 0;
+      for (let i = 0; i < attendedList.length; i++) {
+        const student = attendedList[i];
+        setCertSendingProgress({ total: attendedList.length, sent: i, currentStudentName: student.studentName });
+
+        // 1. Generate individual personalized certificate
+        const certBytes = await generateSingleCertificate(
+          student,
+          pdfTemplateBytes,
+          selectedPlaceholders,
+          textPositions,
+          selectedCertEvent.title,
+          selectedCertEvent.date
+        );
+
+        // 2. Convert to Base64
+        const pdfBase64 = uint8ToBase64(certBytes);
+
+        // 3. Dispatch individually using 'send_certificate' to Apps Script
+        const emailSubject = `🎓 Certificate of Participation: "${selectedCertEvent.title}"`;
+        const emailBody = `
+<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+  <div style="background-color: #0f0c29; border-top: 4px solid #14b8a6; padding: 25px; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 24px; letter-spacing: 2px;">INFINITIUM</h1>
+    <p style="color: #14b8a6; margin: 5px 0 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;">Atma Ram Sanatan Dharma College</p>
+  </div>
+  <div style="padding: 30px; line-height: 1.6; color: #334155; background-color: #ffffff;">
+    <h2 style="color: #0f0c29; margin-top: 0; font-size: 18px;">Certificate Distribution</h2>
+    <p>Dear <strong>${student.studentName}</strong>,</p>
+    <p>Congratulations! Your official personalized Certificate of Participation for the event <strong>${selectedCertEvent.title}</strong> has been issued.</p>
+    <p>Please find your digital certificate attached to this email as a PDF document.</p>
+    <p>Thank you for participating actively in INFINITIUM events. We look forward to hosting you for more scientific workshops and physical activities in the future!</p>
+    <p style="margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+      Warm regards,<br/>
+      <strong>Infinitium Society Organizers</strong><br/>
+      Atma Ram Sanatan Dharma College, University of Delhi
+    </p>
+  </div>
+  <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+    This is an automated system email. Please do not reply directly to this message.
+  </div>
+</div>
+        `;
+
+        await fetch(appsScriptUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify({
+            type: "send_certificate",
+            email: student.email || student.Email || student['Email ID'],
+            subject: emailSubject,
+            message: emailBody,
+            fileName: `Certificate_${student.studentName.replace(/\s+/g, '_')}.pdf`,
+            pdfBase64: pdfBase64
+          })
+        });
+
+        sentCount++;
+      }
+
+      setCertSendingProgress({ total: attendedList.length, sent: sentCount, currentStudentName: '' });
+      setCertSuccessMessage(`Successfully processed and dispatched all ${sentCount} certificates via email!`);
+    } catch (err: any) {
+      console.error("Error dispatching certificates:", err);
+      setCertError(err.message || "An error occurred while generating or dispatching certificates.");
+    } finally {
+      setSendingCertificates(false);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedCertEvent) {
+      loadRegistralsForCert(selectedCertEvent);
+    } else {
+      // Clear up preview URLs to avoid memory leaks
+      previewBlobUrls.forEach(url => URL.revokeObjectURL(url));
+      setPreviewBlobUrls([]);
+      setPdfTemplateBytes(null);
+      setPdfTemplateName('');
+      setRegistrantsForCert([]);
+      setCertError(null);
+      setCertSuccessMessage(null);
+    }
+  }, [selectedCertEvent]);
+
+  useEffect(() => {
+    if (selectedCertEvent) {
+      generatePreviews().catch(err => console.error("Error generating previews:", err));
+    }
+  }, [selectedCertEvent, pdfTemplateBytes, selectedPlaceholders, textPositions, registrantsForCert]);
 
   // Contact management state
   const [contactConfig, setContactConfig] = useState<{ sheetId: string; adminEmail: string }>({ sheetId: '', adminEmail: '' });
@@ -1505,6 +1905,16 @@ export default function Admin_Page() {
                         <div className="flex gap-3 justify-end items-center">
                           <button
                             onClick={() => {
+                              setSelectedCertEvent(e);
+                            }}
+                            title="Generate & Distribute Certificates"
+                            className="p-2.5 bg-cyan-50 hover:bg-cyan-100 rounded-xl text-cyan-600 hover:text-cyan-900 transition-all border border-cyan-100 flex items-center justify-center gap-1.5 font-bold text-xs px-3.5"
+                          >
+                            <Award className="w-4 h-4 text-cyan-500 animate-pulse" />
+                            <span>Certificate</span>
+                          </button>
+                          <button
+                            onClick={() => {
                               setEditingEvent(e);
                               setEventImagePreview(e.image);
                               setEventMediaPreviews([]);
@@ -2344,6 +2754,392 @@ export default function Admin_Page() {
                    </button>
                 </div>
              </motion.div>
+          </div>
+        )}
+
+        {selectedCertEvent && (
+          <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm overflow-y-auto">
+            <div className="absolute inset-0" onClick={() => setSelectedCertEvent(null)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative bg-white w-full max-w-7xl rounded-[2.5rem] p-8 shadow-2xl border border-zinc-100 flex flex-col xl:flex-row gap-8 max-h-[90vh] overflow-y-auto xl:overflow-hidden z-[170]"
+            >
+              {/* Left Column: Form & Configuration */}
+              <div className="flex-1 space-y-6 xl:max-h-[75vh] xl:overflow-y-auto xl:pr-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-cyan-50 rounded-full flex items-center justify-center border border-cyan-100">
+                      <Award className="w-6 h-6 text-cyan-500 animate-pulse" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Issue Event Certificates</h3>
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{selectedCertEvent.title}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Info Cards / Registrants Counter */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-slate-50 border border-slate-100/80 rounded-2xl p-4 text-center">
+                    <span className="block text-2xl font-black text-slate-800 font-mono">
+                      {loadingRegistrants ? "..." : registrantsForCert.length}
+                    </span>
+                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Registered</span>
+                  </div>
+                  <div className="bg-emerald-50 border border-emerald-100/50 rounded-2xl p-4 text-center">
+                    <span className="block text-2xl font-black text-emerald-600 font-mono">
+                      {loadingRegistrants ? "..." : registrantsForCert.filter(r => r.attended).length}
+                    </span>
+                    <span className="text-[10px] uppercase font-bold text-emerald-500 tracking-wider">Present</span>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-100/50 rounded-2xl p-4 text-center">
+                    <span className="block text-2xl font-black text-amber-600 font-mono">
+                      {loadingRegistrants ? "..." : registrantsForCert.filter(r => !r.attended).length}
+                    </span>
+                    <span className="text-[10px] uppercase font-bold text-amber-500 tracking-wider">Absent</span>
+                  </div>
+                </div>
+
+                {/* Upload Section */}
+                <div className="bg-zinc-50 border border-zinc-200/80 rounded-3xl p-5 space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 block">1. Set Certificate Template</span>
+                  <div className="space-y-3">
+                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-300 rounded-2xl cursor-pointer bg-white hover:bg-zinc-50/50 transition-all">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <Download className="w-8 h-8 text-zinc-400 mb-2 rotate-180 text-center" />
+                        <p className="text-xs text-zinc-500 font-semibold mb-1 text-center truncate max-w-sm px-4">
+                          {pdfTemplateName ? `Selected: ${pdfTemplateName}` : "Click to select custom PDF template"}
+                        </p>
+                        <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-widest text-center">Supports .PDF formats</p>
+                      </div>
+                      <input
+                        type="file"
+                        accept=".pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            setPdfTemplateName(file.name);
+                            const reader = new FileReader();
+                            reader.onload = () => {
+                              const arrayBuffer = reader.result as ArrayBuffer;
+                              setPdfTemplateBytes(new Uint8Array(arrayBuffer));
+                            };
+                            reader.readAsArrayBuffer(file);
+                          }
+                        }}
+                      />
+                    </label>
+
+                    {pdfTemplateBytes && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPdfTemplateBytes(null);
+                          setPdfTemplateName('');
+                        }}
+                        className="w-full py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border border-red-100/40"
+                      >
+                        Reset to Minimalist Built-in Template
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Categories & Configuration */}
+                <div className="bg-zinc-50 border border-zinc-200/80 rounded-3xl p-5 space-y-4">
+                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 block">2. Text Placement & Design Categories</span>
+                  
+                  <div className="space-y-4">
+                    {/* Name Config */}
+                    <div className="space-y-2 border-b border-zinc-100 pb-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={selectedPlaceholders.name}
+                            onChange={(e) => setSelectedPlaceholders(prev => ({ ...prev, name: e.target.checked }))}
+                            className="w-4 h-4 text-cyan-600 rounded border-zinc-300 focus:ring-cyan-500"
+                          />
+                          <span>Student Name</span>
+                        </label>
+                        <span className="text-[10px] font-mono text-zinc-400 font-semibold uppercase">PREVIEW VALUE: uppercase</span>
+                      </div>
+                      {selectedPlaceholders.name && (
+                        <div className="grid grid-cols-2 gap-4 pl-6">
+                          <div>
+                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Vertical (Y): {textPositions.name.y}px</span>
+                            <input
+                              type="range"
+                              min="50"
+                              max="550"
+                              value={textPositions.name.y}
+                              onChange={(e) => setTextPositions(prev => ({ ...prev, name: { ...prev.name, y: parseInt(e.target.value) } }))}
+                              className="w-full accent-cyan-500"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Font Size: {textPositions.name.fontSize}px</span>
+                            <input
+                              type="range"
+                              min="12"
+                              max="48"
+                              value={textPositions.name.fontSize}
+                              onChange={(e) => setTextPositions(prev => ({ ...prev, name: { ...prev.name, fontSize: parseInt(e.target.value) } }))}
+                              className="w-full accent-cyan-500"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Course Config */}
+                    <div className="space-y-2 border-b border-zinc-100 pb-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={selectedPlaceholders.course}
+                            onChange={(e) => setSelectedPlaceholders(prev => ({ ...prev, course: e.target.checked }))}
+                            className="w-4 h-4 text-cyan-600 rounded border-zinc-300 focus:ring-cyan-500"
+                          />
+                          <span>Course Title</span>
+                        </label>
+                      </div>
+                      {selectedPlaceholders.course && (
+                        <div className="grid grid-cols-2 gap-4 pl-6">
+                          <div>
+                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Vertical (Y): {textPositions.course.y}px</span>
+                            <input
+                              type="range"
+                              min="50"
+                              max="550"
+                              value={textPositions.course.y}
+                              onChange={(e) => setTextPositions(prev => ({ ...prev, course: { ...prev.course, y: parseInt(e.target.value) } }))}
+                              className="w-full accent-cyan-500"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Font Size: {textPositions.course.fontSize}px</span>
+                            <input
+                              type="range"
+                              min="10"
+                              max="32"
+                              value={textPositions.course.fontSize}
+                              onChange={(e) => setTextPositions(prev => ({ ...prev, course: { ...prev.course, fontSize: parseInt(e.target.value) } }))}
+                              className="w-full accent-cyan-500"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* College Config */}
+                    <div className="space-y-2 border-b border-zinc-100 pb-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={selectedPlaceholders.college}
+                            onChange={(e) => setSelectedPlaceholders(prev => ({ ...prev, college: e.target.checked }))}
+                            className="w-4 h-4 text-cyan-600 rounded border-zinc-300 focus:ring-cyan-500"
+                          />
+                          <span>College Name</span>
+                        </label>
+                      </div>
+                      {selectedPlaceholders.college && (
+                        <div className="grid grid-cols-2 gap-4 pl-6">
+                          <div>
+                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Vertical (Y): {textPositions.college.y}px</span>
+                            <input
+                              type="range"
+                              min="50"
+                              max="550"
+                              value={textPositions.college.y}
+                              onChange={(e) => setTextPositions(prev => ({ ...prev, college: { ...prev.college, y: parseInt(e.target.value) } }))}
+                              className="w-full accent-cyan-500"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Font Size: {textPositions.college.fontSize}px</span>
+                            <input
+                              type="range"
+                              min="10"
+                              max="32"
+                              value={textPositions.college.fontSize}
+                              onChange={(e) => setTextPositions(prev => ({ ...prev, college: { ...prev.college, fontSize: parseInt(e.target.value) } }))}
+                              className="w-full accent-cyan-500"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Year Config */}
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={selectedPlaceholders.year}
+                            onChange={(e) => setSelectedPlaceholders(prev => ({ ...prev, year: e.target.checked }))}
+                            className="w-4 h-4 text-cyan-600 rounded border-zinc-300 focus:ring-cyan-500"
+                          />
+                          <span>Year of Study</span>
+                        </label>
+                      </div>
+                      {selectedPlaceholders.year && (
+                        <div className="grid grid-cols-2 gap-4 pl-6">
+                          <div>
+                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Vertical (Y): {textPositions.year.y}px</span>
+                            <input
+                              type="range"
+                              min="50"
+                              max="550"
+                              value={textPositions.year.y}
+                              onChange={(e) => setTextPositions(prev => ({ ...prev, year: { ...prev.year, y: parseInt(e.target.value) } }))}
+                              className="w-full accent-cyan-500"
+                            />
+                          </div>
+                          <div>
+                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Font Size: {textPositions.year.fontSize}px</span>
+                            <input
+                              type="range"
+                              min="10"
+                              max="32"
+                              value={textPositions.year.fontSize}
+                              onChange={(e) => setTextPositions(prev => ({ ...prev, year: { ...prev.year, fontSize: parseInt(e.target.value) } }))}
+                              className="w-full accent-cyan-500"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Status / Log Console */}
+                {(certError || certSuccessMessage || sendingCertificates) && (
+                  <div className="p-4 rounded-2xl bg-zinc-900 text-zinc-100 border border-zinc-800 space-y-2">
+                    <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-extrabold">Dispatch Console Output</span>
+                    
+                    {sendingCertificates && (
+                      <div className="space-y-2 font-mono text-xs text-zinc-300">
+                        <div className="flex justify-between text-[11px] text-cyan-400 animate-pulse">
+                          <span>Progress: {certSendingProgress.sent} of {certSendingProgress.total}</span>
+                          <span>{Math.round((certSendingProgress.sent / certSendingProgress.total) * 100)}%</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                          <div 
+                            className="bg-cyan-400 h-full transition-all duration-300" 
+                            style={{ width: `${(certSendingProgress.sent / certSendingProgress.total) * 100}%` }}
+                          />
+                        </div>
+                        <p className="text-[11px] text-zinc-400 font-semibold italic text-ellipsis overflow-hidden whitespace-nowrap">
+                          🚀 Packing & dispatching certificate for: {certSendingProgress.currentStudentName}...
+                        </p>
+                      </div>
+                    )}
+
+                    {certSuccessMessage && (
+                      <p className="text-emerald-400 font-mono text-xs font-semibold">{certSuccessMessage}</p>
+                    )}
+
+                    {certError && (
+                      <p className="text-red-400 font-mono text-xs font-semibold uppercase">{certError}</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Buttons block */}
+                <div className="flex gap-4">
+                  <button
+                    onClick={() => setSelectedCertEvent(null)}
+                    className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all font-bold"
+                  >
+                    Close Setup
+                  </button>
+                  <button
+                    onClick={handleSendCertificates}
+                    disabled={sendingCertificates || loadingRegistrants || registrantsForCert.filter(r => r.attended).length === 0}
+                    className="flex-2 py-4 bg-cyan-500 hover:bg-cyan-600 disabled:bg-zinc-100 disabled:text-zinc-400 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-cyan-500/20 flex items-center justify-center gap-2 font-bold"
+                  >
+                    {sendingCertificates ? (
+                      <>
+                        <Clock className="w-4 h-4 animate-spin" />
+                        <span>Sending {certSendingProgress.sent}/{certSendingProgress.total}...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Award className="w-4 h-4" />
+                        <span>Send Certificates to Present Students</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: PDF Previews (First 5 Generated Certificates) */}
+              <div className="w-full xl:w-[540px] bg-slate-50 rounded-[2rem] p-6 border border-slate-100 flex flex-col gap-4 xl:max-h-[75vh] xl:overflow-y-auto">
+                <div>
+                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800 flex items-center gap-1">
+                    <span>3. Generated PDF Previews (First 5)</span>
+                    {generatingPreviews && <span className="text-cyan-500 text-[10px] lowercase italic">(regenerating...)</span>}
+                  </h4>
+                  <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
+                    Displays how certificates look for marked attendees. Adjust vertical sliders to coordinate text layouts!
+                  </p>
+                </div>
+
+                {loadingRegistrants ? (
+                  <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
+                    <Clock className="w-8 h-8 text-cyan-500 animate-spin mb-2" />
+                    <span className="text-xs font-black uppercase tracking-wider text-zinc-400 font-mono">Syncing sheets attendee rolls...</span>
+                  </div>
+                ) : registrantsForCert.filter(r => r.attended).length === 0 ? (
+                  <div className="flex-1 border-2 border-dashed border-zinc-200 rounded-2xl p-8 text-center flex flex-col items-center justify-center bg-white">
+                    <span className="text-2xl text-zinc-300">⚠️</span>
+                    <span className="text-xs font-bold text-zinc-500 mt-2 uppercase tracking-wide">No attendants present</span>
+                    <p className="text-[10px] text-zinc-400 leading-normal max-w-xs mt-1 text-center">
+                      No registrants are currently marked as attended ("Yes" in column L) in Google Sheets for this event. 
+                      Displaying default mock certificate sample preview.
+                    </p>
+                    <div className="w-full mt-4 flex flex-col gap-4">
+                      {previewBlobUrls.map((url, idx) => (
+                        <div key={idx} className="border border-zinc-200 rounded-xl overflow-hidden shadow-sm bg-zinc-950">
+                          <iframe src={url + "#toolbar=0"} className="w-full h-[390px]" title="Mock Preview" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {previewBlobUrls.map((url, index) => {
+                      const student = registrantsForCert.filter(r => r.attended)[index] || { studentName: 'Attendant' };
+                      return (
+                        <div key={index} className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
+                          <div className="px-4 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-100/50">
+                            <span className="text-[10px] font-black uppercase text-slate-500 truncate max-w-[280px]">
+                              {index + 1}. {student.studentName} ({student['collegeName'] || 'ARSD'})
+                            </span>
+                            <span className="text-[9px] font-mono font-bold text-emerald-500 leading-none bg-emerald-50 px-2 py-0.5 rounded-full">Attended</span>
+                          </div>
+                          <div className="bg-zinc-800">
+                            <iframe 
+                              src={`${url}#toolbar=0&navpanes=0&scrollbar=0`} 
+                              className="w-full h-[390px]" 
+                              title={`Preview ${index + 1}`}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </motion.div>
           </div>
         )}
 
