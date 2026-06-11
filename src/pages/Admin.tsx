@@ -2082,7 +2082,21 @@ export default function Admin_Page() {
                       </td>
                       <td className="px-8 py-5">
                         <div className="flex justify-center items-center">
-                          {isFetchingStats ? (
+                          {!e.sheetId ? (
+                            <div 
+                              className="w-11 h-11 rounded-full bg-rose-50 border-2 border-rose-300 flex items-center justify-center text-center shadow-md shadow-rose-100 shrink-0 select-none relative group cursor-help transition-all duration-300 hover:scale-105"
+                              id={`sheet-indicator-missing-${e.id}`}
+                              title="Sheet not available"
+                            >
+                              <X className="w-5 h-5 text-rose-500 font-bold" />
+                              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:flex flex-col items-center z-20 pointer-events-none">
+                                <span className="p-2 px-3 text-[10px] font-black text-white whitespace-nowrap bg-zinc-950 rounded-xl shadow-xl uppercase tracking-widest border border-zinc-800">
+                                  Sheet Not Available
+                                </span>
+                                <div className="w-2.5 h-2.5 -mt-1.5 rotate-45 bg-zinc-950" />
+                              </div>
+                            </div>
+                          ) : isFetchingStats ? (
                             <span className="text-xs font-black text-cyan-500 animate-pulse uppercase tracking-wider font-mono">Fetching...</span>
                           ) : (
                             <div className="w-14 h-14 rounded-full bg-[#041a1a] border-2 border-[#5ce1e6] flex flex-col items-center justify-center text-center shadow-md shadow-[#5ce1e6]/10 shrink-0 select-none">
