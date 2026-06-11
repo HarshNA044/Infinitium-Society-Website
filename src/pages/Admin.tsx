@@ -7,7 +7,7 @@ import {
   Trash2, CheckCircle, XCircle, ChevronLeft,
   LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
   Trophy, Download, LogIn, Github, Menu, X, MessageSquare,
-  Globe, Award, Target, Handshake, Lightbulb, Clock, Mail
+  Globe, Award, Target, Handshake, Lightbulb, Clock, Mail, ExternalLink
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -128,11 +128,106 @@ export default function Admin_Page() {
     enabledFields: { name: boolean; course: boolean; college: boolean; year: boolean },
     positions: { name: { y: number; fontSize: number }; course: { y: number; fontSize: number }; college: { y: number; fontSize: number }; year: { y: number; fontSize: number } },
     eventTitle: string,
-    eventDate: string
+    eventDate: string,
+    eventLocation?: string
   ): Promise<Uint8Array> => {
     let pdfDoc;
+    let filledFormFields = false;
+
     if (templateBytes) {
       pdfDoc = await PDFDocument.load(templateBytes);
+      
+      // Attempt to fill dynamic form fields matching user custom handles (e.g. {{student name}}, {{course}}, etc.)
+      try {
+        const form = pdfDoc.getForm();
+        const fields = form.getFields();
+        if (fields && fields.length > 0) {
+          fields.forEach(field => {
+            const fieldName = field.getName();
+            const lowerName = fieldName.toLowerCase().trim();
+            
+            if (typeof (field as any).setText === 'function') {
+              const textField = field as any;
+              
+              // Normalize field name by stripping curly braces, spaces, hyphens, and underscores
+              const cleanName = lowerName.replace(/[\{\}\s_\-\[\]]/g, '');
+              
+              if (
+                cleanName === 'studentname' || 
+                cleanName === 'student' ||
+                cleanName === 'name' || 
+                cleanName === 'fullname' ||
+                lowerName.includes('student name') || 
+                lowerName.includes('{{student name}}') ||
+                lowerName.includes('name')
+              ) {
+                textField.setText(student.studentName?.toUpperCase() || '');
+                filledFormFields = true;
+              } else if (
+                cleanName === 'course' || 
+                cleanName === 'branch' ||
+                cleanName === 'subject' ||
+                lowerName.includes('course') ||
+                lowerName.includes('{{course}}')
+              ) {
+                textField.setText(student.course || '');
+                filledFormFields = true;
+              } else if (
+                cleanName === 'college' || 
+                cleanName === 'collegename' || 
+                cleanName === 'institution' || 
+                cleanName === 'university' ||
+                lowerName.includes('college') ||
+                lowerName.includes('{{college}}') ||
+                lowerName.includes('college name') || 
+                lowerName.includes('{{college name}}')
+              ) {
+                textField.setText(student.collegeName || '');
+                filledFormFields = true;
+              } else if (
+                cleanName === 'year' || 
+                cleanName === 'semester' || 
+                cleanName === 'academicyear' ||
+                cleanName === 'yearstudent' ||
+                lowerName.includes('year') ||
+                lowerName.includes('{{year}}')
+              ) {
+                const yearStr = student.year ? (student.year.toString().toLowerCase().includes('year') ? student.year : `${student.year} Year`) : '';
+                textField.setText(yearStr);
+                filledFormFields = true;
+              } else if (
+                cleanName === 'event' || 
+                cleanName === 'eventname' || 
+                cleanName === 'eventtitle' || 
+                cleanName === 'topic' ||
+                lowerName.includes('event') ||
+                lowerName.includes('{{event name}}') ||
+                lowerName.includes('{{event}}')
+              ) {
+                textField.setText(eventTitle || '');
+                filledFormFields = true;
+              } else if (
+                cleanName === 'date' || 
+                cleanName === 'eventdate' || 
+                cleanName === 'datetime' ||
+                lowerName.includes('date') ||
+                lowerName.includes('{{event date}}') ||
+                lowerName.includes('{{date}}')
+              ) {
+                textField.setText(eventDate || '');
+                filledFormFields = true;
+              }
+            }
+          });
+          
+          if (filledFormFields) {
+            // Flatten the PDF form fields into standard non-editable output vector lines
+            form.flatten();
+          }
+        }
+      } catch (err) {
+        console.warn("Unable to process interactive PDF Form Fields (PDF might have no form elements). Falling back to direct layout positioning: ", err);
+      }
     } else {
       pdfDoc = await PDFDocument.create();
       const page = pdfDoc.addPage([842, 595]); // landscape A4
@@ -178,62 +273,115 @@ export default function Admin_Page() {
       const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-      // --- Draw Elegant Scientific Orbit Logo ---
+      // --- Draw Dynamic Custom Database-backed Logo or elegant Scientific Orbit fallback ---
       const logoX = 421;
       const logoY = 495;
-      
-      // Outer orbit circle (thin line)
-      page.drawCircle({
-        x: logoX,
-        y: logoY,
-        size: 24,
-        borderColor: rgb(15/255, 12/255, 41/255),
-        borderWidth: 1.5,
-      });
+      let logoImageLoaded = false;
 
-      // Secondary nested orbit path
-      page.drawCircle({
-        x: logoX,
-        y: logoY,
-        size: 16,
-        borderColor: rgb(20/255, 184/255, 166/255),
-        borderWidth: 1,
-      });
+      try {
+        // ALWAYS try loading the official /logo.png first (rasterized logo.svg)
+        const logoRes = await fetch('/logo.png');
+        if (logoRes.ok) {
+          const logoBytes = await logoRes.arrayBuffer();
+          const embeddedLogo = await pdfDoc.embedPng(logoBytes);
+          if (embeddedLogo) {
+            const scaled = embeddedLogo.scale(0.35);
+            page.drawImage(embeddedLogo, {
+              x: logoX - scaled.width / 2,
+              y: logoY - scaled.height / 2,
+              width: scaled.width,
+              height: scaled.height,
+            });
+            logoImageLoaded = true;
+          }
+        }
+      } catch (logoErr) {
+        console.warn("Failed to load official /logo.png asset, falling back to database logo: ", logoErr);
+      }
 
-      // Core nucleus (glowing teal spot)
-      page.drawCircle({
-        x: logoX,
-        y: logoY,
-        size: 8,
-        color: rgb(20/255, 184/255, 166/255),
-      });
+      if (!logoImageLoaded && aboutData?.logo) {
+        try {
+          const rawBase64 = aboutData.logo.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
+          const binaryStr = window.atob(rawBase64);
+          const bytes = new Uint8Array(binaryStr.length);
+          for (let i = 0; i < binaryStr.length; i++) {
+            bytes[i] = binaryStr.charCodeAt(i);
+          }
+          
+          let embeddedLogo;
+          if (aboutData.logo.includes('image/png')) {
+            embeddedLogo = await pdfDoc.embedPng(bytes);
+          } else {
+            embeddedLogo = await pdfDoc.embedJpg(bytes);
+          }
 
-      // Electron dots
-      page.drawCircle({
-        x: logoX - 18,
-        y: logoY - 10,
-        size: 3.5,
-        color: rgb(15/255, 12/255, 41/255),
-      });
-      page.drawCircle({
-        x: logoX + 16,
-        y: logoY + 12,
-        size: 3.5,
-        color: rgb(20/255, 184/255, 166/255),
-      });
-      page.drawCircle({
-        x: logoX - 4,
-        y: logoY + 20,
-        size: 3,
-        color: rgb(15/255, 12/255, 41/255),
-      });
+          if (embeddedLogo) {
+            const scaled = embeddedLogo.scale(0.35);
+            page.drawImage(embeddedLogo, {
+              x: logoX - scaled.width / 2,
+              y: logoY - scaled.height / 2,
+              width: scaled.width,
+              height: scaled.height,
+            });
+            logoImageLoaded = true;
+          }
+        } catch (logoErr) {
+          console.warn("Failed to embed website's custom team logo into PDF:", logoErr);
+        }
+      }
+
+      if (!logoImageLoaded) {
+        // Fallback to elegant scientific orbit logo
+        // Outer orbit circle (thin line)
+        page.drawCircle({
+          x: logoX,
+          y: logoY,
+          size: 24,
+          borderColor: rgb(15/255, 12/255, 41/255),
+          borderWidth: 1.5,
+        });
+
+        // Secondary nested orbit path
+        page.drawCircle({
+          x: logoX,
+          y: logoY,
+          size: 16,
+          borderColor: rgb(20/255, 184/255, 166/255),
+          borderWidth: 1,
+        });
+
+        // Core nucleus (glowing teal spot)
+        page.drawCircle({
+          x: logoX,
+          y: logoY,
+          size: 8,
+          color: rgb(20/255, 184/255, 166/255),
+        });
+
+        // Electron dots
+        page.drawCircle({
+          x: logoX - 18,
+          y: logoY - 10,
+          size: 3.5,
+          color: rgb(15/255, 12/255, 41/255),
+        });
+        page.drawCircle({
+          x: logoX + 16,
+          y: logoY + 12,
+          size: 3.5,
+          color: rgb(20/255, 184/255, 166/255),
+        });
+        page.drawCircle({
+          x: logoX - 4,
+          y: logoY + 20,
+          size: 3,
+          color: rgb(15/255, 12/255, 41/255),
+        });
+      }
 
       // Header texts
       drawCenteredText(page, "INFINITIUM SOCIETY", 440, 22, fontBold, rgb(15/255, 12/255, 41/255));
       drawCenteredText(page, "ATMA RAM SANATAN DHARMA COLLEGE | UNIVERSITY OF DELHI", 418, 9.5, fontRegular, rgb(100/255, 116/255, 139/255));
-      
-      drawCenteredText(page, "CERTIFICATE OF PARTICIPATION", 365, 24, fontBold, rgb(20/255, 184/255, 166/255));
-      drawCenteredText(page, "PROUDLY AWARDED TO", 335, 9, fontRegular, rgb(100/255, 116/255, 139/255));
 
       // Draw elegant signatures at bottom
       page.drawLine({
@@ -258,26 +406,66 @@ export default function Admin_Page() {
     const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
     const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-    if (enabledFields.name && student.studentName) {
-      drawCenteredText(firstPage, student.studentName.toUpperCase(), positions.name.y, positions.name.fontSize, fontBold, rgb(15/255, 12/255, 41/255));
-    }
+    // Only draw coordinates on top of the document if we didn't fill dedicated form placeholders
+    if (!filledFormFields) {
+      if (!templateBytes) {
+        // 1. "This is to certify that"
+        drawCenteredText(firstPage, "This is to certify that", 373, 11.5, fontRegular, rgb(51/255, 65/255, 85/255));
 
-    if (enabledFields.course && student.course) {
-      drawCenteredText(firstPage, `for active and successful contribution in the curriculum of ${student.course}`, positions.course.y, positions.course.fontSize, fontRegular, rgb(51/255, 65/255, 85/255));
-    }
+        // 2. Student Name (dynamic)
+        if (enabledFields.name && student.studentName) {
+          drawCenteredText(firstPage, student.studentName.toUpperCase(), positions.name.y, positions.name.fontSize, fontBold, rgb(15/255, 12/255, 41/255));
+        }
 
-    if (enabledFields.college && student.collegeName) {
-      drawCenteredText(firstPage, `representing ${student.collegeName}`, positions.college.y, positions.college.fontSize, fontRegular, rgb(100/255, 116/255, 139/255));
-    }
+        // 3. COURSE TITLE Label
+        drawCenteredText(firstPage, "COURSE TITLE", positions.course.y + 17, 8, fontRegular, rgb(148/255, 163/255, 184/255));
 
-    if (enabledFields.year && student.year) {
-      const yearStr = student.year.toString().toLowerCase().includes('year') ? student.year : `${student.year} Year Student`;
-      drawCenteredText(firstPage, `enrolled as a ${yearStr}`, positions.year.y, positions.year.fontSize, fontRegular, rgb(100/255, 116/255, 139/255));
-    }
+        // 4. Course Title (dynamic)
+        if (enabledFields.course && student.course) {
+          drawCenteredText(firstPage, student.course.toString().toUpperCase(), positions.course.y, positions.course.fontSize, fontBold, rgb(51/255, 65/255, 85/255));
+        }
 
-    if (!templateBytes) {
-      drawCenteredText(firstPage, `for successful participation and attendance in the event "${eventTitle}"`, 145, 11, fontRegular, rgb(51/255, 65/255, 85/255));
-      drawCenteredText(firstPage, `conducted on ${eventDate}`, 125, 9.5, fontRegular, rgb(100/255, 116/255, 139/255));
+        // 5. YEAR OF STUDY Label
+        drawCenteredText(firstPage, "YEAR OF STUDY", positions.year.y + 17, 8, fontRegular, rgb(148/255, 163/255, 184/255));
+
+        // 6. Year of Study (dynamic)
+        if (enabledFields.year && student.year) {
+          const rawYearStr = student.year.toString().toUpperCase();
+          const yearStr = rawYearStr.includes('YEAR') ? rawYearStr : `${rawYearStr} YEAR`;
+          drawCenteredText(firstPage, yearStr, positions.year.y, positions.year.fontSize, fontRegular, rgb(100/255, 116/255, 139/255));
+        }
+
+        // 7. EVENT NAME Label
+        drawCenteredText(firstPage, "EVENT NAME", positions.college.y + 17, 8, fontRegular, rgb(148/255, 163/255, 184/255));
+
+        // 8. Event Name (dynamic at positions.college.y)
+        if (enabledFields.college) {
+          drawCenteredText(firstPage, eventTitle.toUpperCase(), positions.college.y, positions.college.fontSize || 14, fontBold, rgb(20/255, 184/255, 166/255));
+        }
+
+        // 9. Centered descriptive paragraph at the bottom
+        const venueName = eventLocation || 'ATMA RAM SANATAN DHARMA COLLEGE, NEW DELHI';
+        const summaryText = `has actively participated and demonstrated outstanding achievement in "${eventTitle}" held on ${eventDate} at ${venueName}.`;
+        drawCenteredText(firstPage, summaryText, 110, 9.5, fontRegular, rgb(100/255, 116/255, 139/255));
+      } else {
+        // If there's a custom template, draw the selected coordinates directly on it
+        if (enabledFields.name && student.studentName) {
+          drawCenteredText(firstPage, student.studentName.toUpperCase(), positions.name.y, positions.name.fontSize, fontBold, rgb(15/255, 12/255, 41/255));
+        }
+
+        if (enabledFields.course && student.course) {
+          drawCenteredText(firstPage, student.course, positions.course.y, positions.course.fontSize, fontRegular, rgb(51/255, 65/255, 85/255));
+        }
+
+        if (enabledFields.college && student.collegeName) {
+          drawCenteredText(firstPage, student.collegeName, positions.college.y, positions.college.fontSize, fontRegular, rgb(100/255, 116/255, 139/255));
+        }
+
+        if (enabledFields.year && student.year) {
+          const yearStr = student.year.toString().toLowerCase().includes('year') ? student.year : `${student.year} Year`;
+          drawCenteredText(firstPage, yearStr, positions.year.y, positions.year.fontSize, fontRegular, rgb(100/255, 116/255, 139/255));
+        }
+      }
     }
 
     return await pdfDoc.save();
@@ -333,14 +521,12 @@ export default function Admin_Page() {
 
     const attendedList = registrantsForCert.filter(r => r.attended);
     
-    // If we have none retrieved yet, create mock students to show instant previews
+    // If we have none retrieved yet, create 1 mock student to show instant preview
     const studentsToPreview = attendedList.length > 0 
-      ? attendedList.slice(0, 5) 
+      ? attendedList.slice(0, 1) 
       : [
-          { studentName: "John Doe", course: "B.Sc. (Hons) Computer Science", collegeName: "ARSD College", year: "III" },
-          { studentName: "Jane Smith", course: "B.Sc. (Hons) Physics", collegeName: "Hansraj College", year: "II" },
-          { studentName: "Alex Dev", course: "B.Sc. (Hons) Chemistry", collegeName: "Kirori Mal College", year: "I" }
-        ].slice(0, 5);
+          { studentName: "John Doe", course: "B.Sc. (Hons) Computer Science", collegeName: "ARSD College", year: "III" }
+        ];
 
     try {
       const urls: string[] = [];
@@ -351,7 +537,8 @@ export default function Admin_Page() {
           selectedPlaceholders,
           textPositions,
           selectedCertEvent.title,
-          selectedCertEvent.date
+          selectedCertEvent.date,
+          selectedCertEvent.location
         );
         const blob = new Blob([bytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
@@ -397,7 +584,8 @@ export default function Admin_Page() {
           selectedPlaceholders,
           textPositions,
           selectedCertEvent.title,
-          selectedCertEvent.date
+          selectedCertEvent.date,
+          selectedCertEvent.location
         );
 
         // 2. Convert to Base64
@@ -2946,7 +3134,7 @@ export default function Admin_Page() {
                             onChange={(e) => setSelectedPlaceholders(prev => ({ ...prev, college: e.target.checked }))}
                             className="w-4 h-4 text-cyan-600 rounded border-zinc-300 focus:ring-cyan-500"
                           />
-                          <span>College Name</span>
+                          <span>Event Name / College</span>
                         </label>
                       </div>
                       {selectedPlaceholders.college && (
@@ -3074,18 +3262,18 @@ export default function Admin_Page() {
                     ) : (
                       <>
                         <Award className="w-4 h-4" />
-                        <span>Send Certificates to Present Students</span>
+                        <span>Send Certificates</span>
                       </>
                     )}
                   </button>
                 </div>
               </div>
 
-              {/* Right Column: PDF Previews (First 5 Generated Certificates) */}
+              {/* Right Column: PDF Previews (First Generated Certificate) */}
               <div className="w-full xl:w-[540px] bg-slate-50 rounded-[2rem] p-6 border border-slate-100 flex flex-col gap-4 xl:max-h-[75vh] xl:overflow-y-auto">
                 <div>
                   <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800 flex items-center gap-1">
-                    <span>3. Generated PDF Previews (First 5)</span>
+                    <span>3. Generated PDF Preview</span>
                     {generatingPreviews && <span className="text-cyan-500 text-[10px] lowercase italic">(regenerating...)</span>}
                   </h4>
                   <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
@@ -3107,24 +3295,51 @@ export default function Admin_Page() {
                       Displaying default mock certificate sample preview.
                     </p>
                     <div className="w-full mt-4 flex flex-col gap-4">
-                      {previewBlobUrls.map((url, idx) => (
+                      {previewBlobUrls.slice(0, 1).map((url, idx) => (
                         <div key={idx} className="border border-zinc-200 rounded-xl overflow-hidden shadow-sm bg-zinc-950">
-                          <iframe src={url + "#toolbar=0"} className="w-full h-[390px]" title="Mock Preview" />
+                          <div className="px-4 py-2 border-b border-zinc-100 flex justify-between items-center bg-zinc-50">
+                            <span className="text-[10px] font-black uppercase text-slate-500 truncate">
+                              Sample Certificate Preview
+                            </span>
+                            <a 
+                              href={url} 
+                              target="_blank" 
+                              rel="noreferrer noopener"
+                              className="p-1 px-2.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-all flex items-center gap-1 text-[10px] font-bold"
+                              title="Open full sample certificate"
+                            >
+                              <span>Open PDF</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+                          </div>
+                          <iframe src={url + "#toolbar=0&navpanes=0&scrollbar=0"} className="w-full h-[390px]" title="Mock Preview" />
                         </div>
                       ))}
                     </div>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {previewBlobUrls.map((url, index) => {
+                    {previewBlobUrls.slice(0, 1).map((url, index) => {
                       const student = registrantsForCert.filter(r => r.attended)[index] || { studentName: 'Attendant' };
                       return (
                         <div key={index} className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
                           <div className="px-4 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-100/50">
-                            <span className="text-[10px] font-black uppercase text-slate-500 truncate max-w-[280px]">
-                              {index + 1}. {student.studentName} ({student['collegeName'] || 'ARSD'})
+                            <span className="text-[10px] font-black uppercase text-slate-500 truncate max-w-[240px]">
+                              {student.studentName} ({student['collegeName'] || 'ARSD'})
                             </span>
-                            <span className="text-[9px] font-mono font-bold text-emerald-500 leading-none bg-emerald-50 px-2 py-0.5 rounded-full">Attended</span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-mono font-bold text-emerald-500 leading-none bg-emerald-50 px-2 py-1 rounded-full">Attended</span>
+                              <a 
+                                href={url} 
+                                target="_blank" 
+                                rel="noreferrer noopener"
+                                className="p-1 px-2.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-all flex items-center gap-1 text-[10px] font-bold"
+                                title="Open full certificate"
+                              >
+                                <span>Open PDF</span>
+                                <ExternalLink className="w-3 h-3" />
+                              </a>
+                            </div>
                           </div>
                           <div className="bg-zinc-800">
                             <iframe 
