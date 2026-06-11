@@ -617,7 +617,7 @@ export default function Admin_Page() {
 </div>
         `;
 
-        await fetch(appsScriptUrl, {
+        const response = await fetch(appsScriptUrl, {
           method: "POST",
           headers: { "Content-Type": "text/plain" },
           body: JSON.stringify({
@@ -629,6 +629,11 @@ export default function Admin_Page() {
             pdfBase64: pdfBase64
           })
         });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to send email for ${student.studentName}: ${errorText}`);
+        }
 
         sentCount++;
       }

@@ -435,7 +435,19 @@ export default function EventDetail_Page() {
     </div>
   );
 
-  const isPast = event.status === 'Past';
+  const isExpired = (dateStr: string) => {
+    try {
+      const eventDate = new Date(dateStr);
+      const now = new Date();
+      eventDate.setHours(0, 0, 0, 0);
+      now.setHours(0, 0, 0, 0);
+      return eventDate < now;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const isPast = event.status === 'Past' || isExpired(event.date);
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-16">
