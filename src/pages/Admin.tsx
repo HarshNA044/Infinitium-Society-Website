@@ -629,14 +629,14 @@ export default function Admin_Page() {
     <p style="color: #14b8a6; margin: 5px 0 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;">Atma Ram Sanatan Dharma College</p>
   </div>
   <div style="padding: 30px; line-height: 1.6; color: #334155; background-color: #ffffff;">
-    <h2 style="color: #0f0c29; margin-top: 0; font-size: 18px;">Your certificate is here!</h2>
+    <h2 style="color: #0f0c29; margin-top: 0; font-size: 18px;">Certificate Distribution</h2>
     <p>Dear <strong>${student.studentName}</strong>,</p>
-    <p>Congratulations! Your Certificate of Participation for the event <strong>${selectedCertEvent.title}</strong> has been issued.</p>
+    <p>Congratulations! Your official personalized Certificate of Participation for the event <strong>${selectedCertEvent.title}</strong> has been issued.</p>
     <p>Please find your digital certificate attached to this email as a PDF document.</p>
-    <p>Thank you for participating actively in INFINITIUM events. We look forward to hosting you for more scientific workshops and other events in the future!</p>
+    <p>Thank you for participating actively in INFINITIUM events. We look forward to hosting you for more scientific workshops and physical activities in the future!</p>
     <p style="margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
       Warm regards,<br/>
-      <strong>Infinitium Society</strong><br/>
+      <strong>Infinitium Society Organizers</strong><br/>
       Atma Ram Sanatan Dharma College, University of Delhi
     </p>
   </div>
