@@ -1749,7 +1749,6 @@ export default function Admin_Page() {
             { id: 'members', icon: Users, label: 'Team' },
             { id: 'achievements', icon: Trophy, label: 'Achievements' },
             { id: 'gallery', icon: Camera, label: 'Gallery' },
-            { id: 'about', icon: LayoutDashboard, label: 'About Page' },
             { id: 'scanner', icon: Scan, label: 'QR Scanner' },
             { id: 'contacts', icon: Mail, label: 'Contacts' },
           ].map(tab => (
@@ -1837,30 +1836,6 @@ export default function Admin_Page() {
               className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
             >
               <Plus className="w-5 h-5" /> Add Image
-            </button>
-          )}
-
-          {activeTab === 'about' && (
-            <button 
-              onClick={async () => {
-                if (!aboutData) {
-                  alert("No data to save. Please wait for the page to load.");
-                  return;
-                }
-                setIsSavingAbout(true);
-                try {
-                  await setDoc(doc(db, 'about', 'current'), aboutData);
-                  alert("About page updated successfully!");
-                } catch (error) {
-                  handleFirestoreError(error, OperationType.WRITE, 'about/current');
-                } finally {
-                  setIsSavingAbout(false);
-                }
-              }}
-              disabled={isSavingAbout}
-              className="flex items-center gap-2 px-6 py-3 bg-brand-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-700 transition-all shadow-xl shadow-brand-600/20 border border-brand-700 disabled:opacity-50"
-            >
-              {isSavingAbout ? 'Saving...' : 'Save Changes'}
             </button>
           )}
           </div>
@@ -2381,104 +2356,6 @@ export default function Admin_Page() {
                   )}
                 </tbody>
               </table>
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'about' && aboutData && (
-          <div className="space-y-8">
-            {/* Hero Banner info */}
-            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-6">
-              <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tight mb-4">Hero Banner info</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Hero Title</label>
-                  <input
-                    value={aboutData.hero?.title || ''}
-                    onChange={(e) => setAboutData({
-                      ...aboutData,
-                      hero: { ...aboutData.hero, title: e.target.value }
-                    })}
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2 block">Hero Banner Image</label>
-                  <div className="flex items-center gap-4 bg-zinc-50 rounded-2xl p-4 border border-zinc-100">
-                    <div className="relative w-16 h-16 rounded-xl border border-zinc-200 overflow-hidden bg-zinc-100 flex items-center justify-center shrink-0">
-                      {aboutData.hero?.image ? (
-                        <img 
-                          src={aboutData.hero.image} 
-                          alt="Hero Preview" 
-                          className="w-full h-full object-cover" 
-                          referrerPolicy="no-referrer"
-                        />
-                      ) : (
-                        <div className="text-[9px] text-zinc-400 font-bold uppercase text-center p-1">No Image</div>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAboutHeroImageChange}
-                        className="hidden"
-                        id="hero-image-upload-input"
-                      />
-                      <label 
-                        htmlFor="hero-image-upload-input"
-                        className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-white hover:bg-zinc-100 border border-zinc-200 rounded-xl text-[11px] font-black uppercase tracking-wider cursor-pointer shadow-sm transition-all text-zinc-700"
-                      >
-                        <Camera className="w-3.5 h-3.5 text-zinc-500" /> Upload Image
-                      </label>
-                      <p className="text-[9.5px] text-zinc-400 font-medium mt-1 uppercase tracking-wider">JPEG or PNG, scaled to 1000x600px</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Hero Paragraph</label>
-                <textarea
-                  value={aboutData.hero?.paragraph || ''}
-                  onChange={(e) => setAboutData({
-                    ...aboutData,
-                    hero: { ...aboutData.hero, paragraph: e.target.value }
-                  })}
-                  className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-medium h-24"
-                />
-              </div>
-            </div>
-
-            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-6">
-              <h2 className="text-xl font-black text-zinc-900 uppercase tracking-tight mb-4">Society Objectives</h2>
-              {aboutData.objectives?.map((obj: any, idx: number) => (
-                <div key={obj.id || idx} className="p-6 bg-zinc-50 rounded-2xl border-2 border-zinc-100 space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Objective Title</label>
-                    <input
-                      value={obj.title || ''}
-                      onChange={(e) => {
-                        const flexibleObjs = [...aboutData.objectives];
-                        flexibleObjs[idx] = { ...flexibleObjs[idx], title: e.target.value };
-                        setAboutData({ ...aboutData, objectives: flexibleObjs });
-                      }}
-                      className="w-full px-5 py-4 bg-white rounded-2xl border-2 border-zinc-100 text-sm font-bold"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Objective Text</label>
-                    <textarea
-                      value={obj.text || ''}
-                      onChange={(e) => {
-                        const flexibleObjs = [...aboutData.objectives];
-                        flexibleObjs[idx] = { ...flexibleObjs[idx], text: e.target.value };
-                        setAboutData({ ...aboutData, objectives: flexibleObjs });
-                      }}
-                      className="w-full px-5 py-4 bg-white rounded-2xl border-2 border-zinc-100 text-sm font-medium h-20"
-                    />
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         )}
