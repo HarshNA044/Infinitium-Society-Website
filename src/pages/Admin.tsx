@@ -56,9 +56,11 @@ export default function Admin_Page() {
   const [scanResult, setScanResult] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [selectedScanEventId, setSelectedScanEventId] = useState<string>('');
+  const [lastScannedStudent, setLastScannedStudent] = useState<string | null>(null);
   
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const ScannerTimeout = useRef<NodeJS.Timeout | null>(null);
+  const lastScanUiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isProcessingRef = useRef(false);
 
   // New states for expanded control
@@ -1508,6 +1510,14 @@ export default function Admin_Page() {
               ticketId: decodedText
             });
             
+            setLastScannedStudent(regData.studentName || "Attendee");
+            if (lastScanUiTimeoutRef.current) {
+              clearTimeout(lastScanUiTimeoutRef.current);
+            }
+            lastScanUiTimeoutRef.current = setTimeout(() => {
+              setLastScannedStudent(null);
+            }, 3000);
+            
             loadFirebaseData();
           } catch (err: any) {
             console.error("Scan error:", err);
@@ -1528,6 +1538,7 @@ export default function Admin_Page() {
     return () => {
       stopScanner();
       if (ScannerTimeout.current) clearTimeout(ScannerTimeout.current);
+      if (lastScanUiTimeoutRef.current) clearTimeout(lastScanUiTimeoutRef.current);
     };
   }, [isScanning, activeTab, selectedScanEventId]);
 
@@ -2112,6 +2123,26 @@ export default function Admin_Page() {
                       </td>
                       <td className="px-8 py-5 text-right">
                         <div className="flex gap-3 justify-end items-center">
+                          {e.sheetId ? (
+                            <a
+                              href={e.sheetId.startsWith('http') ? e.sheetId : `https://docs.google.com/spreadsheets/d/${e.sheetId}/edit`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              title="Open registration sheet (Google Sheets / Excel)"
+                              className="p-2.5 bg-emerald-50 hover:bg-emerald-100 rounded-xl text-emerald-600 hover:text-emerald-900 transition-all border border-emerald-100 flex items-center justify-center gap-1.5 font-bold text-xs px-3.5"
+                              id={`sheet-link-${e.id}`}
+                            >
+                              <ExternalLink className="w-4 h-4 text-emerald-500" />
+                              <span>Sheet</span>
+                            </a>
+                          ) : (
+                            <span 
+                              title="No sheet ID configured for this event"
+                              className="p-2.5 bg-zinc-50 border border-zinc-100 text-zinc-400 rounded-xl text-xs font-semibold cursor-not-allowed select-none inline-flex items-center gap-1.5 px-3.5"
+                            >
+                              <span>No Sheet</span>
+                            </span>
+                          )}
                           <button
                             onClick={() => {
                               setSelectedCertEvent(e);
@@ -2406,29 +2437,30 @@ export default function Admin_Page() {
 
                 {isScanning && (
                   <div className="border border-zinc-100 rounded-3xl overflow-hidden shadow-2xl relative bg-zinc-50">
-                    <div className="absolute top-4 left-4 z-10 bg-emerald-500/95 backdrop-blur-sm text-white text-[10px] font-black tracking-widest px-3 py-1.5 rounded-full animate-pulse flex items-center gap-1.5 shadow-md">
-                      <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
-                      ONLINE & ACTIVE
-                    </div>
+                    {lastScannedStudent ? (
+                      <div className="absolute top-4 left-4 right-4 z-10 bg-emerald-600/95 backdrop-blur-sm text-white text-xs font-black tracking-wide px-4 py-3 rounded-2xl flex items-center gap-2 shadow-lg border border-emerald-400">
+                        <CheckCircle className="w-5 h-5 text-white shrink-0" />
+                        <span className="truncate">{lastScannedStudent} Check-In Successful!</span>
+                      </div>
+                    ) : (
+                      <div className="absolute top-4 left-4 z-10 bg-emerald-500/95 backdrop-blur-sm text-white text-[10px] font-black tracking-widest px-3 py-1.5 rounded-full animate-pulse flex items-center gap-1.5 shadow-md">
+                        <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
+                        ONLINE & ACTIVE
+                      </div>
+                    )}
                     <div id="reader" className="w-full max-w-md mx-auto aspect-square"></div>
                   </div>
                 )}
               </div>
             )}
 
-            {scanResult && (
-              <div className={`p-6 rounded-3xl border-2 ${scanResult.loading ? 'bg-zinc-50 border-zinc-100 text-zinc-600' : scanResult.success ? 'bg-emerald-50 border-emerald-100 text-emerald-900' : 'bg-red-50 border-red-100 text-red-900'} transition-all text-center space-y-3`}>
+            {scanResult && (scanResult.loading || !scanResult.success) && (
+              <div className={`p-6 rounded-3xl border-2 ${scanResult.loading ? 'bg-zinc-50 border-zinc-100 text-zinc-600' : 'bg-red-50 border-red-100 text-red-900'} transition-all text-center space-y-3`}>
                 {scanResult.loading ? (
                   <div className="flex items-center justify-center gap-3">
                     <div className="w-5 h-5 border-2 border-zinc-200 border-t-zinc-600 rounded-full animate-spin"></div>
                     <span className="font-bold uppercase tracking-widest text-xs">Processing check-in...</span>
                   </div>
-                ) : scanResult.success ? (
-                  <>
-                    <h3 className="text-lg font-black uppercase text-emerald-800">Success! Checked-In</h3>
-                    <p className="text-sm font-bold">{scanResult.student?.studentName || 'Attendee'} ({scanResult.student?.rollNo || 'N/A'})</p>
-                    <p className="text-xs font-semibold uppercase">{scanResult.alreadyMarked ? '⚠️ Attendance already logged earlier' : '✓ Attendance marked successfully'}</p>
-                  </>
                 ) : (
                   <>
                     <h3 className="text-lg font-black uppercase text-red-800">Check-in Failed</h3>
