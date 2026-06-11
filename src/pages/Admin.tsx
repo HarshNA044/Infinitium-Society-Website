@@ -615,6 +615,11 @@ export default function Admin_Page() {
         console.log("DEBUG: student object for certificate:", student);
         console.log("DEBUG: email recipient:", emailRecipient);
 
+        if (!emailRecipient || typeof emailRecipient !== 'string' || !emailRecipient.includes('@')) {
+          console.error("Skipping: Invalid or missing email for student", student.studentName);
+          continue; 
+        }
+
         // 3. Dispatch individually using 'send_certificate' to Apps Script
         const emailSubject = `🎓 Certificate of Participation: "${selectedCertEvent.title}"`;
         const emailBody = `
@@ -643,13 +648,14 @@ export default function Admin_Page() {
         
         const payload = {
             type: "send_certificate",
+            sheetId: selectedCertEvent.sheetId,
             email: emailRecipient,
             subject: emailSubject,
             message: emailBody,
             fileName: `Certificate_${student.studentName.replace(/\s+/g, '_')}.pdf`,
             pdfBase64: pdfBase64
         };
-        console.log("DEBUG: Sending payload:", payload);
+        console.log("DEBUG: Sending payload to Apps Script:", payload);
 
         const response = await fetch(appsScriptUrl, {
           method: "POST",
@@ -657,9 +663,13 @@ export default function Admin_Page() {
           body: JSON.stringify(payload)
         });
 
+        const resText = await response.text();
         if (!response.ok) {
-          const errorText = await response.text();
-          throw new Error(`Failed to send email for ${student.studentName}: ${errorText}`);
+          throw new Error(`Failed to send email for ${student.studentName}: ${resText}`);
+        }
+
+        if (resText.includes("Error") || !resText.includes("Success")) {
+          throw new Error(`Apps Script reported error for ${student.studentName}: ${resText}`);
         }
 
         sentCount++;

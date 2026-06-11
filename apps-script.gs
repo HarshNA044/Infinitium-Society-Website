@@ -9,6 +9,53 @@ function doPost(e) {
   try {
     var data = JSON.parse(e.postData.contents);
     console.log("Processing request: " + JSON.stringify(data));
+    
+    // -----------------------------------------------------------------
+    // Actions that DO NOT require a spreadsheet
+    // -----------------------------------------------------------------
+    if (data.type === 'send_email') {
+      GmailApp.sendEmail(
+        data.email,
+        data.subject || "Event Reminder",
+        "Please find the event details below.",
+        {
+          htmlBody: data.message || ""
+        }
+      );
+      return ContentService.createTextOutput("Success");
+    }
+
+    if (data.type === 'send_certificate') {
+      var blob;
+      var fileName = data.fileName || "Certificate.pdf";
+      if (data.pdfBase64) {
+        var base64Data = data.pdfBase64;
+        if (base64Data.indexOf("base64,") !== -1) {
+          base64Data = base64Data.split("base64,")[1];
+        }
+        var decodedBytes = Utilities.base64Decode(base64Data);
+        blob = Utilities.newBlob(decodedBytes, "application/pdf", fileName);
+      }
+      
+      var mailOptions = {
+        htmlBody: data.message || "Please find your certificate attached."
+      };
+      if (blob) {
+        mailOptions.attachments = [blob];
+      }
+      
+      GmailApp.sendEmail(
+        data.email,
+        data.subject || "Event Certificate",
+        "Please find your certificate attached.",
+        mailOptions
+      );
+      return ContentService.createTextOutput("Success");
+    }
+
+    // -----------------------------------------------------------------
+    // Actions that DO require a spreadsheet
+    // -----------------------------------------------------------------
     var sheetId = data.sheetId;
     if (!sheetId) {
       return ContentService.createTextOutput("Error: Missing sheetId");
@@ -72,40 +119,7 @@ function doPost(e) {
       return ContentService.createTextOutput("Success");
     }
     
-    if (data.type === 'send_email') {
-      MailApp.sendEmail({
-        to: data.email,
-        subject: data.subject || "Event Reminder",
-        htmlBody: data.message || ""
-      });
-      return ContentService.createTextOutput("Success");
-    }
-
-    if (data.type === 'send_certificate') {
-      var blob;
-      var fileName = data.fileName || "Certificate.pdf";
-      if (data.pdfBase64) {
-        var base64Data = data.pdfBase64;
-        if (base64Data.indexOf("base64,") !== -1) {
-          base64Data = base64Data.split("base64,")[1];
-        }
-        var decodedBytes = Utilities.base64Decode(base64Data);
-        blob = Utilities.newBlob(decodedBytes, "application/pdf", fileName);
-      }
-      
-      var mailOptions = {
-        to: data.email,
-        subject: data.subject || "Event Certificate",
-        htmlBody: data.message || "Please find your certificate attached."
-      };
-      if (blob) {
-        mailOptions.attachments = [blob];
-      }
-      MailApp.sendEmail(mailOptions);
-      return ContentService.createTextOutput("Success");
-    }
-    
-    // Ensure the sheet has at least 12 columns to prevent range exception errors when getting values
+// Ensure the sheet has at least 12 columns to prevent range exception errors when getting values
     var maxCols = sheet.getMaxColumns();
     if (maxCols < 12) {
       sheet.insertColumnsAfter(maxCols, 12 - maxCols);
@@ -372,12 +386,15 @@ function sendRegistrationEmail(data) {
                  '  </div>' +
                  '</div>';
   
-      MailApp.sendEmail({
-        to: data.email,
-        subject: "Registration Confirmed: " + (data.eventTitle || "Event"),
-        htmlBody: body,
-        attachments: [blob]
-      });
+      GmailApp.sendEmail(
+        data.email,
+        "Registration Confirmed: " + (data.eventTitle || "Event"),
+        "Registration Confirmed Pass",
+        {
+          htmlBody: body,
+          attachments: [blob]
+        }
+      );
       
       console.log("Ticket PDF sent successfully to " + data.email);
     } catch (e) {
@@ -422,10 +439,13 @@ function sendContactEmailToAdmin(adminEmail, contactData) {
              '  </div>' +
              '</div>';
 
-  MailApp.sendEmail({
-    to: adminEmail,
-    replyTo: contactData.email,
-    subject: subject,
-    htmlBody: body
-  });
+  GmailApp.sendEmail(
+    adminEmail,
+    subject,
+    "New Contact Inquiry",
+    {
+      replyTo: contactData.email,
+      htmlBody: body
+    }
+  );
 }
