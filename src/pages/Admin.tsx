@@ -1336,7 +1336,7 @@ export default function Admin_Page() {
         scannerRef.current = new Html5QrcodeScanner(
           "reader", 
           { 
-            fps: 10, 
+            fps: 25, 
             qrbox: { width: 250, height: 250 },
             facingMode: isMobile ? { exact: "environment" } : "user",
             supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
@@ -1470,9 +1470,13 @@ export default function Admin_Page() {
           } catch (err: any) {
             console.error("Scan error:", err);
             setScanResult({ success: false, error: err.message });
+          } finally {
+            // Keep scanner open for the next scan.
+            // Reset the processing state after a brief 1.5-second cooldown to avoid rapid double-scanning of the same ticket.
+            setTimeout(() => {
+              isProcessingRef.current = false;
+            }, 1500);
           }
-          stopScanner();
-          setIsScanning(false);
         }, (err) => {
           // ignore errors
         });
@@ -2483,6 +2487,10 @@ export default function Admin_Page() {
 
                 {isScanning && (
                   <div className="border border-zinc-100 rounded-3xl overflow-hidden shadow-2xl relative bg-zinc-50">
+                    <div className="absolute top-4 left-4 z-10 bg-emerald-500/95 backdrop-blur-sm text-white text-[10px] font-black tracking-widest px-3 py-1.5 rounded-full animate-pulse flex items-center gap-1.5 shadow-md">
+                      <span className="w-2 h-2 bg-white rounded-full animate-ping"></span>
+                      ONLINE & ACTIVE
+                    </div>
                     <div id="reader" className="w-full max-w-md mx-auto aspect-square"></div>
                   </div>
                 )}
