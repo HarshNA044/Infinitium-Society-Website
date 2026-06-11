@@ -65,19 +65,31 @@ export default function Gallery_Page() {
                 </div>
               </div>
               <div className="mt-6 px-2">
-                <div className="flex justify-between items-start mb-2">
+                <div className="flex justify-between items-start mb-2 gap-4">
                   <h3 className="text-lg font-black text-slate-900 uppercase tracking-tighter leading-none">{item.title}</h3>
-                  <div className="flex flex-col items-end gap-1">
+                  <div className="flex flex-col items-end gap-1 shrink-0">
                     {item.category && (
                       <span className="text-[10px] font-black text-brand-600 uppercase tracking-widest bg-brand-50 px-2 py-0.5 rounded-md border border-brand-100">
                         {item.category}
                       </span>
                     )}
-                    {item.eventDate && (
-                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">{item.eventDate}</span>
-                    )}
                   </div>
                 </div>
+
+                {/* Highly structured tag badges for Event Name and Event Date */}
+                {item.eventDate && (
+                  <div className="flex flex-wrap gap-1.5 mb-2.5" id={`gallery-tags-${item.id || idx}`}>
+                    <span className="inline-flex items-center gap-1.5 text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                      📅 {item.eventDate}
+                    </span>
+                    {item.category === 'Events' && (
+                      <span className="inline-flex items-center gap-1.5 text-[9px] font-black text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-md uppercase tracking-wider max-w-[150px] truncate" title={item.title}>
+                        🏷️ Event: {item.title}
+                      </span>
+                    )}
+                  </div>
+                )}
+
                 <p className="text-xs text-slate-500 font-medium leading-relaxed line-clamp-2">{item.description}</p>
               </div>
             </motion.div>

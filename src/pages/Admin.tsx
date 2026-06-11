@@ -34,6 +34,7 @@ export default function Admin_Page() {
   const [activeTab, setActiveTab] = useState('overview');
   const [fetchedStats, setFetchedStats] = useState<Record<string, { registrations: number; attendance: number; societyAttendance?: number }>>({});
   const [isFetchingStats, setIsFetchingStats] = useState(false);
+  const [isFirebaseLoading, setIsFirebaseLoading] = useState(true);
   const [selectedEventDate, setSelectedEventDate] = useState<string>('');
   const [events, setEvents] = useState([]);
   const [members, setMembers] = useState<any[]>([]);
@@ -73,6 +74,52 @@ export default function Admin_Page() {
   const [editingGallery, setEditingGallery] = useState<any>(null);
   const [isImageProcessing, setIsImageProcessing] = useState(false);
   const [isSubmittingGallery, setIsSubmittingGallery] = useState(false);
+  const [isDeletingHighlights, setIsDeletingHighlights] = useState(false);
+  const [showDeleteHighlightsConfirm, setShowDeleteHighlightsConfirm] = useState(false);
+  const [highlightDeleteStatus, setHighlightDeleteStatus] = useState<string | null>(null);
+
+  const handleDeleteAllHighlights = async () => {
+    setIsDeletingHighlights(true);
+    setHighlightDeleteStatus('Scanning for highlight images...');
+    try {
+      // 1. Delete all gallery items with category === 'Events' or connected eventId
+      const targetGalleryItems = gallery.filter((g: any) => g.category === 'Events' || !!g.eventId);
+      let count = 0;
+      for (const item of targetGalleryItems) {
+        if (item.id) {
+          await deleteDoc(doc(db, 'gallery', item.id));
+          count++;
+        }
+      }
+
+      setHighlightDeleteStatus(`Removed ${count} images from gallery. Clearing event subcollections...`);
+
+      // 2. Clear subcollection 'photos' for all events
+      let subcount = 0;
+      for (const e of events as any) {
+        if (e.id) {
+          const photosRef = collection(db, 'events', e.id, 'photos');
+          const photosSnap = await getDocs(photosRef);
+          for (const photoDoc of photosSnap.docs) {
+            await deleteDoc(doc(db, 'events', e.id, 'photos', photoDoc.id));
+            subcount++;
+          }
+        }
+      }
+
+      setHighlightDeleteStatus(`Success! Cleaned up ${count} gallery references and ${subcount} subcollection files.`);
+      await loadFirebaseData();
+      setTimeout(() => {
+        setShowDeleteHighlightsConfirm(false);
+        setHighlightDeleteStatus(null);
+      }, 1800);
+    } catch (err: any) {
+      console.error(err);
+      setHighlightDeleteStatus('Error: ' + (err.message || err));
+    } finally {
+      setIsDeletingHighlights(false);
+    }
+  };
 
   // About management state
   const [aboutData, setAboutData] = useState<any>(null);
@@ -952,6 +999,7 @@ export default function Admin_Page() {
   };
 
   const loadFirebaseData = async () => {
+    setIsFirebaseLoading(true);
     try {
       // Load Members
       try {
@@ -1052,6 +1100,8 @@ export default function Admin_Page() {
       }
     } catch (error: any) {
       console.error("Error loading Firebase data", error);
+    } finally {
+      setIsFirebaseLoading(false);
     }
   };
 
@@ -1554,12 +1604,23 @@ export default function Admin_Page() {
   const COLORS = ['#14b8a6', '#0d9488', '#0f766e', '#115e59']; // brand-500, 600, 700, 800
 
   const liveStats = React.useMemo(() => {
+    const sheetEvents = events.filter((e: any) => e.sheetId);
+    if (sheetEvents.length === 0) {
+      return {
+        totalRegistrations: 0,
+        totalAttendance: 0,
+        totalSocietyAttendance: 0,
+        completionRate: 0,
+        noSheets: true,
+      };
+    }
+
     let totalRegistrations = 0;
     let totalAttendance = 0;
     let totalSocietyAttendance = 0;
     let hasLive = false;
 
-    events.forEach((e: any) => {
+    sheetEvents.forEach((e: any) => {
       let reg = e.stats?.registrations || 0;
       let att = e.stats?.attendance || 0;
       let soc = e.stats?.societyAttendance || 0;
@@ -1588,16 +1649,17 @@ export default function Admin_Page() {
     });
 
     return {
-      totalRegistrations: hasLive ? totalRegistrations : stats.totalRegistrations,
-      totalAttendance: hasLive ? totalAttendance : stats.totalAttendance,
+      totalRegistrations,
+      totalAttendance,
       totalSocietyAttendance,
-      completionRate: (hasLive ? totalRegistrations : stats.totalRegistrations) > 0 
-        ? Math.round(((hasLive ? totalAttendance : stats.totalAttendance) / (hasLive ? totalRegistrations : stats.totalRegistrations)) * 100) 
-        : 0
+      completionRate: totalRegistrations > 0 
+        ? Math.round((totalAttendance / totalRegistrations) * 100) 
+        : 0,
+      noSheets: false,
     };
-  }, [events, fetchedStats, stats]);
+  }, [events, fetchedStats]);
 
-  const chartData = events.map((e: any) => {
+  const chartData = events.filter((e: any) => e.sheetId).map((e: any) => {
     let reg = e.stats?.registrations || 0;
     let att = e.stats?.attendance || 0;
     if (fetchedStats[e.id] !== undefined) {
@@ -1622,7 +1684,7 @@ export default function Admin_Page() {
     };
   });
 
-  const typeData = events.reduce((acc: any, e: any) => {
+  const typeData = events.filter((e: any) => e.sheetId).reduce((acc: any, e: any) => {
     const type = e.type || 'Other';
     const eventName = e.title || 'Untitled Event';
     const existing = acc.find((item: any) => item.name === type);
@@ -1863,14 +1925,16 @@ export default function Admin_Page() {
                   </div>
                 </div>
                 <p className="text-4xl font-black text-zinc-900 tracking-tighter mt-1">
-                  {isFetchingStats ? (
+                  {isFirebaseLoading || isFetchingStats ? (
                     <span className="text-2xl font-bold text-zinc-400 animate-pulse">Fetching...</span>
+                  ) : liveStats.noSheets ? (
+                    <span className="text-sm font-black text-rose-500 uppercase tracking-widest">Sheet Not Available</span>
                   ) : (
                     liveStats.totalRegistrations
                   )}
                 </p>
                 <div className="mt-6 h-1 w-full bg-zinc-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand-500 transition-all duration-1000" style={{ width: `${liveStats.totalRegistrations > 0 ? 80 : 0}%` }}></div>
+                  <div className="h-full bg-brand-500 transition-all duration-1000" style={{ width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets && liveStats.totalRegistrations > 0 ? 80 : 0}%` }}></div>
                 </div>
               </div>
 
@@ -1882,14 +1946,16 @@ export default function Admin_Page() {
                   </div>
                 </div>
                 <p className="text-4xl font-black tracking-tighter mt-1">
-                  {isFetchingStats ? (
+                  {isFirebaseLoading || isFetchingStats ? (
                     <span className="text-2xl font-bold text-brand-100 animate-pulse">Fetching...</span>
+                  ) : liveStats.noSheets ? (
+                    <span className="text-sm font-black text-white/80 uppercase tracking-widest">Sheet Not Available</span>
                   ) : (
                     liveStats.totalAttendance
                   )}
                 </p>
                 <div className="mt-6 h-1 w-full bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white transition-all duration-1000" style={{ width: `${liveStats.totalRegistrations > 0 ? (liveStats.totalAttendance / liveStats.totalRegistrations) * 100 : 0}%` }}></div>
+                  <div className="h-full bg-white transition-all duration-1000" style={{ width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets && liveStats.totalRegistrations > 0 ? (liveStats.totalAttendance / liveStats.totalRegistrations) * 100 : 0}%` }}></div>
                 </div>
                 <div className="absolute right-0 top-0 w-24 h-24 bg-white/[0.03] rounded-full blur-xl pointer-events-none"></div>
               </div>
@@ -1902,14 +1968,16 @@ export default function Admin_Page() {
                   </div>
                 </div>
                 <p className="text-4xl font-black tracking-tighter mt-1">
-                  {isFetchingStats ? (
+                  {isFirebaseLoading || isFetchingStats ? (
                     <span className="text-2xl font-bold text-teal-100 animate-pulse">Fetching...</span>
+                  ) : liveStats.noSheets ? (
+                    <span className="text-sm font-black text-white/80 uppercase tracking-widest">Sheet Not Available</span>
                   ) : (
                     liveStats.totalSocietyAttendance
                   )}
                 </p>
                 <div className="mt-6 h-1 w-full bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white transition-all duration-1000" style={{ width: `${liveStats.totalAttendance > 0 ? (liveStats.totalSocietyAttendance / liveStats.totalAttendance) * 100 : 0}%` }}></div>
+                  <div className="h-full bg-white transition-all duration-1000" style={{ width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets && liveStats.totalAttendance > 0 ? (liveStats.totalSocietyAttendance / liveStats.totalAttendance) * 100 : 0}%` }}></div>
                 </div>
                 <div className="absolute right-0 top-0 w-24 h-24 bg-white/[0.03] rounded-full blur-xl pointer-events-none"></div>
               </div>
@@ -1922,14 +1990,16 @@ export default function Admin_Page() {
                   </div>
                 </div>
                 <p className="text-4xl font-black tracking-tighter mt-1">
-                  {isFetchingStats ? (
+                  {isFirebaseLoading || isFetchingStats ? (
                     <span className="text-2xl font-bold text-amber-950/70 animate-pulse">Fetching...</span>
+                  ) : liveStats.noSheets ? (
+                    <span className="text-sm font-black text-amber-950/80 uppercase tracking-widest">Sheet Not Available</span>
                   ) : (
                     `${liveStats.completionRate}%`
                   )}
                 </p>
                 <div className="mt-6 h-1 w-full bg-amber-950/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-950 transition-all duration-1000" style={{ width: `${liveStats.completionRate}%` }}></div>
+                  <div className="h-full bg-amber-950 transition-all duration-1000" style={{ width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets ? liveStats.completionRate : 0}%` }}></div>
                 </div>
               </div>
             </div>
@@ -1949,7 +2019,19 @@ export default function Admin_Page() {
                       </div>
                    </div>
                  </div>
-                 <ResponsiveContainer width="100%" height="80%">
+                 {isFirebaseLoading || isFetchingStats ? (
+                   <div className="h-[80%] flex flex-col items-center justify-center text-center gap-2">
+                     <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+                     <p className="text-zinc-500 font-extrabold text-xs uppercase tracking-wider animate-pulse">Fetching Statistics...</p>
+                   </div>
+                 ) : liveStats.noSheets ? (
+                   <div className="h-[80%] flex flex-col items-center justify-center text-center gap-2">
+                     <XCircle className="w-12 h-12 text-rose-400" />
+                     <p className="text-zinc-500 font-extrabold text-xs uppercase tracking-wider">Sheet Not Available</p>
+                     <p className="text-[10px] text-zinc-400 max-w-xs px-4">There are no active Google sheets connected to any event to generate stats.</p>
+                   </div>
+                 ) : (
+                   <ResponsiveContainer width="100%" height="80%">
                    <BarChart data={chartData}>
                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                      <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} />
@@ -1962,65 +2044,84 @@ export default function Admin_Page() {
                      <Bar dataKey="attendance" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
                    </BarChart>
                  </ResponsiveContainer>
+                 )}
                </div>
                
                <div className="bento-card min-h-[410px] flex flex-col justify-between">
                  <div>
                    <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-4">Event Distribution</h3>
-                   <div className="h-[180px]">
-                     <ResponsiveContainer width="100%" height="100%">
-                       <PieChart>
-                         <Pie
-                           data={typeData}
-                           innerRadius={50}
-                           outerRadius={70}
-                           paddingAngle={5}
-                           dataKey="value"
-                         >
-                           {typeData.map((_, index) => (
-                             <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                           ))}
-                         </Pie>
-                         <Tooltip 
-                           content={({ active, payload }) => {
-                             if (active && payload && payload.length) {
-                               const data = payload[0].payload;
-                               return (
-                                 <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-xl text-[11px] font-bold">
-                                   <p className="text-slate-800 uppercase mb-1.5">{data.name}: {data.value}</p>
-                                   <div className="flex flex-col gap-1 border-t border-slate-50 pt-1.5 max-w-[200px]">
-                                     {(data.events || []).map((evt: string, i: number) => (
-                                       <span key={i} className="text-[9px] text-zinc-500 font-medium capitalize truncate block" title={evt}>
-                                         • {evt}
-                                       </span>
-                                     ))}
+                   {isFirebaseLoading || isFetchingStats ? (
+                     <div className="h-[180px] flex flex-col items-center justify-center text-center gap-1.5">
+                       <div className="w-10 h-10 border-4 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                       <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider animate-pulse">Fetching Categories...</p>
+                     </div>
+                   ) : liveStats.noSheets ? (
+                     <div className="h-[180px] flex flex-col items-center justify-center text-center gap-1.5">
+                       <XCircle className="w-10 h-10 text-rose-400" />
+                       <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Sheet Not Available</p>
+                     </div>
+                   ) : (
+                     <div className="h-[180px]">
+                       <ResponsiveContainer width="100%" height="100%">
+                         <PieChart>
+                           <Pie
+                             data={typeData}
+                             innerRadius={50}
+                             outerRadius={70}
+                             paddingAngle={5}
+                             dataKey="value"
+                           >
+                             {typeData.map((_, index) => (
+                               <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                             ))}
+                           </Pie>
+                           <Tooltip 
+                             content={({ active, payload }) => {
+                               if (active && payload && payload.length) {
+                                 const data = payload[0].payload;
+                                 return (
+                                   <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-xl text-[11px] font-bold">
+                                     <p className="text-slate-800 uppercase mb-1.5">{data.name}: {data.value}</p>
+                                     <div className="flex flex-col gap-1 border-t border-slate-50 pt-1.5 max-w-[200px]">
+                                       {(data.events || []).map((evt: string, i: number) => (
+                                         <span key={i} className="text-[9px] text-zinc-500 font-medium capitalize truncate block" title={evt}>
+                                           • {evt}
+                                         </span>
+                                       ))}
+                                     </div>
                                    </div>
-                                 </div>
-                               );
-                             }
-                             return null;
-                           }}
-                         />
-                       </PieChart>
-                     </ResponsiveContainer>
-                   </div>
+                                 );
+                               }
+                               return null;
+                             }}
+                           />
+                         </PieChart>
+                       </ResponsiveContainer>
+                     </div>
+                   )}
                  </div>
                  <div className="mt-4 flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
-                    {typeData.map((item, index) => (
-                      <div key={item.name} className="flex flex-col gap-1 p-2 rounded-xl bg-slate-50 border border-slate-100 text-left w-full">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></div>
-                          <span className="text-[9px] font-black text-slate-700 uppercase">{item.name}: {item.value}</span>
+                    {isFirebaseLoading || isFetchingStats ? (
+                      <p className="text-[9px] text-zinc-400 font-medium text-center uppercase tracking-wide w-full py-4 animate-pulse">Loading categories...</p>
+                    ) : liveStats.noSheets ? (
+                      <p className="text-[9px] text-zinc-400 font-medium text-center uppercase tracking-wide w-full py-4">No categories to display</p>
+                    ) : (
+                      typeData.map((item, index) => (
+                        <div key={item.name} className="flex flex-col gap-1 p-2 rounded-xl bg-slate-50 border border-slate-100 text-left w-full">
+                          <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></div>
+                            <span className="text-[9px] font-black text-slate-700 uppercase">{item.name}: {item.value}</span>
+                          </div>
+                          <div className="pl-3 flex flex-col gap-0.5">
+                            {(item.events || []).map((evt: string, i: number) => (
+                              <span key={i} className="text-[8px] font-bold text-slate-400 capitalize block truncate" title={evt}>
+                                • {evt}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                        <div className="pl-3 flex flex-col gap-0.5">
-                          {(item.events || []).map((evt: string, i: number) => (
-                            <span key={i} className="text-[8px] font-bold text-slate-400 capitalize block truncate" title={evt}>
-                              • {evt}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    )}
                  </div>
                </div>
             </div>
@@ -2680,6 +2781,48 @@ export default function Admin_Page() {
                     </label>
                   </div>
 
+                  <div className="space-y-3 p-5 bg-zinc-50 rounded-2xl border-2 border-zinc-100/80">
+                    <div className="flex justify-between items-center">
+                      <label className="text-[10px] font-black text-zinc-900 uppercase tracking-widest pl-1">Event Highlights (Multiple Photos)</label>
+                      <span className="text-[9px] font-bold text-zinc-400 uppercase">Optional</span>
+                    </div>
+                    <div className="border-2 border-dashed border-zinc-200 hover:border-brand-500 rounded-xl p-5 bg-white relative flex flex-col items-center justify-center cursor-pointer transition-all min-h-[100px]">
+                      <div className="flex flex-col items-center gap-1 text-center text-zinc-400">
+                        <Camera className="w-6 h-6 text-zinc-300" />
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-700">Browse Highlight Pictures</span>
+                        <span className="text-[8px] font-medium text-zinc-400 uppercase tracking-tight">Supports multiple file selection</span>
+                      </div>
+                      <input 
+                        type="file" 
+                        multiple 
+                        accept="image/*" 
+                        onChange={handleEventMediaChange}
+                        className="absolute inset-0 opacity-0 cursor-pointer"
+                        id="event-highlights-uploader"
+                      />
+                    </div>
+                    {isEventImageProcessing && (
+                      <p className="text-[10px] text-cyan-600 font-black animate-pulse uppercase tracking-widest pl-1">Processing and compressing images...</p>
+                    )}
+                    {eventMediaPreviews.length > 0 && (
+                      <div className="grid grid-cols-4 gap-3.5 pt-3 border-t border-zinc-150" id="event-media-previews-list">
+                        {eventMediaPreviews.map((src, idx) => (
+                          <div key={idx} className="relative aspect-square group/hl-pic rounded-lg overflow-hidden border border-zinc-200/80 bg-zinc-100 shadow-sm">
+                            <img src={src} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="Highlight preview" />
+                            <button
+                              type="button"
+                              onClick={() => removeEventMedia(idx)}
+                              className="absolute top-1 right-1 p-1 bg-red-600/90 hover:bg-red-700 hover:scale-105 text-white rounded-full transition-all shadow-md"
+                              title="Delete picture from highlight session"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Description</label>
                     <textarea
@@ -2901,6 +3044,24 @@ export default function Admin_Page() {
                                        deleteConfirm.type === 'event' ? 'events' :
                                        deleteConfirm.type === 'gallery' ? 'gallery' : 'achievements';
                            try {
+                              if (deleteConfirm.type === 'gallery') {
+                                 // Fetch the gallery document to see if it is associated with an event
+                                 const galleryItemSnap = await getDoc(doc(db, 'gallery', deleteConfirm.id));
+                                 if (galleryItemSnap.exists()) {
+                                    const gData = galleryItemSnap.data();
+                                    if (gData && gData.eventId && gData.src) {
+                                       // Synchronously locate and delete matching image from event photos subcollection
+                                       const photosRef = collection(db, 'events', gData.eventId, 'photos');
+                                       const photosSnap = await getDocs(photosRef);
+                                       for (const photoDoc of photosSnap.docs) {
+                                          if (photoDoc.data().src === gData.src) {
+                                             await deleteDoc(doc(db, 'events', gData.eventId, 'photos', photoDoc.id));
+                                          }
+                                       }
+                                    }
+                                 }
+                              }
+
                               await deleteDoc(doc(db, col, deleteConfirm.id));
                               loadFirebaseData();
                               setDeleteConfirm(null);
@@ -2912,6 +3073,51 @@ export default function Admin_Page() {
                      className="flex-1 py-4 bg-red-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-xl shadow-red-600/20"
                    >
                      Clear Data
+                   </button>
+                </div>
+             </motion.div>
+          </div>
+        )}
+
+        {showDeleteHighlightsConfirm && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+             <div className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm" onClick={() => !isDeletingHighlights && setShowDeleteHighlightsConfirm(false)} />
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.9 }}
+               animate={{ opacity: 1, scale: 1 }}
+               exit={{ opacity: 0, scale: 0.9 }}
+               className="relative bg-white w-full max-w-sm rounded-[2rem] p-8 md:p-10 shadow-2xl text-center border border-zinc-100"
+             >
+                <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md shadow-rose-100 animate-bounce">
+                  <Trash2 className="w-8 h-8" />
+                </div>
+                <h3 className="text-xl font-black text-rose-600 mb-3 tracking-tighter uppercase">Confirm Mass Deletion</h3>
+                <p className="text-xs text-zinc-500 mb-6 font-semibold leading-relaxed">
+                  Are you sure you want to delete <strong className="text-rose-600 uppercase font-black">all</strong> event highlights photos from the database? This will clear all attached photographs under every single event highlights container AND their gallery directory shadows.
+                </p>
+
+                {highlightDeleteStatus && (
+                  <div className="mb-6 p-4 rounded-xl bg-zinc-950 text-emerald-400 text-[9px] font-mono whitespace-pre-wrap leading-relaxed text-left max-h-[120px] overflow-y-auto border border-zinc-800">
+                    {highlightDeleteStatus}
+                  </div>
+                )}
+                
+                <div className="flex gap-4">
+                   <button 
+                     type="button"
+                     disabled={isDeletingHighlights}
+                     onClick={() => setShowDeleteHighlightsConfirm(false)}
+                     className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                   >
+                     Cancel
+                   </button>
+                   <button 
+                     type="button"
+                     disabled={isDeletingHighlights}
+                     onClick={handleDeleteAllHighlights}
+                     className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-red-600/20 disabled:opacity-50"
+                   >
+                     {isDeletingHighlights ? "Wiping..." : "Confirm Delete"}
                    </button>
                 </div>
              </motion.div>
