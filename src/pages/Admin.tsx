@@ -49,6 +49,10 @@ export default function Admin_Page() {
   const [eventMediaPreviews, setEventMediaPreviews] = useState<string[]>([]);
   const [isEventImageProcessing, setIsEventImageProcessing] = useState(false);
   const [isEventSubmitting, setIsEventSubmitting] = useState(false);
+  const [selectedHour, setSelectedHour] = useState<string>('10');
+  const [selectedMinute, setSelectedMinute] = useState<string>('00');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('AM');
+  const [showClockDropdown, setShowClockDropdown] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'member' | 'event' | 'gallery' | 'achievement' } | null>(null);
   
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -754,6 +758,32 @@ export default function Admin_Page() {
       generatePreviews().catch(err => console.error("Error generating previews:", err));
     }
   }, [selectedCertEvent, pdfTemplateBytes, selectedPlaceholders, textPositions, registrantsForCert]);
+
+  // Sync state when event modal opens or editingEvent changes
+  useEffect(() => {
+    if (showAddEvent) {
+      if (editingEvent?.startTime) {
+        const timeStr = editingEvent.startTime.trim();
+        // Match standard patterns e.g. "10:30 AM", "02:15 PM", "10:00AM", "12:00"
+        const match = timeStr.match(/^(\d{1,2}):(\d{2})\s*(AM|PM|am|pm)?$/i);
+        if (match) {
+          const hr = parseInt(match[1], 10);
+          setSelectedHour(hr.toString());
+          setSelectedMinute(match[2]);
+          setSelectedPeriod((match[3] || 'AM').toUpperCase());
+        } else {
+          setSelectedHour('10');
+          setSelectedMinute('00');
+          setSelectedPeriod('AM');
+        }
+      } else {
+        setSelectedHour('10');
+        setSelectedMinute('00');
+        setSelectedPeriod('AM');
+      }
+      setShowClockDropdown(false);
+    }
+  }, [showAddEvent, editingEvent]);
 
   // Contact management state
   const [contactConfig, setContactConfig] = useState<{ sheetId: string; adminEmail: string }>({ sheetId: '', adminEmail: '' });
@@ -2722,14 +2752,181 @@ export default function Admin_Page() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Start Time (Optional)</label>
-                      <input
-                        name="startTime"
-                        defaultValue={editingEvent?.startTime || ''}
-                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
-                        placeholder="e.g. 10:00 AM"
-                      />
+                    <div className="space-y-2 relative">
+                      <div className="flex justify-between items-center pl-2">
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Start Time (Optional)</label>
+                        <button
+                          type="button"
+                          onClick={() => setShowClockDropdown(!showClockDropdown)}
+                          className="text-[10px] bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-lg px-2.5 py-1.5 font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1 transition-all"
+                        >
+                          <Clock className="w-3.5 h-3.5 text-zinc-400" />
+                          <span>{showClockDropdown ? "Close Picker" : "Open Clock"}</span>
+                        </button>
+                      </div>
+
+                      <div className="relative">
+                        {/* Selected Time Display Trigger */}
+                        <div 
+                          onClick={() => setShowClockDropdown(!showClockDropdown)}
+                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold flex items-center justify-between cursor-pointer hover:border-brand-500 transition-all select-none"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                              <Clock className="w-4 h-4" />
+                            </div>
+                            <div>
+                              <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-bold">Scheduled for</p>
+                              <p className="text-sm font-black text-zinc-900 tracking-tight">
+                                {selectedHour ? `${selectedHour.padStart(2, '0')}:${selectedMinute} ${selectedPeriod}` : "No specific time selected"}
+                              </p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            {selectedHour && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedHour('');
+                                }}
+                                className="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg px-2.5 py-1 font-bold uppercase tracking-wider transition-all"
+                              >
+                                Clear
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Hidden input to pass value back to FormData */}
+                        <input
+                          type="hidden"
+                          name="startTime"
+                          value={selectedHour ? `${selectedHour.padStart(2, '0')}:${selectedMinute} ${selectedPeriod}` : ""}
+                        />
+
+                        {/* Interactive Clock Picker Dropdown Panel */}
+                        {showClockDropdown && (
+                          <div className="absolute top-full left-0 right-0 mt-3 bg-white border-2 border-zinc-100 rounded-3xl p-6 shadow-2xl z-[180] space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
+                            
+                            {/* Visual Time Preview header */}
+                            <div className="flex items-center justify-between bg-zinc-50 p-4 rounded-2xl border border-zinc-100">
+                              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Clock Preview</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-2xl font-black text-brand-600 font-mono">
+                                  {selectedHour ? selectedHour.padStart(2, '0') : '--'}
+                                </span>
+                                <span className="text-xl font-bold text-zinc-300 font-mono">:</span>
+                                <span className="text-2xl font-black text-brand-600 font-mono">
+                                  {selectedHour ? selectedMinute : '--'}
+                                </span>
+                                <span className="text-xs font-black uppercase text-zinc-400 ml-1">
+                                  {selectedHour ? selectedPeriod : ''}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Hours Grid */}
+                            <div className="space-y-2">
+                              <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">Select Hour</p>
+                              <div className="grid grid-cols-6 gap-1.5">
+                                {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map(hr => {
+                                  const isActive = selectedHour === hr;
+                                  return (
+                                    <button
+                                      key={hr}
+                                      type="button"
+                                      onClick={() => {
+                                        if (!selectedHour) {
+                                          setSelectedHour(hr);
+                                          setSelectedMinute('00');
+                                          setSelectedPeriod('AM');
+                                        } else {
+                                          setSelectedHour(hr);
+                                        }
+                                      }}
+                                      className={cn(
+                                        "py-2 px-1 rounded-xl text-xs font-black font-mono transition-all border",
+                                        isActive 
+                                          ? "bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-600/20 scale-105" 
+                                          : "bg-zinc-50 text-zinc-600 border-zinc-100 hover:bg-zinc-100"
+                                      )}
+                                    >
+                                      {hr.padStart(2, '0')}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Minutes Quick Select Grid */}
+                            <div className="space-y-2">
+                              <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">Select Minute</p>
+                              <div className="grid grid-cols-4 gap-1.5">
+                                {['00', '15', '30', '45', '10', '20', '40', '50'].map(min => {
+                                  const isActive = selectedMinute === min;
+                                  return (
+                                    <button
+                                      key={min}
+                                      type="button"
+                                      disabled={!selectedHour}
+                                      onClick={() => setSelectedMinute(min)}
+                                      className={cn(
+                                        "py-2 rounded-xl text-xs font-black font-mono transition-all border disabled:opacity-40",
+                                        isActive && selectedHour
+                                          ? "bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-600/20" 
+                                          : "bg-zinc-50 text-zinc-600 border-zinc-100 hover:bg-zinc-100"
+                                      )}
+                                    >
+                                      {min}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* AM/PM Grid and Done control */}
+                            <div className="flex gap-4 pt-1">
+                              <div className="flex-1 space-y-2">
+                                <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">AM / PM</p>
+                                <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200">
+                                  {['AM', 'PM'].map(p => {
+                                    const isActive = selectedPeriod === p;
+                                    return (
+                                      <button
+                                        key={p}
+                                        type="button"
+                                        disabled={!selectedHour}
+                                        onClick={() => setSelectedPeriod(p)}
+                                        className={cn(
+                                          "flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-40",
+                                          isActive && selectedHour
+                                            ? "bg-white text-zinc-900 shadow-sm"
+                                            : "text-zinc-500 hover:text-zinc-950"
+                                        )}
+                                      >
+                                        {p}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+
+                              <div className="flex items-end">
+                                <button
+                                  type="button"
+                                  onClick={() => setShowClockDropdown(false)}
+                                  className="py-2.5 px-5 bg-brand-950 text-white hover:bg-brand-600 transition-all rounded-xl text-[10px] font-black uppercase tracking-widest shadow-md shadow-brand-950/10"
+                                >
+                                  Done
+                                </button>
+                              </div>
+                            </div>
+
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Location</label>
