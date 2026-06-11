@@ -14,14 +14,12 @@ function doPost(e) {
     // Actions that DO NOT require a spreadsheet
     // -----------------------------------------------------------------
     if (data.type === 'send_email') {
-      GmailApp.sendEmail(
-        data.email,
-        data.subject || "Event Reminder",
-        "Please find the event details below.",
-        {
-          htmlBody: data.message || ""
-        }
-      );
+      MailApp.sendEmail({
+        to: data.email,
+        subject: data.subject || "Event Reminder",
+        body: "Please find the event details below.",
+        htmlBody: data.message || ""
+      });
       return ContentService.createTextOutput("Success");
     }
 
@@ -38,18 +36,16 @@ function doPost(e) {
       }
       
       var mailOptions = {
+        to: data.email,
+        subject: data.subject || "Event Certificate",
+        body: "Please find your certificate attached.",
         htmlBody: data.message || "Please find your certificate attached."
       };
       if (blob) {
         mailOptions.attachments = [blob];
       }
       
-      GmailApp.sendEmail(
-        data.email,
-        data.subject || "Event Certificate",
-        "Please find your certificate attached.",
-        mailOptions
-      );
+      MailApp.sendEmail(mailOptions);
       return ContentService.createTextOutput("Success");
     }
 
@@ -386,15 +382,13 @@ function sendRegistrationEmail(data) {
                  '  </div>' +
                  '</div>';
   
-      GmailApp.sendEmail(
-        data.email,
-        "Registration Confirmed: " + (data.eventTitle || "Event"),
-        "Registration Confirmed Pass",
-        {
-          htmlBody: body,
-          attachments: [blob]
-        }
-      );
+      MailApp.sendEmail({
+        to: data.email,
+        subject: "Registration Confirmed: " + (data.eventTitle || "Event"),
+        body: "Registration Confirmed Pass",
+        htmlBody: body,
+        attachments: [blob]
+      });
       
       console.log("Ticket PDF sent successfully to " + data.email);
     } catch (e) {
@@ -439,13 +433,11 @@ function sendContactEmailToAdmin(adminEmail, contactData) {
              '  </div>' +
              '</div>';
 
-  GmailApp.sendEmail(
-    adminEmail,
-    subject,
-    "New Contact Inquiry",
-    {
-      replyTo: contactData.email,
-      htmlBody: body
-    }
-  );
+  MailApp.sendEmail({
+    to: adminEmail,
+    replyTo: contactData.email,
+    subject: subject,
+    body: "New Contact Inquiry",
+    htmlBody: body
+  });
 }
