@@ -499,7 +499,27 @@ export default function Admin_Page() {
       
       const res = await response.json();
       if (res.status === "success" && Array.isArray(res.registrations)) {
-        setRegistrantsForCert(res.registrations);
+        // Map attendance status to 'attended' boolean
+        const formattedRegistrations = res.registrations.map((reg: any) => {
+          let hasAttended = false;
+          if (reg.attended === true || String(reg.attended).toLowerCase() === 'true') {
+            hasAttended = true;
+          } else {
+            const keys = Object.keys(reg);
+            for (const k of keys) {
+              const kLower = k.toLowerCase().trim();
+              if (kLower === 'attendance' || kLower === 'attended' || kLower === 'present' || kLower === 'status' || kLower.includes('attendance') || kLower.includes('attended')) {
+                const val = String(reg[k]).toLowerCase().trim();
+                if (val === 'yes' || val === 'present' || val === 'checked' || val === 'checked-in' || val === 'attended' || val === 'true') {
+                  hasAttended = true;
+                  break;
+                }
+              }
+            }
+          }
+          return { ...reg, attended: hasAttended };
+        });
+        setRegistrantsForCert(formattedRegistrations);
       } else {
         setCertError("Could not retrieve registrations. Make sure sheetId is correct and Webhook is active.");
       }
@@ -591,6 +611,10 @@ export default function Admin_Page() {
         // 2. Convert to Base64
         const pdfBase64 = uint8ToBase64(certBytes);
 
+        const emailRecipient = student.email || student.Email || student['Email ID'] || student['email'] || student['EmailId'];
+        console.log("DEBUG: student object for certificate:", student);
+        console.log("DEBUG: email recipient:", emailRecipient);
+
         // 3. Dispatch individually using 'send_certificate' to Apps Script
         const emailSubject = `🎓 Certificate of Participation: "${selectedCertEvent.title}"`;
         const emailBody = `
@@ -616,18 +640,21 @@ export default function Admin_Page() {
   </div>
 </div>
         `;
-
-        const response = await fetch(appsScriptUrl, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify({
+        
+        const payload = {
             type: "send_certificate",
-            email: student.email || student.Email || student['Email ID'],
+            email: emailRecipient,
             subject: emailSubject,
             message: emailBody,
             fileName: `Certificate_${student.studentName.replace(/\s+/g, '_')}.pdf`,
             pdfBase64: pdfBase64
-          })
+        };
+        console.log("DEBUG: Sending payload:", payload);
+
+        const response = await fetch(appsScriptUrl, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain" },
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) {
