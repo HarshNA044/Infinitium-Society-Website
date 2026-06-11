@@ -623,27 +623,36 @@ export default function EventDetail_Page() {
       {/* Photo Lightbox */}
       <AnimatePresence>
         {selectedPhoto && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 select-none">
             <motion.div 
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setSelectedPhoto(null)}
-              className="absolute inset-0 bg-zinc-950/95 backdrop-blur-xl"
+              className="absolute inset-0 bg-black/95 backdrop-blur-xl cursor-zoom-out"
             />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="relative max-w-5xl w-full max-h-[85vh] flex items-center justify-center"
+            
+            <button 
+              onClick={() => setSelectedPhoto(null)}
+              className="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-white z-50 hover:scale-105 active:scale-95"
+              title="Close image"
             >
-              <img src={selectedPhoto} className="max-w-full max-h-full object-contain rounded-xl shadow-2xl" referrerPolicy="no-referrer" />
-              <button 
-                onClick={() => setSelectedPhoto(null)}
-                className="absolute -top-12 right-0 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all"
-              >
-                <X className="w-6 h-6" />
-              </button>
+              <X className="w-6 h-6" />
+            </button>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="relative max-w-[95vw] max-h-[90vh] flex items-center justify-center z-10"
+            >
+              <img 
+                src={selectedPhoto} 
+                className="max-w-full max-h-[85vh] md:max-h-[90vh] object-contain rounded-xl shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] border border-white/5" 
+                alt="Enlarged event highlight visual"
+                referrerPolicy="no-referrer" 
+              />
             </motion.div>
           </div>
         )}
