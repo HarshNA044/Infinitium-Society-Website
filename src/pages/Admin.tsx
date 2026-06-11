@@ -7,7 +7,7 @@ import {
   Trash2, CheckCircle, XCircle, ChevronLeft,
   LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
   Trophy, Download, LogIn, Github, Menu, X, MessageSquare,
-  Globe, Award, Target, Handshake, Lightbulb, Clock, Mail, ExternalLink
+  Globe, Award, Target, Handshake, Lightbulb, Clock, Mail, ExternalLink, Info
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -550,8 +550,18 @@ export default function Admin_Page() {
         })
       });
       
-      const res = await response.json();
-      if (res.status === "success" && Array.isArray(res.registrations)) {
+      const text = await response.text();
+      let res: any = null;
+      try {
+        res = JSON.parse(text);
+      } catch (parseErr) {
+        console.warn(`Could not parse JSON for certificate registration check. Response starts with: "${text.substring(0, 100)}..."`);
+        setCertError("Failed to parse sheet data. The configured Google Sheet ID might be invalid or set incorrectly.");
+        setLoadingRegistrants(false);
+        return;
+      }
+
+      if (res && res.status === "success" && Array.isArray(res.registrations)) {
         // Map attendance status to 'attended' boolean
         const formattedRegistrations = res.registrations.map((reg: any) => {
           let hasAttended = false;
@@ -577,7 +587,7 @@ export default function Admin_Page() {
         setCertError("Could not retrieve registrations. Make sure sheetId is correct and Webhook is active.");
       }
     } catch (err: any) {
-      console.error("Error loading registrations for certificate:", err);
+      console.warn("Could not load registrations for certificate:", err);
       setCertError(err.message || "Failed to query attendee registration data.");
     } finally {
       setLoadingRegistrants(false);
@@ -859,8 +869,16 @@ export default function Admin_Page() {
                 })
               });
 
-              const resultObj = await response.json();
-              if (resultObj.status === "success" && Array.isArray(resultObj.registrations)) {
+              const text = await response.text();
+              let resultObj: any = null;
+              try {
+                resultObj = JSON.parse(text);
+              } catch (parseErr) {
+                console.warn(`[Graceful] Could not parse JSON response for event ${e.title || e.id}. The Google Sheet with ID "${e.sheetId}" might be inaccessible or unshared. Server responded with: "${text.substring(0, 150)}..."`);
+                return;
+              }
+
+              if (resultObj && resultObj.status === "success" && Array.isArray(resultObj.registrations)) {
                 const list = resultObj.registrations;
                 const totalReg = list.length;
                 
@@ -917,7 +935,7 @@ export default function Admin_Page() {
                 };
               }
             } catch (err) {
-              console.error(`Error loading registration list for event ${e.title || e.id}:`, err);
+              console.warn(`[Graceful] Could not load registration list for event ${e.title || e.id}:`, err);
             }
           })
         );
@@ -1082,7 +1100,7 @@ export default function Admin_Page() {
               { id: 'imp2', title: '10 +', text: 'Events organised annually' }
             ],
             departments: [
-              { id: 'dep1', title: 'Core Team', aim: 'Overall management', tasks: ['Operations', 'Strategy'] },
+              { id: 'dep1', title: 'Core Team', aim: 'Overall management', tasks: [] },
               { id: 'dep2', title: 'Technical', aim: 'Research and Dev', tasks: ['Workshops', 'Coding'] },
               { id: 'dep3', title: 'Content', aim: 'Knowledge Sharing', tasks: ['Blogs', 'Magazines'] }
             ]
@@ -1224,18 +1242,63 @@ export default function Admin_Page() {
   const handleAboutHeroImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setIsSavingAbout(true);
       try {
-        const compressed = await compressImage(file, 1000, 600, 0.7);
-        setAboutData((prev: any) => ({
-          ...prev,
+        const compressed = await compressImage(file, 1200, 800, 0.8);
+        
+        // Setup initial default aboutData structure if missing
+        const currentAbout = aboutData || {
+          hero: { 
+            title: "INFINITIUM SOCIETY", 
+            paragraph: "The Premier Society of Physical Sciences at ARSD College, University of Delhi.", 
+            image: "" 
+          },
+          objectives: [
+            { id: 'obj1', title: 'Scientific Temper', text: 'Cultivating a curious and analytical mindset.' },
+            { id: 'obj2', title: 'Innovation', text: 'Providing a platform for creative solutions.' },
+            { id: 'obj3', title: 'Leadership', text: 'Developing organizational skills.' },
+            { id: 'obj4', title: 'Teamwork', text: 'Fostering a collaborative environment where students work together across disciplines to achieve common scientific goals.' },
+            { id: 'obj5', title: 'Equal opportunity to all', text: 'Ensuring 100% inclusivity and a meritocratic platform where every student has fair access to resources and mentorship.' },
+            { id: 'obj6', title: 'Networking', text: 'Building professional bridges by connecting students with faculty, alumni, and global scientific communities.' },
+            { id: 'obj7', title: 'Value', text: 'Instilling core scientific ethics and integrity, creating long-term academic and professional value for our members.' }
+          ],
+          impacts: [
+            { id: 'imp1', title: '1000 +', text: 'Students reached annually' },
+            { id: 'imp2', title: '10 +', text: 'Events organised annually' }
+          ],
+          departments: [
+            { id: 'dep1', title: 'Core Team', aim: 'Overall management', tasks: [] },
+            { id: 'dep2', title: 'Technical', aim: 'Research and Dev', tasks: ['Workshops', 'Coding'] },
+            { id: 'dep3', title: 'Content', aim: 'Knowledge Sharing', tasks: ['Blogs', 'Magazines'] }
+          ]
+        };
+
+        const updatedAbout = {
+          ...currentAbout,
           hero: {
-            ...prev.hero,
+            ...(currentAbout.hero || {}),
             image: compressed
-          }
-        }));
+          },
+          // Proactively remove dynamic operations and strategy from core team department
+          departments: (currentAbout.departments || []).map((dept: any) => {
+            if (dept.title === 'Core Team' || dept.id === 'dep1') {
+              return {
+                ...dept,
+                tasks: (dept.tasks || []).filter((task: string) => task !== 'Operations' && task !== 'Strategy')
+              };
+            }
+            return dept;
+          })
+        };
+
+        setAboutData(updatedAbout);
+        await setDoc(doc(db, 'about', 'current'), updatedAbout);
+        alert("About page cover image changed and saved successfully!");
       } catch (err) {
-        console.error("Hero image compression failed", err);
-        alert("Failed to process hero image.");
+        console.error("Hero image update failed", err);
+        alert("Failed to process and save hero cover image: " + (err instanceof Error ? err.message : String(err)));
+      } finally {
+        setIsSavingAbout(false);
       }
     }
   };
@@ -1854,6 +1917,7 @@ export default function Admin_Page() {
             { id: 'gallery', icon: Camera, label: 'Gallery' },
             { id: 'scanner', icon: Scan, label: 'QR Scanner' },
             { id: 'contacts', icon: Mail, label: 'Contacts' },
+            { id: 'about', icon: Info, label: 'About' },
           ].map(tab => (
             <button
               key={tab.id}
@@ -2663,6 +2727,83 @@ export default function Admin_Page() {
                 {isSavingContactConfig ? 'Saving settings...' : 'Save Settings'}
               </button>
             </form>
+          </div>
+        )}
+
+        {activeTab === 'about' && (
+          <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-10 max-w-4xl mx-auto">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-100 pb-6">
+              <div>
+                <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">About Page Settings</h2>
+                <p className="text-sm text-zinc-500 font-medium">Manage the cover image, hero text, and department specifications of your public About Page.</p>
+              </div>
+              <div className="flex items-center gap-2 self-start bg-indigo-50 border border-indigo-100 px-3.5 py-2 rounded-2xl">
+                <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-700">Live Customization</span>
+              </div>
+            </div>
+
+            {/* Change Cover Image Section */}
+            <div className="space-y-4">
+              <h3 className="text-sm font-black uppercase text-zinc-400 tracking-widest">About Cover Image</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-zinc-50/50 p-6 rounded-3xl border border-zinc-100">
+                <div className="space-y-4">
+                  <p className="text-xs text-zinc-500 font-semibold leading-relaxed">
+                    Upload a high-quality visual banner for the top of your About Page. The image will be dynamically compressed to ensure high performance and fast page load speeds.
+                  </p>
+                  
+                  <div className="flex items-center gap-3">
+                    <label 
+                      htmlFor="about-hero-upload" 
+                      className={cn(
+                        "inline-flex items-center justify-center gap-2 px-6 py-4 bg-brand-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-700 transition-all cursor-pointer shadow-lg shadow-brand-600/10",
+                        isSavingAbout && "opacity-50 pointer-events-none"
+                      )}
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>{isSavingAbout ? "Uploading..." : "Upload New Cover"}</span>
+                    </label>
+                    <input 
+                      id="about-hero-upload" 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={handleAboutHeroImageChange} 
+                      disabled={isSavingAbout}
+                    />
+                  </div>
+                </div>
+
+                <div className="relative aspect-video rounded-2xl bg-zinc-100 border-4 border-white shadow-xl overflow-hidden group">
+                  {aboutData?.hero?.image ? (
+                    <>
+                      <img 
+                        src={aboutData.hero.image} 
+                        alt="Current Cover" 
+                        className="w-full h-full object-cover" 
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-brand-950/10 group-hover:bg-brand-950/20 transition-colors" />
+                    </>
+                  ) : (
+                    <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 bg-zinc-50 gap-2">
+                      <Camera className="w-8 h-8" />
+                      <span className="text-[9px] font-black uppercase tracking-widest">No Cover Image</span>
+                    </div>
+                  )}
+                  {isSavingAbout && (
+                    <div className="absolute inset-0 bg-white/70 backdrop-blur-sm flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-brand-600 font-black uppercase tracking-widest text-[10px]">
+                        <div className="w-6 h-6 border-2 border-brand-200 border-t-brand-600 rounded-full animate-spin" />
+                        <span>Saving Cover Image...</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
           </div>
         )}
 

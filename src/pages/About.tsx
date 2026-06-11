@@ -346,13 +346,16 @@ export default function About_Page() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-16">
             {data.departments.map((dept: any, i: number) => {
               const icons = [BookOpen, Edit3, Monitor, Calendar, Megaphone, Handshake, Shield, Heart, Zap];
+              const filteredTasks = dept.title === 'Core Team' 
+                ? (dept.tasks || []).filter((task: string) => task !== 'Operations' && task !== 'Strategy')
+                : (dept.tasks || []);
               return (
                 <DepartmentCard 
                   key={dept.id}
                   icon={icons[i % icons.length] || BookOpen} 
                   title={dept.title}
                   aim={dept.aim}
-                  tasks={dept.tasks}
+                  tasks={filteredTasks}
                   delay={0.1 * (i + 1)}
                 />
               );
