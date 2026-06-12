@@ -2878,6 +2878,7 @@ export default function Admin_Page() {
                         <option value="Festival">Festival</option>
                         <option value="Lecture">Lecture</option>
                         <option value="Hackathon">Hackathon</option>
+                        <option value="Field Trip">Field Trip</option>
                       </select>
                     </div>
                     <div className="space-y-2">
