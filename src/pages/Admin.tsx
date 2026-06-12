@@ -7,7 +7,8 @@ import {
   Trash2, CheckCircle, XCircle, ChevronLeft,
   LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
   Trophy, Download, LogIn, Github, Menu, X, MessageSquare,
-  Globe, Award, Target, Handshake, Lightbulb, Clock, Mail, ExternalLink, Info
+  Globe, Award, Target, Handshake, Lightbulb, Clock, Mail, ExternalLink, Info,
+  FileSpreadsheet
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -2727,6 +2728,29 @@ export default function Admin_Page() {
                 {isSavingContactConfig ? 'Saving settings...' : 'Save Settings'}
               </button>
             </form>
+
+            {contactConfig.sheetId && (
+              <div className="border-t border-zinc-100 pt-6 space-y-4" id="view-contact-responses-panel">
+                <div className="bg-emerald-50/50 border border-emerald-100 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="space-y-1 text-center sm:text-left">
+                    <h3 className="text-sm font-black text-emerald-950 uppercase tracking-tight">Contact Form Responses</h3>
+                    <p className="text-xs text-emerald-700/80 font-semibold leading-normal">
+                      Access all submitted inquiries, contact messages and feedback in your master spreadsheet.
+                    </p>
+                  </div>
+                  <a
+                    href={contactConfig.sheetId.startsWith('http') ? contactConfig.sheetId : `https://docs.google.com/spreadsheets/d/${contactConfig.sheetId}/edit`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/10 hover:scale-105 active:scale-95 shrink-0"
+                    id="open-contact-spreadsheet-btn"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    Open Excel Sheet
+                  </a>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
