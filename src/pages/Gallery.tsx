@@ -127,7 +127,7 @@ export default function Gallery_Page() {
                   className="w-full text-[11px] font-black uppercase tracking-wider text-slate-900 bg-white border-2 border-zinc-200 px-4 py-3.5 pr-10 rounded-2xl outline-none focus:border-brand-500 cursor-pointer transition-all appearance-none"
                   id="gallery-filter-event"
                 >
-                  <option value="all">📷 All Events</option>
+                  <option value="all">All Events</option>
                   <option value="none">Miscellaneous / Other</option>
                   {events.map((ev) => (
                     <option key={ev.id} value={ev.id}>
