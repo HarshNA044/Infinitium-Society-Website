@@ -1478,11 +1478,15 @@ export default function Admin_Page() {
       alert("Please wait for image to finish processing.");
       return;
     }
+    if (!galleryImagePreview) {
+      alert("Please upload a photo from your device.");
+      return;
+    }
     
     setIsSubmittingGallery(true);
     const formData = new FormData(e.currentTarget);
     const data = {
-      src: galleryImagePreview || formData.get('src') as string,
+      src: galleryImagePreview,
       title: formData.get('title') as string,
       description: formData.get('description') as string,
       category: formData.get('category') as string,
@@ -3337,17 +3341,6 @@ export default function Admin_Page() {
                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-sm" 
                         />
                       </div>
-                   </div>
-                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Or Image URL</label>
-                     <input 
-                       name="src" 
-                       value={galleryImagePreview || ''}
-                       onChange={(e) => setGalleryImagePreview(e.target.value)}
-                       required
-                       className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 transition-all font-mono text-xs" 
-                       placeholder="https://..." 
-                     />
                    </div>
                    <textarea 
                     name="description" 
