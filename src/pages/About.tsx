@@ -6,7 +6,7 @@ import {
   BookOpen, Edit3, Monitor, Calendar, Megaphone, DollarSign,
   TrendingUp, Award, UserPlus, Globe, Trophy,
   Shield, Heart, Zap, Sparkles, Cpu, FileText,
-  Atom, Beaker, Terminal, Network
+  Atom, Beaker, Terminal, Network, Video
 } from 'lucide-react';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
@@ -116,7 +116,7 @@ const MinorDepartmentCard = ({ icon: Icon, title, delay }: any) => (
 const STATIC_DEPARTMENTS = [
   { title: 'Academics', icon: GraduationCap },
   { title: 'Content', icon: FileText },
-  { title: 'Digital', icon: Cpu },
+  { title: 'Digital', icon: Video },
   { title: 'Event', icon: Calendar },
   { title: 'Public Relations', icon: Users },
   { title: 'Sponsorship', icon: Handshake },
