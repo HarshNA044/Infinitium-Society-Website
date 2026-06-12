@@ -80,11 +80,11 @@ export default function Gallery_Page() {
                 {item.eventDate && (
                   <div className="flex flex-wrap gap-1.5 mb-2.5" id={`gallery-tags-${item.id || idx}`}>
                     <span className="inline-flex items-center gap-1.5 text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-100 px-2.5 py-1 rounded-md uppercase tracking-wider">
-                      📅 {item.eventDate}
+                      Date: {item.eventDate}
                     </span>
                     {item.category === 'Events' && (
                       <span className="inline-flex items-center gap-1.5 text-[9px] font-black text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-md uppercase tracking-wider max-w-[150px] truncate" >
-                        🏷️ Event: {item.title}
+                        Event: {item.title}
                       </span>
                     )}
                   </div>
