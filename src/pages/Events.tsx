@@ -281,7 +281,7 @@ export default function Events_Page() {
                      <button 
                       onClick={(e) => handleShare(e, event)}
                       className="p-2 bg-slate-50 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all active:scale-90 border border-slate-100"
-                      title="Share Event"
+
                      >
                        <Share2 className="w-4 h-4" />
                      </button>

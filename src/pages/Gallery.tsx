@@ -83,7 +83,7 @@ export default function Gallery_Page() {
                       📅 {item.eventDate}
                     </span>
                     {item.category === 'Events' && (
-                      <span className="inline-flex items-center gap-1.5 text-[9px] font-black text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-md uppercase tracking-wider max-w-[150px] truncate" title={item.title}>
+                      <span className="inline-flex items-center gap-1.5 text-[9px] font-black text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-md uppercase tracking-wider max-w-[150px] truncate" >
                         🏷️ Event: {item.title}
                       </span>
                     )}
@@ -114,7 +114,7 @@ export default function Gallery_Page() {
               onClick={() => setSelectedImage(null)}
               className="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-white z-50 hover:scale-105 active:scale-95"
               id="gallery-lightbox-close"
-              title="Close image"
+              
             >
               <X className="w-6 h-6" />
             </button>

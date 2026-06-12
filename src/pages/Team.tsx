@@ -136,7 +136,7 @@ export default function Team_Page() {
                           target="_blank" 
                           rel="noopener noreferrer"
                           className="absolute bottom-2 right-2 w-6 h-6 bg-white/95 backdrop-blur-sm text-brand-600 rounded flex items-center justify-center hover:bg-brand-600 hover:text-white transition-all shadow-md z-10"
-                          title="LinkedIn Profile"
+                          
                         >
                           <Linkedin className="w-3 h-3" />
                         </a>
@@ -165,7 +165,7 @@ export default function Team_Page() {
                           </p>
                         )}
                         {member.course ? (
-                          <p className="text-[9px] text-zinc-400 font-semibold tracking-wide truncate uppercase" title={member.course}>
+                          <p className="text-[9px] text-zinc-400 font-semibold tracking-wide truncate uppercase">
                             {getAbbreviatedCourse(member.course)}
                           </p>
                         ) : (
