@@ -429,7 +429,7 @@ function sendContactEmailToAdmin(adminEmail, contactData) {
              '    <p style="margin-top: 30px;">To reply directly to the sender, please click their email address listed above.</p>' +
              '  </div>' +
              '  <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">' +
-             '    This is an automated report forwarded from Google Apps Script.' +
+             '    This is an automated report.' +
              '  </div>' +
              '</div>';
 
