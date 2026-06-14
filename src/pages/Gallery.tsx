@@ -129,8 +129,8 @@ export default function Gallery_Page() {
                 >
                   <option value="all">All Events</option>
                   <option value="none">Miscellaneous / Other</option>
-                  {events.map((ev) => (
-                    <option key={ev.id} value={ev.id}>
+                  {events.map((ev, i) => (
+                    <option key={`gallery-event-opt-${ev.id || i}`} value={ev.id}>
                       {ev.title} {ev.date ? `(${ev.date})` : ''}
                     </option>
                   ))}
@@ -170,7 +170,7 @@ export default function Gallery_Page() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {displayedItems.map((item, idx) => (
               <motion.div
-                key={item.id || idx}
+                key={`gallery-item-${item.id || idx}`}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Mail, Linkedin, Instagram, Send, CheckCircle2, 
@@ -8,6 +8,26 @@ import { db } from '../lib/firebase';
 import { collection, doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function Contact_Page() {
+  const [societyEmail, setSocietyEmail] = useState('teaminfinitium.arsd@gmail.com');
+
+  useEffect(() => {
+    const fetchContactEmail = async () => {
+      try {
+        const configDocRef = doc(db, 'settings', 'contact_config');
+        const configSnap = await getDoc(configDocRef);
+        if (configSnap.exists()) {
+          const configData = configSnap.data();
+          if (configData.adminEmail && configData.adminEmail.trim()) {
+            setSocietyEmail(configData.adminEmail.trim());
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to load settings configuration on mount:", err);
+      }
+    };
+    fetchContactEmail();
+  }, []);
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -160,8 +180,8 @@ export default function Contact_Page() {
                   </div>
                   <div>
                     <h4 className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Email Address</h4>
-                    <a href="mailto:teaminfinitium.arsd@gmail.com" className="text-xs text-brand-600 font-black hover:underline hover:text-brand-700 block mt-1 transition-colors">
-                      teaminfinitium.arsd@gmail.com
+                    <a href={`mailto:${societyEmail}`} className="text-xs text-brand-600 font-black hover:underline hover:text-brand-700 block mt-1 transition-colors">
+                      {societyEmail}
                     </a>
                   </div>
                 </div>

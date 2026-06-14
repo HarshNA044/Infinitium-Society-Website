@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="100%" height="100%">
+    <circle cx="100" cy="100" r="96" fill="none" stroke="#a62c2b" stroke-width="2"/>
+    <circle cx="100" cy="100" r="86" fill="none" stroke="#a62c2b" stroke-width="1"/>
+    <circle cx="100" cy="100" r="52" fill="none" stroke="#a62c2b" stroke-width="1.5"/>
+    <path d="M100,53 C103,65 97,72 100,88 C105,82 113,80 123,76 C117,84 114,88 120,95 C126,90 128,84 135,80 C128,89 123,94 131,102 C125,104 122,109 124,115 C116,110 115,103 110,111 C113,118 116,124 111,130 C106,122 106,115 100,119 C94,115 94,122 89,130 C84,124 87,118 90,111 C85,103 84,110 76,115 C78,109 75,104 69,102 C77,94 72,89 65,80 C72,84 74,90 80,95 C86,88 83,84 77,76 C87,80 95,82 100,88 Z" fill="#a62c2b"/>
+    <path d="M74,136 C80,131 87,128 94,127 C94,131 92,135 88,137 Z M82,143 C88,139 93,137 98,137 C97,141 94,144 90,146 Z M100,148 C100,142 103,139 107,138 C105,142 103,146 100,148 Z M112,143 C107,140 104,136 103,132 C108,133 113,136 115,140 Z M121,134 C116,131 112,126 111,121 C116,123 120,127 121,132 Z" fill="#a62c2b"/>
+    <path id="textPathUpper" d="M30,125 A74,74 0 1,1 170,125" fill="none"/>
+    <path id="textPathLower" d="M172,120 A76,76 0 0,1 28,120" fill="none"/>
+    <text font-family="'Cinzel', serif" font-size="13.5" font-weight="bold" fill="#a62c2b" letter-spacing="2px">
+        <textPath href="#textPathUpper" startOffset="50%" text-anchor="middle">तेजस्विनावधीतमस्तु</textPath>
+    </text>
+    <text font-family="'Montserrat', sans-serif" font-size="9.5" font-weight="600" fill="#a62c2b" letter-spacing="1px">
+        <textPath href="#textPathLower" startOffset="50%" text-anchor="middle">आत्मा राम सनातन धर्म कॉलेज, नई दिल्ली</textPath>
+    </text>
+</svg>

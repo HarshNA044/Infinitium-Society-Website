@@ -169,7 +169,7 @@ export default function Home_Page() {
         const achSnap = await getDocs(achQuery);
         setAchievements(achSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-        const galleryQuery = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'), limit(4));
+        const galleryQuery = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'));
         const gallerySnap = await getDocs(galleryQuery);
         setGalleryImages(gallerySnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
       } catch (error) {
@@ -310,9 +310,9 @@ export default function Home_Page() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-            {events.slice(0, 6).map((event: any) => (
+            {events.slice(0, 6).map((event: any, index: number) => (
               <motion.div
-                key={event.id}
+                key={`home-event-${event.id || index}`}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}

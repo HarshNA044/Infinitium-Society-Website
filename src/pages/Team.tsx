@@ -105,7 +105,7 @@ export default function Team_Page() {
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {filteredMembers.map((member: any, idx: number) => (
                   <motion.div
-                    key={member.id}
+                    key={`team-member-${member.id || idx}`}
                     initial={{ opacity: 0, y: 15 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: idx * 0.05 }}

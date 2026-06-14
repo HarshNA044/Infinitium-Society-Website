@@ -296,7 +296,7 @@ export default function About_Page() {
               const icons = [Search, Lightbulb, Users, Handshake, Target, Globe, Trophy, Microscope, GraduationCap, Award];
               return (
                 <Card 
-                  key={obj.id}
+                  key={`objective-${obj.id || i}-${i}`}
                   icon={icons[i % icons.length]} 
                   title={obj.title} 
                   text={obj.text}
@@ -317,7 +317,7 @@ export default function About_Page() {
                  const icons = [Users, Calendar, Award, UserPlus, TrendingUp];
                  return (
                   <motion.div 
-                    key={imp.id} 
+                    key={`impact-${imp.id || i}-${i}`} 
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
@@ -351,7 +351,7 @@ export default function About_Page() {
                 : (dept.tasks || []);
               return (
                 <DepartmentCard 
-                  key={dept.id}
+                  key={`dept-${dept.id || i}-${i}`}
                   icon={icons[i % icons.length] || BookOpen} 
                   title={dept.title}
                   aim={dept.aim}

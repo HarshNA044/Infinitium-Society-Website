@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { motion, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { 
@@ -7,16 +9,18 @@ import {
   Trash2, CheckCircle, XCircle, ChevronLeft,
   LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
   Trophy, Download, LogIn, Github, Menu, X, MessageSquare,
-  Globe, Award, Target, Handshake, Lightbulb, Clock, Mail, ExternalLink, Info,
-  FileSpreadsheet
+  Globe, Award, Target, Handshake, Lightbulb, Clock, Mail, ExternalLink, Info, Send,
+  FileSpreadsheet, Database
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, Cell, PieChart, Pie 
+  Tooltip, ResponsiveContainer, Cell, PieChart, Pie,
+  AreaChart, Area
 } from 'recharts';
 import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
 import { useApi } from '../hooks/useApi';
 import { Logo } from '../App';
+import { INFINITIUM_LOGO_BASE64, ARSD_LOGO_BASE64 } from '../assets/logoBase64';
 import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
 import { 
   collection, getDocs, doc, setDoc, updateDoc, deleteDoc, 
@@ -146,10 +150,107 @@ export default function Admin_Page() {
   const [registrantsForCert, setRegistrantsForCert] = useState<any[]>([]);
   const [generatingPreviews, setGeneratingPreviews] = useState(false);
   const [previewBlobUrls, setPreviewBlobUrls] = useState<string[]>([]);
+  const [previewImgDataUrls, setPreviewImgDataUrls] = useState<string[]>([]);
   const [sendingCertificates, setSendingCertificates] = useState(false);
   const [certSendingProgress, setCertSendingProgress] = useState({ total: 0, sent: 0, currentStudentName: '' });
   const [certError, setCertError] = useState<string | null>(null);
   const [certSuccessMessage, setCertSuccessMessage] = useState<string | null>(null);
+
+  interface SignatureItem {
+    id: string;
+    image: string;
+    name: string;
+    position: string;
+  }
+
+  const [uploadedSignatures, setUploadedSignatures] = useState<SignatureItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('infinitium_signatures');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {
+      console.warn("Could not read signatures from localStorage", e);
+    }
+    return [
+      { id: 'sig-1', image: '', name: 'Dr. John Doe', position: 'President, Infinitium Society' },
+      { id: 'sig-2', image: '', name: 'Dr. Jane Smith', position: 'Vice President, Infinitium Society' }
+    ];
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('infinitium_signatures', JSON.stringify(uploadedSignatures));
+    } catch (e) {
+      console.warn("Could not save signatures to localStorage", e);
+    }
+  }, [uploadedSignatures]);
+
+  const handleSignatureUpload = (id: string, file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setUploadedSignatures(prev =>
+        prev.map(sig => sig.id === id ? { ...sig, image: reader.result as string } : sig)
+      );
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addSignatureField = () => {
+    if (uploadedSignatures.length >= 4) return;
+    setUploadedSignatures(prev => [
+      ...prev,
+      { id: `sig-${Date.now()}`, image: '', name: 'Holder Name', position: 'Holder Position' }
+    ]);
+  };
+
+  const removeSignatureField = (id: string) => {
+    setUploadedSignatures(prev => prev.filter(sig => sig.id !== id));
+  };
+
+  const getBase64ImageFromUrl = async (imageUrl: string): Promise<string> => {
+    if (!imageUrl) return "";
+    if (imageUrl.startsWith("data:")) return imageUrl;
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = imageUrl;
+
+      img.onload = () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth || img.width;
+          canvas.height = img.naturalHeight || img.height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0);
+            const dataUrl = canvas.toDataURL("image/png");
+            resolve(dataUrl);
+            return;
+          }
+        } catch (e) {
+          console.error("Canvas conversion failed for: " + imageUrl, e);
+        }
+        resolve(imageUrl);
+      };
+
+      img.onerror = () => {
+        // Fallback to fetch method
+        fetch(imageUrl)
+          .then((res) => res.blob())
+          .then((blob) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = () => resolve(imageUrl);
+            reader.readAsDataURL(blob);
+          })
+          .catch(() => {
+            resolve(imageUrl);
+          });
+      };
+    });
+  };
 
   const uint8ToBase64 = (uint8: Uint8Array): string => {
     let binary = '';
@@ -184,345 +285,440 @@ export default function Admin_Page() {
     eventTitle: string,
     eventDate: string,
     eventLocation?: string
-  ): Promise<Uint8Array> => {
-    let pdfDoc;
-    let filledFormFields = false;
-
-    if (templateBytes) {
-      pdfDoc = await PDFDocument.load(templateBytes);
-      
-      // Attempt to fill dynamic form fields matching user custom handles (e.g. {{student name}}, {{course}}, etc.)
-      try {
-        const form = pdfDoc.getForm();
-        const fields = form.getFields();
-        if (fields && fields.length > 0) {
-          fields.forEach(field => {
-            const fieldName = field.getName();
-            const lowerName = fieldName.toLowerCase().trim();
-            
-            if (typeof (field as any).setText === 'function') {
-              const textField = field as any;
-              
-              // Normalize field name by stripping curly braces, spaces, hyphens, and underscores
-              const cleanName = lowerName.replace(/[\{\}\s_\-\[\]]/g, '');
-              
-              if (
-                cleanName === 'studentname' || 
-                cleanName === 'student' ||
-                cleanName === 'name' || 
-                cleanName === 'fullname' ||
-                lowerName.includes('student name') || 
-                lowerName.includes('{{student name}}') ||
-                lowerName.includes('name')
-              ) {
-                textField.setText(student.studentName?.toUpperCase() || '');
-                filledFormFields = true;
-              } else if (
-                cleanName === 'course' || 
-                cleanName === 'branch' ||
-                cleanName === 'subject' ||
-                lowerName.includes('course') ||
-                lowerName.includes('{{course}}')
-              ) {
-                textField.setText(student.course || '');
-                filledFormFields = true;
-              } else if (
-                cleanName === 'college' || 
-                cleanName === 'collegename' || 
-                cleanName === 'institution' || 
-                cleanName === 'university' ||
-                lowerName.includes('college') ||
-                lowerName.includes('{{college}}') ||
-                lowerName.includes('college name') || 
-                lowerName.includes('{{college name}}')
-              ) {
-                textField.setText(student.collegeName || '');
-                filledFormFields = true;
-              } else if (
-                cleanName === 'year' || 
-                cleanName === 'semester' || 
-                cleanName === 'academicyear' ||
-                cleanName === 'yearstudent' ||
-                lowerName.includes('year') ||
-                lowerName.includes('{{year}}')
-              ) {
-                const yearStr = student.year ? (student.year.toString().toLowerCase().includes('year') ? student.year : `${student.year} Year`) : '';
-                textField.setText(yearStr);
-                filledFormFields = true;
-              } else if (
-                cleanName === 'event' || 
-                cleanName === 'eventname' || 
-                cleanName === 'eventtitle' || 
-                cleanName === 'topic' ||
-                lowerName.includes('event') ||
-                lowerName.includes('{{event name}}') ||
-                lowerName.includes('{{event}}')
-              ) {
-                textField.setText(eventTitle || '');
-                filledFormFields = true;
-              } else if (
-                cleanName === 'date' || 
-                cleanName === 'eventdate' || 
-                cleanName === 'datetime' ||
-                lowerName.includes('date') ||
-                lowerName.includes('{{event date}}') ||
-                lowerName.includes('{{date}}')
-              ) {
-                textField.setText(eventDate || '');
-                filledFormFields = true;
-              }
-            }
-          });
-          
-          if (filledFormFields) {
-            // Flatten the PDF form fields into standard non-editable output vector lines
-            form.flatten();
-          }
-        }
-      } catch (err) {
-        console.warn("Unable to process interactive PDF Form Fields (PDF might have no form elements). Falling back to direct layout positioning: ", err);
-      }
-    } else {
-      pdfDoc = await PDFDocument.create();
-      const page = pdfDoc.addPage([842, 595]); // landscape A4
-      const { width, height } = page.getSize();
-      
-      // Draw professional double borders
-      page.drawRectangle({
-        x: 20,
-        y: 20,
-        width: width - 40,
-        height: height - 40,
-        borderColor: rgb(15/255, 12/255, 41/255), // #0f0c29 Deep Navy/Purple
-        borderWidth: 4,
-        color: rgb(254/255, 254/255, 254/255),
-      });
-      
-      page.drawRectangle({
-        x: 28,
-        y: 28,
-        width: width - 56,
-        height: height - 56,
-        borderColor: rgb(20/255, 184/255, 166/255), // Teal inner border
-        borderWidth: 2,
-      });
-
-      // Draw elegant corner accents
-      const corners = [
-        { x: 32, y: 32 },
-        { x: width - 42, y: 32 },
-        { x: 32, y: height - 42 },
-        { x: width - 42, y: height - 42 }
-      ];
-      corners.forEach(c => {
-        page.drawRectangle({
-          x: c.x,
-          y: c.y,
-          width: 10,
-          height: 10,
-          color: rgb(20/255, 184/255, 166/255), // Teal
-        });
-      });
-
-      const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-      // --- Draw Dynamic Custom Database-backed Logo or elegant Scientific Orbit fallback ---
-      const logoX = 421;
-      const logoY = 495;
-      let logoImageLoaded = false;
-
-      try {
-        // ALWAYS try loading the official /logo.png first (rasterized logo.svg)
-        const logoRes = await fetch('/logo.png');
-        if (logoRes.ok) {
-          const logoBytes = await logoRes.arrayBuffer();
-          const embeddedLogo = await pdfDoc.embedPng(logoBytes);
-          if (embeddedLogo) {
-            const scaled = embeddedLogo.scale(0.35);
-            page.drawImage(embeddedLogo, {
-              x: logoX - scaled.width / 2,
-              y: logoY - scaled.height / 2,
-              width: scaled.width,
-              height: scaled.height,
-            });
-            logoImageLoaded = true;
-          }
-        }
-      } catch (logoErr) {
-        console.warn("Failed to load official /logo.png asset, falling back to database logo: ", logoErr);
-      }
-
-      if (!logoImageLoaded && aboutData?.logo) {
-        try {
-          const rawBase64 = aboutData.logo.replace(/^data:image\/(png|jpeg|jpg|webp);base64,/, '');
-          const binaryStr = window.atob(rawBase64);
-          const bytes = new Uint8Array(binaryStr.length);
-          for (let i = 0; i < binaryStr.length; i++) {
-            bytes[i] = binaryStr.charCodeAt(i);
-          }
-          
-          let embeddedLogo;
-          if (aboutData.logo.includes('image/png')) {
-            embeddedLogo = await pdfDoc.embedPng(bytes);
-          } else {
-            embeddedLogo = await pdfDoc.embedJpg(bytes);
-          }
-
-          if (embeddedLogo) {
-            const scaled = embeddedLogo.scale(0.35);
-            page.drawImage(embeddedLogo, {
-              x: logoX - scaled.width / 2,
-              y: logoY - scaled.height / 2,
-              width: scaled.width,
-              height: scaled.height,
-            });
-            logoImageLoaded = true;
-          }
-        } catch (logoErr) {
-          console.warn("Failed to embed website's custom team logo into PDF:", logoErr);
-        }
-      }
-
-      if (!logoImageLoaded) {
-        // Fallback to elegant scientific orbit logo
-        // Outer orbit circle (thin line)
-        page.drawCircle({
-          x: logoX,
-          y: logoY,
-          size: 24,
-          borderColor: rgb(15/255, 12/255, 41/255),
-          borderWidth: 1.5,
-        });
-
-        // Secondary nested orbit path
-        page.drawCircle({
-          x: logoX,
-          y: logoY,
-          size: 16,
-          borderColor: rgb(20/255, 184/255, 166/255),
-          borderWidth: 1,
-        });
-
-        // Core nucleus (glowing teal spot)
-        page.drawCircle({
-          x: logoX,
-          y: logoY,
-          size: 8,
-          color: rgb(20/255, 184/255, 166/255),
-        });
-
-        // Electron dots
-        page.drawCircle({
-          x: logoX - 18,
-          y: logoY - 10,
-          size: 3.5,
-          color: rgb(15/255, 12/255, 41/255),
-        });
-        page.drawCircle({
-          x: logoX + 16,
-          y: logoY + 12,
-          size: 3.5,
-          color: rgb(20/255, 184/255, 166/255),
-        });
-        page.drawCircle({
-          x: logoX - 4,
-          y: logoY + 20,
-          size: 3,
-          color: rgb(15/255, 12/255, 41/255),
-        });
-      }
-
-      // Header texts
-      drawCenteredText(page, "INFINITIUM SOCIETY", 440, 22, fontBold, rgb(15/255, 12/255, 41/255));
-      drawCenteredText(page, "ATMA RAM SANATAN DHARMA COLLEGE | UNIVERSITY OF DELHI", 418, 9.5, fontRegular, rgb(100/255, 116/255, 139/255));
-
-      // Draw elegant signatures at bottom
-      page.drawLine({
-        start: { x: 120, y: 85 },
-        end: { x: 280, y: 85 },
-        color: rgb(100/255, 116/255, 139/255),
-        thickness: 1,
-      });
-      page.drawText("Faculty Advisor", { x: 160, y: 67, size: 9, font: fontRegular, color: rgb(100/255, 116/255, 139/255) });
-
-      page.drawLine({
-        start: { x: 562, y: 85 },
-        end: { x: 722, y: 85 },
-        color: rgb(100/255, 116/255, 139/255),
-        thickness: 1,
-      });
-      page.drawText("President, Infinitium", { x: 595, y: 67, size: 9, font: fontRegular, color: rgb(100/255, 116/255, 139/255) });
-    }
-
-    const pages = pdfDoc.getPages();
-    const firstPage = pages[0];
-    const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-    const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
-
-    // Only draw coordinates on top of the document if we didn't fill dedicated form placeholders
-    if (!filledFormFields) {
-      if (!templateBytes) {
-        // 1. "This is to certify that"
-        drawCenteredText(firstPage, "This is to certify that", 373, 11.5, fontRegular, rgb(51/255, 65/255, 85/255));
-
-        // 2. Student Name (dynamic)
-        if (enabledFields.name && student.studentName) {
-          drawCenteredText(firstPage, student.studentName.toUpperCase(), positions.name.y, positions.name.fontSize, fontBold, rgb(15/255, 12/255, 41/255));
-        }
-
-        // 3. COURSE TITLE Label
-        drawCenteredText(firstPage, "COURSE TITLE", positions.course.y + 17, 8, fontRegular, rgb(148/255, 163/255, 184/255));
-
-        // 4. Course Title (dynamic)
-        if (enabledFields.course && student.course) {
-          drawCenteredText(firstPage, student.course.toString().toUpperCase(), positions.course.y, positions.course.fontSize, fontBold, rgb(51/255, 65/255, 85/255));
-        }
-
-        // 5. YEAR OF STUDY Label
-        drawCenteredText(firstPage, "YEAR OF STUDY", positions.year.y + 17, 8, fontRegular, rgb(148/255, 163/255, 184/255));
-
-        // 6. Year of Study (dynamic)
-        if (enabledFields.year && student.year) {
-          const rawYearStr = student.year.toString().toUpperCase();
-          const yearStr = rawYearStr.includes('YEAR') ? rawYearStr : `${rawYearStr} YEAR`;
-          drawCenteredText(firstPage, yearStr, positions.year.y, positions.year.fontSize, fontRegular, rgb(100/255, 116/255, 139/255));
-        }
-
-        // 7. EVENT NAME Label
-        drawCenteredText(firstPage, "EVENT NAME", positions.college.y + 17, 8, fontRegular, rgb(148/255, 163/255, 184/255));
-
-        // 8. Event Name (dynamic at positions.college.y)
-        if (enabledFields.college) {
-          drawCenteredText(firstPage, eventTitle.toUpperCase(), positions.college.y, positions.college.fontSize || 14, fontBold, rgb(20/255, 184/255, 166/255));
-        }
-
-        // 9. Centered descriptive paragraph at the bottom
-        const venueName = eventLocation || 'ATMA RAM SANATAN DHARMA COLLEGE, NEW DELHI';
-        const summaryText = `has actively participated and demonstrated outstanding achievement in "${eventTitle}" held on ${eventDate} at ${venueName}.`;
-        drawCenteredText(firstPage, summaryText, 110, 9.5, fontRegular, rgb(100/255, 116/255, 139/255));
+  ): Promise<{ pdfBytes: Uint8Array; imgDataUrl: string }> => {
+    const yearRaw = student.year ? student.year.toString() : '';
+    // Format year beautifully
+    let yearStr = '3rd Year'; // default fallback
+    if (yearRaw) {
+      if (yearRaw.toLowerCase().includes('year')) {
+        yearStr = yearRaw;
+      } else if (yearRaw.trim() === '1') {
+        yearStr = '1st Year';
+      } else if (yearRaw.trim() === '2') {
+        yearStr = '2nd Year';
+      } else if (yearRaw.trim() === '3') {
+        yearStr = '3rd Year';
+      } else if (yearRaw.trim() === '4') {
+        yearStr = '4th Year';
       } else {
-        // If there's a custom template, draw the selected coordinates directly on it
-        if (enabledFields.name && student.studentName) {
-          drawCenteredText(firstPage, student.studentName.toUpperCase(), positions.name.y, positions.name.fontSize, fontBold, rgb(15/255, 12/255, 41/255));
-        }
-
-        if (enabledFields.course && student.course) {
-          drawCenteredText(firstPage, student.course, positions.course.y, positions.course.fontSize, fontRegular, rgb(51/255, 65/255, 85/255));
-        }
-
-        if (enabledFields.college && student.collegeName) {
-          drawCenteredText(firstPage, student.collegeName, positions.college.y, positions.college.fontSize, fontRegular, rgb(100/255, 116/255, 139/255));
-        }
-
-        if (enabledFields.year && student.year) {
-          const yearStr = student.year.toString().toLowerCase().includes('year') ? student.year : `${student.year} Year`;
-          drawCenteredText(firstPage, yearStr, positions.year.y, positions.year.fontSize, fontRegular, rgb(100/255, 116/255, 139/255));
-        }
+        yearStr = `${yearRaw} Year`;
       }
     }
 
-    return await pdfDoc.save();
+    // Define correct logo sources (with Firestore custom upload support & fallback to requested static URLs)
+    const collegeLogoSrc = arsdLogoBase64 || "https://i.ibb.co/67SLNj6c/arsd-college-logo-png-seeklogo-458089-removebg-preview-2.png";
+    const societyLogoSrc = logoBase64 || "https://i.ibb.co/cKD8BFhN/logo.png";
+
+    // Build the dynamic signatures HTML content based on the user-defined uploaded signatures
+    const signaturesHtml = (uploadedSignatures || []).map(sig => `
+      <div class="signature-block">
+          ${sig.image ? `<img class="signature-img" src="${sig.image}" alt="Signature" />` : '<div style="height: 50px;"></div>'}
+          <div class="signature-line">
+              <p class="signer-name">${sig.name || ''}</p>
+              <p class="signer-title">${(sig.position || '').replace(/\n/g, '<br>')}</p>
+          </div>
+      </div>
+    `).join('\n');
+
+    // Create a hidden iframe for clean rendering completely isolated from parent stylesheets / oklch problems
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.top = '-9999px';
+    iframe.style.left = '-9999px';
+    iframe.style.width = '1123px';
+    iframe.style.height = '794px';
+    iframe.style.border = 'none';
+    iframe.style.pointerEvents = 'none';
+    iframe.style.zIndex = '-9999';
+
+    document.body.appendChild(iframe);
+
+    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+    if (!iframeDoc) {
+      if (iframe.parentNode) {
+        document.body.removeChild(iframe);
+      }
+      throw new Error("Could not access iframe content document");
+    }
+
+    // Write the self-contained HTML including styles to the iframe
+    iframeDoc.open();
+    iframeDoc.write(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+          <meta charset="UTF-8">
+          <base href="${window.location.origin}/">
+          <title>Certificate of Appreciation</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,400&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+          
+          <style>
+              * {
+                  box-sizing: border-box;
+              }
+              
+              body {
+                  margin: 0;
+                  padding: 0;
+                  background-color: #ffffff;
+                  display: flex;
+                  justify-content: center;
+                  align-items: center;
+                  height: 100vh;
+                  width: 100vw;
+                  overflow: hidden;
+              }
+
+              /* Certificate Container optimized for A4 Landscape printing */
+              .certificate-container {
+                  width: 1123px;
+                  height: 794px;
+                  background-color: #fffdf9; /* Soft off-white texture color */
+                  padding: 40px;
+                  position: relative;
+                  display: flex;
+                  flex-direction: column;
+                  justify-content: space-between;
+                  align-items: center;
+                  border: 2px solid #e2ba6e;
+                  overflow: hidden;
+                  box-sizing: border-box;
+              }
+
+              /* Decorative Gold Corner Borders */
+              .certificate-container::before {
+                  content: "";
+                  position: absolute;
+                  top: 15px;
+                  left: 15px;
+                  right: 15px;
+                  bottom: 15px;
+                  border: 1px solid #e2ba6e;
+                  pointer-events: none;
+              }
+
+              /* Corner flourishes (using CSS shapes/borders for automation safety) */
+              .corner-flourish {
+                  position: absolute;
+                  width: 60px;
+                  height: 60px;
+                  border: 3px double #c59b27;
+                  pointer-events: none;
+              }
+              .top-left { top: 25px; left: 25px; border-right: none; border-bottom: none; }
+              .top-right { top: 25px; right: 25px; border-left: none; border-bottom: none; }
+              .bottom-left { bottom: 25px; left: 25px; border-right: none; border-top: none; }
+              .bottom-right { bottom: 25px; right: 25px; border-left: none; border-top: none; }
+
+              /* Header Section */
+              .header-section {
+                  display: flex;
+                  justify-content: space-between;
+                  align-items: center;
+                  width: 100%;
+                  padding: 10px 40px 0 40px;
+                  z-index: 10;
+              }
+
+              .logo {
+                  width: 80px;
+                  height: 80px;
+                  object-fit: contain;
+              }
+
+              .college-title {
+                  text-align: center;
+                  flex-grow: 1;
+                  padding: 0 20px;
+              }
+
+              .college-title h2 {
+                  margin: 0;
+                  font-size: 18px;
+                  color: #111;
+                  font-weight: 700;
+                  letter-spacing: 0.5px;
+              }
+
+              .college-title h1 {
+                  margin: 5px 0 2px 0;
+                  font-size: 22px;
+                  color: #0b2347; /* Deep blue/black matching college themes */
+                  font-weight: 700;
+                  letter-spacing: 1px;
+              }
+
+              .college-details {
+                  margin: 0;
+                  font-size: 11px;
+                  color: #555;
+                  font-weight: 600;
+                  line-height: 1.4;
+              }
+
+              /* Certificate Core Content */
+              .main-content {
+                  text-align: center;
+                  width: 100%;
+                  margin-top: -10px;
+                  z-index: 10;
+              }
+
+              .certificate-for {
+                  font-family: 'Cinzel', serif;
+                  font-size: 46px;
+                  color: #aa7c11;
+                  margin: 0;
+                  letter-spacing: 6px;
+                  font-weight: 700;
+              }
+
+              .sub-purpose {
+                  font-family: 'Cinzel', serif;
+                  font-size: 16px;
+                  color: #b58d3d;
+                  margin: 5px 0 15px 0;
+                  letter-spacing: 4px;
+                  font-weight: 500;
+              }
+
+              .proudly-presented {
+                  font-family: 'Cormorant Garamond', serif;
+                  font-style: italic;
+                  font-size: 20px;
+                  color: #555;
+                  margin: 0 0 15px 0;
+              }
+
+              /* Recipient Name - Target for Automation */
+              .recipient-name {
+                  font-family: 'Montserrat', sans-serif;
+                  font-size: 38px;
+                  color: #c59b27;
+                  font-weight: 700;
+                  margin: 10px 0;
+                  letter-spacing: 1px;
+                  display: inline-block;
+              }
+
+              /* Elegant divider line around the name */
+              .divider {
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  margin: 5px auto 25px auto;
+                  width: 65%;
+              }
+              .divider::before, .divider::after {
+                  content: "";
+                  flex: 1;
+                  height: 1px;
+                  background: linear-gradient(to var(--direction, right), transparent, #c59b27);
+              }
+              .divider::after { --direction: left; }
+              .divider-diamond {
+                  width: 8px;
+                  height: 8px;
+                  background-color: #c59b27;
+                  transform: rotate(45deg);
+                  margin: 0 10px;
+              }
+
+              /* Description / Recognition Text */
+              .recognition-text {
+                  font-family: 'Cormorant Garamond', serif;
+                  font-size: 21px;
+                  line-height: 1.6;
+                  color: #444;
+                  max-width: 80%;
+                  margin: 0 auto;
+              }
+
+              .highlight {
+                  font-family: 'Montserrat', sans-serif;
+                  font-weight: 700;
+                  font-size: 16px;
+                  color: #222;
+              }
+
+              /* Signatures Section */
+              .signature-section {
+                  display: flex;
+                  justify-content: space-around;
+                  align-items: flex-end;
+                  width: 100%;
+                  padding: 0 50px 20px 50px;
+                  z-index: 10;
+              }
+
+              .signature-block {
+                  text-align: center;
+                  width: 220px;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: flex-end;
+              }
+
+              .signature-img {
+                  height: 50px;
+                  max-width: 180px;
+                  object-fit: contain;
+                  margin-bottom: 5px;
+                  mix-blend-mode: multiply; 
+              }
+
+              .signature-line {
+                  border-top: 1px solid #b58d3d;
+                  margin-top: 5px;
+                  padding-top: 5px;
+                  width: 100%;
+              }
+
+              .signer-name {
+                  font-size: 11px;
+                  font-weight: 700;
+                  color: #c59b27;
+                  text-transform: uppercase;
+                  margin: 0;
+              }
+
+              .signer-title {
+                  font-size: 10px;
+                  font-weight: 600;
+                  color: #666;
+                  text-transform: uppercase;
+                  margin: 2px 0 0 0;
+                  letter-spacing: 0.5px;
+                  line-height: 1.3;
+              }
+
+              /* Print styling logic to ensure it downloads cleanly as a PDF */
+              @media print {
+                  body { padding: 0; background-color: #fff; }
+                  .certificate-container { box-shadow: none; border: none; }
+              }
+          </style>
+      </head>
+      <body>
+
+          <div id="certificate" class="certificate-container">
+              <div class="corner-flourish top-left"></div>
+              <div class="corner-flourish top-right"></div>
+              <div class="corner-flourish bottom-left"></div>
+              <div class="corner-flourish bottom-right"></div>
+
+              <div class="header-section">
+                  <img class="logo" src="${collegeLogoSrc}" alt="College Logo">
+                  
+                  <div class="college-title">
+                      <h2>आत्मा राम सनातन धर्म महाविद्यालय</h2>
+                      <h1>ATMA RAM SANATAN DHARMA COLLEGE</h1>
+                      <p class="college-details">
+                          दिल्ली विश्वविद्यालय | University of Delhi<br>
+                          Accredited Grade 'A++' by NAAC | All India 5th Rank by NIRF (MoE)
+                      </p>
+                  </div>
+                  
+                  <img class="logo" src="${societyLogoSrc}" alt="Society Logo">
+              </div>
+
+              <div class="main-content">
+                  <h3 class="certificate-for">CERTIFICATE</h3>
+                  <h4 class="sub-purpose">OF APPRECIATION</h4>
+                  <p class="proudly-presented">This certificate is proudly presented to</p>
+                  
+                  <div class="recipient-name" id="recipientName">${student.studentName || 'Student Name'}</div>
+                  
+                  <div class="divider">
+                      <div class="divider-diamond"></div>
+                  </div>
+                  
+                  <p class="recognition-text">
+                      In recognition of their dedication and outstanding contributions as<br>
+                      the <span class="highlight" id="role">${student.role || student.Role || student.position || student.Position || student.course || student.Course || 'PRESIDENT'}</span> of <span class="highlight" id="society">${student.society || student.Society || 'INFINITIUM: Physical Science Society'}</span>,<br>
+                      Atma Ram Sanatan Dharma College, for the session <span class="highlight" id="session">${student.session || student.Session || '2025-2026'}</span>.
+                  </p>
+              </div>
+
+              <div class="signature-section">
+                  ${signaturesHtml}
+              </div>
+          </div>
+
+      </body>
+      </html>
+    `);
+    iframeDoc.close();
+
+    // Wait for dynamic CSS and fonts inside the iframe to load/apply fully
+    await new Promise((resolve) => setTimeout(resolve, 800));
+    try {
+      if (iframe.contentWindow?.document.fonts) {
+        await iframe.contentWindow.document.fonts.ready;
+      }
+    } catch (fontErr) {
+      console.warn("Fonts check warning inside iframe:", fontErr);
+    }
+
+    // Wait for all images inside the iframe to finish loading
+    try {
+      const images = Array.from(iframeDoc.getElementsByTagName("img"));
+      await Promise.all(
+        images.map((img) => {
+          if (img.complete) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+          });
+        })
+      );
+    } catch (imgLoadErr) {
+      console.warn("Error waiting for images inside iframe:", imgLoadErr);
+    }
+
+    try {
+      const elementToRender = iframeDoc.getElementById('certificate');
+      if (!elementToRender) {
+        throw new Error("Could not find certificate element in iframe");
+      }
+
+      const canvas = await html2canvas(elementToRender, {
+        width: 1123,
+        height: 794,
+        scale: 2, // Retain sharp crystal-clear resolution
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+      });
+
+      // Cleanup iframe from DOM
+      if (iframe.parentNode) {
+        document.body.removeChild(iframe);
+      }
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'px',
+        format: [1123, 794],
+      });
+
+      pdf.addImage(imgData, 'JPEG', 0, 0, 1123, 794);
+      const arr = pdf.output('arraybuffer');
+      return {
+        pdfBytes: new Uint8Array(arr),
+        imgDataUrl: imgData
+      };
+    } catch (canvasErr) {
+      console.error("Canvas rendering failed inside isolated iframe, performing cleanup", canvasErr);
+      if (iframe.parentNode) {
+        document.body.removeChild(iframe);
+      }
+      throw canvasErr;
+    }
   };
 
   const loadRegistralsForCert = async (event: any) => {
@@ -602,6 +798,7 @@ export default function Admin_Page() {
     // Revoke previous URLs to prevent memory leaks
     previewBlobUrls.forEach(url => URL.revokeObjectURL(url));
     setPreviewBlobUrls([]);
+    setPreviewImgDataUrls([]);
 
     const attendedList = registrantsForCert.filter(r => r.attended);
     
@@ -614,8 +811,9 @@ export default function Admin_Page() {
 
     try {
       const urls: string[] = [];
+      const imgUrls: string[] = [];
       for (const s of studentsToPreview) {
-        const bytes = await generateSingleCertificate(
+        const result = await generateSingleCertificate(
           s,
           pdfTemplateBytes,
           selectedPlaceholders,
@@ -624,11 +822,13 @@ export default function Admin_Page() {
           selectedCertEvent.date,
           selectedCertEvent.location
         );
-        const blob = new Blob([bytes], { type: 'application/pdf' });
+        const blob = new Blob([result.pdfBytes], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         urls.push(url);
+        imgUrls.push(result.imgDataUrl);
       }
       setPreviewBlobUrls(urls);
+      setPreviewImgDataUrls(imgUrls);
     } catch (err: any) {
       console.error("Failed to generate previews:", err);
     } finally {
@@ -637,6 +837,24 @@ export default function Admin_Page() {
   };
 
   const handleSendCertificates = async () => {
+    if (!selectedCertEvent) return;
+    const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
+    if (!appsScriptUrl) {
+      setCertError("Apps Script URL is not configured (VITE_APPS_SCRIPT_URL is missing).");
+      return;
+    }
+
+    const attendedList = registrantsForCert.filter(r => r.attended);
+    if (attendedList.length === 0) {
+      setCertError("There are no registered students marked as present (attended) for this event.");
+      return;
+    }
+
+    setShowCertSendConfirm(true);
+  };
+
+  const executeSendCertificates = async () => {
+    setShowCertSendConfirm(false);
     if (!selectedCertEvent) return;
     const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
     if (!appsScriptUrl) {
@@ -662,7 +880,7 @@ export default function Admin_Page() {
         setCertSendingProgress({ total: attendedList.length, sent: i, currentStudentName: student.studentName });
 
         // 1. Generate individual personalized certificate
-        const certBytes = await generateSingleCertificate(
+        const result = await generateSingleCertificate(
           student,
           pdfTemplateBytes,
           selectedPlaceholders,
@@ -673,7 +891,7 @@ export default function Admin_Page() {
         );
 
         // 2. Convert to Base64
-        const pdfBase64 = uint8ToBase64(certBytes);
+        const pdfBase64 = uint8ToBase64(result.pdfBytes);
 
         const emailRecipient = student.email || student.Email || student['Email ID'] || student['email'] || student['EmailId'];
         console.log("DEBUG: student object for certificate:", student);
@@ -756,6 +974,7 @@ export default function Admin_Page() {
       // Clear up preview URLs to avoid memory leaks
       previewBlobUrls.forEach(url => URL.revokeObjectURL(url));
       setPreviewBlobUrls([]);
+      setPreviewImgDataUrls([]);
       setPdfTemplateBytes(null);
       setPdfTemplateName('');
       setRegistrantsForCert([]);
@@ -768,7 +987,7 @@ export default function Admin_Page() {
     if (selectedCertEvent) {
       generatePreviews().catch(err => console.error("Error generating previews:", err));
     }
-  }, [selectedCertEvent, pdfTemplateBytes, selectedPlaceholders, textPositions, registrantsForCert]);
+  }, [selectedCertEvent, pdfTemplateBytes, selectedPlaceholders, textPositions, registrantsForCert, uploadedSignatures]);
 
   // Sync state when event modal opens or editingEvent changes
   useEffect(() => {
@@ -800,6 +1019,13 @@ export default function Admin_Page() {
   const [contactConfig, setContactConfig] = useState<{ sheetId: string; adminEmail: string }>({ sheetId: '', adminEmail: '' });
   const [isSavingContactConfig, setIsSavingContactConfig] = useState(false);
 
+  // Dynamic certificate logos fetched from Firebase
+  const [firebaseLogos, setFirebaseLogos] = useState<{ infinitium: string; arsd: string } | null>(null);
+  const [isSavingLogos, setIsSavingLogos] = useState(false);
+
+  // Confirmation state for sending certificates
+  const [showCertSendConfirm, setShowCertSendConfirm] = useState(false);
+
   const handleSaveContactConfig = async (sheetId: string, adminEmail: string) => {
     setIsSavingContactConfig(true);
     try {
@@ -815,6 +1041,24 @@ export default function Admin_Page() {
       handleFirestoreError(e, OperationType.WRITE, 'settings/contact_config');
     } finally {
       setIsSavingContactConfig(false);
+    }
+  };
+
+  const handleSaveLogosConfig = async (infinitiumBase64: string, arsdBase64: string) => {
+    setIsSavingLogos(true);
+    try {
+      await setDoc(doc(db, 'settings', 'logo_config'), {
+        infinitium: infinitiumBase64,
+        arsd: arsdBase64,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      setFirebaseLogos({ infinitium: infinitiumBase64, arsd: arsdBase64 });
+      alert("Certificate logos saved to Firebase successfully!");
+    } catch (e) {
+      console.error("Failed to save logo config:", e);
+      alert("Failed to save logos to Firebase: " + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setIsSavingLogos(false);
     }
   };
 
@@ -1146,6 +1390,33 @@ export default function Admin_Page() {
         }
       } catch (e) {
         console.warn("Could not load contact config:", e);
+      }
+
+      // Load Logo Config
+      try {
+        const logoConfigRef = doc(db, 'settings', 'logo_config');
+        const logoConfigDoc = await getDoc(logoConfigRef);
+        if (logoConfigDoc.exists()) {
+          const data = logoConfigDoc.data() || {};
+          setFirebaseLogos({
+            infinitium: data.infinitium || INFINITIUM_LOGO_BASE64,
+            arsd: data.arsd || ARSD_LOGO_BASE64
+          });
+        } else {
+          // Auto-seed optimized JPEGs to Firebase Firestore!
+          await setDoc(logoConfigRef, {
+            infinitium: INFINITIUM_LOGO_BASE64,
+            arsd: ARSD_LOGO_BASE64,
+            updatedAt: new Date().toISOString()
+          });
+          setFirebaseLogos({
+            infinitium: INFINITIUM_LOGO_BASE64,
+            arsd: ARSD_LOGO_BASE64
+          });
+          console.log("Certificate logos auto-seeded in Firebase Firestore successfully!");
+        }
+      } catch (e) {
+        console.warn("Could not load or auto-seed logo config:", e);
       }
     } catch (error: any) {
       console.error("Error loading Firebase data", error);
@@ -1797,6 +2068,66 @@ export default function Admin_Page() {
     return acc;
   }, []);
 
+  // Dynamically compute estimated firebase database and storage usage based on real entity records loaded
+  const storageMetrics = React.useMemo(() => {
+    const avgDocSizeKB = 2.4; 
+    const avgImageSizeKB = 120;
+    
+    const firestoreDocsCount = events.length + members.length + achievements.length + gallery.length + Object.keys(fetchedStats).length + 20;
+    const estimatedFirestoreBytes = (firestoreDocsCount * avgDocSizeKB * 1024) + (gallery.length * 0.15 * avgImageSizeKB * 1024);
+    const firestoreUsedMB = Math.max(0.24, Number((estimatedFirestoreBytes / (1024 * 1024)).toFixed(3)));
+    const firestoreLimitMB = 1024; 
+    const firestorePercent = Number(((firestoreUsedMB / firestoreLimitMB) * 100).toFixed(2));
+    
+    const mediaCount = gallery.length + events.filter((e: any) => e.image).length + members.filter((m: any) => m.image).length + achievements.filter((a: any) => a.image).length;
+    const estimatedStorageBytes = mediaCount * avgImageSizeKB * 1024;
+    const storageUsedMB = Math.max(3.8, Number((estimatedStorageBytes / (1024 * 1024)).toFixed(1)));
+    const storageLimitMB = 5120; 
+    const storagePercent = Number(((storageUsedMB / storageLimitMB) * 100).toFixed(2));
+    
+    const totalUsedMB = Number((firestoreUsedMB + storageUsedMB).toFixed(2));
+    const totalLimitMB = firestoreLimitMB + storageLimitMB;
+    const totalPercent = Number(((totalUsedMB / totalLimitMB) * 100).toFixed(2));
+
+    return {
+      firestoreUsedMB,
+      firestoreLimitMB,
+      firestorePercent,
+      storageUsedMB,
+      storageLimitMB,
+      storagePercent,
+      totalUsedMB,
+      totalLimitMB,
+      totalPercent,
+      firestoreDocsCount,
+      mediaCount
+    };
+  }, [events, members, achievements, gallery, fetchedStats]);
+
+  const storageGrowthData = React.useMemo(() => {
+    const currentMB = storageMetrics.totalUsedMB;
+    const monthlyDocGrowth = Math.max(0.4, Number((events.length * 0.08).toFixed(2))); 
+    const monthlyAssetGrowth = Math.max(1.8, Number((gallery.length * 0.06 + events.length * 0.1).toFixed(2)));
+    const growthPerMonth = monthlyDocGrowth + monthlyAssetGrowth;
+
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const currentMonthIdx = new Date().getMonth();
+    
+    const data = [];
+    for (let i = -3; i <= 3; i++) {
+      const monthLabel = months[(currentMonthIdx + i + 12) % 12];
+      const distance = i;
+      const projectedValue = Math.max(0.5, Number((currentMB + (distance * growthPerMonth)).toFixed(2)));
+      data.push({
+        name: monthLabel,
+        "Storage Used (MB)": projectedValue,
+        "Free Tier Limit (MB)": 6144,
+        status: distance < 0 ? "Actual" : distance === 0 ? "Current" : "Projected"
+      });
+    }
+    return data;
+  }, [storageMetrics, events.length, gallery.length]);
+
   const PIE_COLORS = ['#0d9488', '#0f766e', '#115e59', '#134e4a', '#14b8a6'];
 
   if (authLoading) {
@@ -2221,8 +2552,155 @@ export default function Admin_Page() {
                         </div>
                       ))
                     )}
-                 </div>
-               </div>
+                  </div>
+                </div>
+             </div>
+
+            {/* Firebase Storage and Growth Monitor */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+              {/* Card 1: Storage Overview & Limits Dial */}
+              <div className="bento-card bg-white p-8 border border-zinc-100 shadow-sm flex flex-col justify-between">
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-zinc-400">Quota Overview</span>
+                      <h4 className="text-sm font-black uppercase text-zinc-800 tracking-wider mt-1">Free Tier Limits</h4>
+                    </div>
+                    <div className="p-2 bg-brand-50 rounded-xl text-brand-600">
+                      <Database className="w-5 h-5" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4 my-6">
+                    {/* Firestore (NoSQL Databases) */}
+                    <div>
+                      <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                        <span>Firestore Database (Documents)</span>
+                        <span className="font-mono">{storageMetrics.firestorePercent}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-cyan-500 rounded-full transition-all duration-1000" 
+                          style={{ width: `${storageMetrics.firestorePercent}%` }} 
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-zinc-400 font-mono mt-1">
+                        <span>{storageMetrics.firestoreDocsCount} total documents</span>
+                        <span>{storageMetrics.firestoreUsedMB}MB / {storageMetrics.firestoreLimitMB}MB</span>
+                      </div>
+                    </div>
+
+                    {/* Firebase Storage (Media/Files) */}
+                    <div>
+                      <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                        <span>Firebase Storage (Media/Files)</span>
+                        <span className="font-mono">{storageMetrics.storagePercent}%</span>
+                      </div>
+                      <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-brand-500 rounded-full transition-all duration-1000" 
+                          style={{ width: `${storageMetrics.storagePercent}%` }} 
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-zinc-400 font-mono mt-1">
+                        <span>{storageMetrics.mediaCount} objects (gallery/events)</span>
+                        <span>{storageMetrics.storageUsedMB}MB / {storageMetrics.storageLimitMB}MB</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-50 bg-slate-50/50 -mx-8 -mb-8 p-6 rounded-b-3xl">
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Total Stored Assets</p>
+                      <p className="text-xl font-black text-slate-800 leading-none mt-1 font-mono">
+                        {storageMetrics.totalUsedMB} <span className="text-xs font-bold text-zinc-400 uppercase font-sans">MB</span>
+                      </p>
+                    </div>
+                    <span className="px-2.5 py-1 text-[9px] font-black leading-none bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 uppercase tracking-widest">
+                      Spark Plan (Free)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Growth Forecast (Timeline Line Chart / Area Chart) */}
+              <div className="bento-card bg-white p-8 border border-zinc-100 shadow-sm md:col-span-2 flex flex-col justify-between min-h-[350px]">
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-zinc-400">Predictive Analytics</span>
+                    <h4 className="text-sm font-black uppercase text-zinc-800 tracking-wider mt-1">6-Month Storage Growth Forecast</h4>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-2.5 rounded-full bg-brand-500" />
+                      <span className="text-[9px] font-black text-slate-400 uppercase">Used (MB)</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2.5 h-0.5 border-t-2 border-dashed border-zinc-300" />
+                      <span className="text-[9px] font-black text-zinc-400 uppercase">Limit (6.1GB)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="h-[180px] w-full animate-fade-in">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={storageGrowthData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorStorage" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.15}/>
+                          <stop offset="95%" stopColor="#14b8a6" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                      <XAxis 
+                        dataKey="name" 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} 
+                      />
+                      <YAxis 
+                        axisLine={false} 
+                        tickLine={false} 
+                        tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} 
+                        type="number"
+                      />
+                      <Tooltip 
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            const data = payload[0].payload;
+                            return (
+                              <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-xl text-[11px] font-bold">
+                                <p className="text-slate-500 uppercase text-[9px] font-black tracking-widest">{data.status} • {data.name}</p>
+                                <p className="text-slate-850 text-sm font-black mt-1 font-mono">
+                                  {payload[0].value} <span className="text-[10px] text-zinc-400 uppercase font-sans">MB</span>
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Area 
+                        type="monotone" 
+                        dataKey="Storage Used (MB)" 
+                        stroke="#14b8a6" 
+                        strokeWidth={2.5}
+                        fillOpacity={1} 
+                        fill="url(#colorStorage)" 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+
+                <div className="text-[10px] text-zinc-500 font-bold bg-amber-50/50 border border-amber-100/60 p-4 rounded-2xl flex items-start gap-2.5 mt-4">
+                  <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <p className="leading-relaxed text-amber-950/80">
+                    <strong>Growth Insight:</strong> Based on the frequency of events and media assets uploaded, your overall project footprint is projected to grow by <strong>~{(storageGrowthData[4]["Storage Used (MB)"] - storageGrowthData[3]["Storage Used (MB)"]).toFixed(2)} MB/month</strong>. Currently consuming <strong className="text-emerald-700 font-extrabold font-mono">{storageMetrics.totalPercent}%</strong> of the combined Spark free limit (6.1 GB).
+                  </p>
+                </div>
+              </div>
             </div>
 
           </div>
@@ -2255,8 +2733,8 @@ export default function Admin_Page() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
-                  {events.map((e: any) => (
-                    <tr key={e.id} className="hover:bg-zinc-50/30 transition-colors">
+                  {events.map((e: any, idx: number) => (
+                    <tr key={`admin-event-row-${e.id || idx}`} className="hover:bg-zinc-50/30 transition-colors">
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-4">
                           {e.image && (
@@ -2419,8 +2897,8 @@ export default function Admin_Page() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
-                  {members.map((m: any) => (
-                    <tr key={m.id} className="hover:bg-zinc-50/30 transition-colors">
+                  {members.map((m: any, idx: number) => (
+                    <tr key={`admin-member-row-${m.id || idx}`} className="hover:bg-zinc-50/30 transition-colors">
                       <td className="px-8 py-5">
                         {m.image && (
                           <img src={m.image} className="w-12 h-12 object-cover rounded-full border border-zinc-100" referrerPolicy="no-referrer" />
@@ -2489,8 +2967,8 @@ export default function Admin_Page() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
-                  {achievements.map((a: any) => (
-                    <tr key={a.id} className="hover:bg-zinc-50/30 transition-colors">
+                  {achievements.map((a: any, idx: number) => (
+                    <tr key={`admin-achievement-row-${a.id || idx}`} className="hover:bg-zinc-50/30 transition-colors">
                       <td className="px-8 py-5 text-sm font-bold text-zinc-900">
                         {a.title}
                       </td>
@@ -2551,8 +3029,8 @@ export default function Admin_Page() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
-                  {gallery.map((g: any) => (
-                    <tr key={g.id} className="hover:bg-zinc-50/30 transition-colors">
+                  {gallery.map((g: any, idx: number) => (
+                    <tr key={`admin-gallery-row-${g.id || idx}`} className="hover:bg-zinc-50/30 transition-colors">
                       <td className="px-8 py-5">
                         {g.src && (
                           <img src={g.src} className="w-14 h-14 object-cover rounded-xl border border-zinc-100" referrerPolicy="no-referrer" />
@@ -2625,8 +3103,8 @@ export default function Admin_Page() {
                 className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold outline-none"
               >
                 <option value="">-- Choose Event to Check attendance --</option>
-                {events.map((e: any) => (
-                  <option key={e.id} value={e.id}>{e.title}</option>
+                {events.map((e: any, idx: number) => (
+                  <option key={`checker-event-opt-${e.id || idx}`} value={e.id}>{e.title}</option>
                 ))}
               </select>
             </div>
@@ -2687,74 +3165,162 @@ export default function Admin_Page() {
         )}
 
         {activeTab === 'contacts' && (
-          <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-8 max-w-2xl mx-auto">
-            <div>
-              <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Google Sheets Configuration</h2>
-              <p className="text-sm text-zinc-500 font-medium">Configure where the inquiries, registrations and feedback data are stored in Google Sheets.</p>
+          <div className="space-y-8 max-w-2xl mx-auto">
+            {/* Google Sheets Configuration Card */}
+            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-8">
+              <div>
+                <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Google Sheets Configuration</h2>
+                <p className="text-sm text-zinc-500 font-medium">Configure where the inquiries, registrations and feedback data are stored in Google Sheets.</p>
+              </div>
+
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                handleSaveContactConfig(
+                  formData.get('sheetId') as string,
+                  formData.get('adminEmail') as string
+                );
+              }} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Master Spreadsheet Google Sheet ID</label>
+                  <input
+                    name="sheetId"
+                    defaultValue={contactConfig.sheetId}
+                    required
+                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                    placeholder="e.g. 1a2b3c4d5e6f7g8h9i0j..."
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Admin Notification Email</label>
+                  <input
+                    name="adminEmail"
+                    type="email"
+                    defaultValue={contactConfig.adminEmail}
+                    required
+                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
+                    placeholder="e.g. teaminfinitium.arsd@gmail.com"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSavingContactConfig}
+                  className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all disabled:opacity-50"
+                >
+                  {isSavingContactConfig ? 'Saving settings...' : 'Save Settings'}
+                </button>
+              </form>
+
+              {contactConfig.sheetId && (
+                <div className="border-t border-zinc-100 pt-6 space-y-4" id="view-contact-responses-panel">
+                  <div className="bg-emerald-50/50 border border-emerald-100 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="space-y-1 text-center sm:text-left">
+                      <h3 className="text-sm font-black text-emerald-950 uppercase tracking-tight">Contact Form Responses</h3>
+                      <p className="text-xs text-emerald-700/80 font-semibold leading-normal">
+                        Access all submitted inquiries, contact messages and feedback in your master spreadsheet.
+                      </p>
+                    </div>
+                    <a
+                      href={contactConfig.sheetId.startsWith('http') ? contactConfig.sheetId : `https://docs.google.com/spreadsheets/d/${contactConfig.sheetId}/edit`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/10 hover:scale-105 active:scale-95 shrink-0"
+                      id="open-contact-spreadsheet-btn"
+                    >
+                      <FileSpreadsheet className="w-4 h-4" />
+                      Open Excel Sheet
+                    </a>
+                  </div>
+                </div>
+              )}
             </div>
 
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              handleSaveContactConfig(
-                formData.get('sheetId') as string,
-                formData.get('adminEmail') as string
-              );
-            }} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Master Spreadsheet Google Sheet ID</label>
-                <input
-                  name="sheetId"
-                  defaultValue={contactConfig.sheetId}
-                  required
-                  className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
-                  placeholder="e.g. 1a2b3c4d5e6f7g8h9i0j..."
-                />
+            {/* Firebase Certificate Logos Configuration Card */}
+            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-8">
+              <div>
+                <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Certificate Logos (Firebase)</h2>
+                <p className="text-sm text-zinc-500 font-medium">Upload or update the JPEG logo files hosted on Firebase for use in dynamic certificates.</p>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Admin Notification Email</label>
-                <input
-                  name="adminEmail"
-                  type="email"
-                  defaultValue={contactConfig.adminEmail}
-                  required
-                  className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
-                  placeholder="e.g. teaminfinitium.arsd@gmail.com"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={isSavingContactConfig}
-                className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all disabled:opacity-50"
-              >
-                {isSavingContactConfig ? 'Saving settings...' : 'Save Settings'}
-              </button>
-            </form>
-
-            {contactConfig.sheetId && (
-              <div className="border-t border-zinc-100 pt-6 space-y-4" id="view-contact-responses-panel">
-                <div className="bg-emerald-50/50 border border-emerald-100 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <div className="space-y-1 text-center sm:text-left">
-                    <h3 className="text-sm font-black text-emerald-950 uppercase tracking-tight">Contact Form Responses</h3>
-                    <p className="text-xs text-emerald-700/80 font-semibold leading-normal">
-                      Access all submitted inquiries, contact messages and feedback in your master spreadsheet.
-                    </p>
+              <div className="grid grid-cols-2 gap-6 bg-zinc-50 p-6 rounded-3xl border border-zinc-100">
+                <div className="space-y-3 flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm text-center">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Infinitium Logo</span>
+                  <div className="h-28 w-28 bg-zinc-50 rounded-xl p-2 flex items-center justify-center border border-zinc-100 overflow-hidden">
+                    <img
+                      src={firebaseLogos?.infinitium || INFINITIUM_LOGO_BASE64}
+                      alt="Infinitium Logo"
+                      className="max-h-full max-w-full object-contain"
+                    />
                   </div>
-                  <a
-                    href={contactConfig.sheetId.startsWith('http') ? contactConfig.sheetId : `https://docs.google.com/spreadsheets/d/${contactConfig.sheetId}/edit`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/10 hover:scale-105 active:scale-95 shrink-0"
-                    id="open-contact-spreadsheet-btn"
-                  >
-                    <FileSpreadsheet className="w-4 h-4" />
-                    Open Excel Sheet
-                  </a>
+                  <label className="cursor-pointer text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-4 py-2 rounded-xl transition">
+                    Upload JPEG
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const base64 = await compressImage(file, 400, 400, 0.9);
+                            await handleSaveLogosConfig(base64, firebaseLogos?.arsd || ARSD_LOGO_BASE64);
+                          } catch (err) {
+                            alert("Upload failed: " + (err instanceof Error ? err.message : String(err)));
+                          }
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className="space-y-3 flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm text-center">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">ARSD Logo</span>
+                  <div className="h-28 w-28 bg-zinc-50 rounded-xl p-2 flex items-center justify-center border border-zinc-100 overflow-hidden">
+                    <img
+                      src={firebaseLogos?.arsd || ARSD_LOGO_BASE64}
+                      alt="ARSD Logo"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                  <label className="cursor-pointer text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-4 py-2 rounded-xl transition">
+                    Upload JPEG
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          try {
+                            const base64 = await compressImage(file, 400, 400, 0.9);
+                            await handleSaveLogosConfig(firebaseLogos?.infinitium || INFINITIUM_LOGO_BASE64, base64);
+                          } catch (err) {
+                            alert("Upload failed: " + (err instanceof Error ? err.message : String(err)));
+                          }
+                        }
+                      }}
+                    />
+                  </label>
                 </div>
               </div>
-            )}
+
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  disabled={isSavingLogos}
+                  onClick={async () => {
+                    if (confirm("Are you sure you want to re-sync or reset logos to original defaults in Firebase?")) {
+                      await handleSaveLogosConfig(INFINITIUM_LOGO_BASE64, ARSD_LOGO_BASE64);
+                    }
+                  }}
+                  className="w-full py-4 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 rounded-3xl font-bold uppercase tracking-widest text-[10px] transition-all disabled:opacity-50"
+                >
+                  Reset Defaults
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -3484,268 +4050,266 @@ export default function Admin_Page() {
           <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm overflow-y-auto">
             <div className="absolute inset-0" onClick={() => setSelectedCertEvent(null)} />
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative bg-white w-full max-w-7xl rounded-[2.5rem] p-8 shadow-2xl border border-zinc-100 flex flex-col xl:flex-row gap-8 max-h-[90vh] overflow-y-auto xl:overflow-hidden z-[170]"
+              initial={{ opacity: 0, y: 80 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 80 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="relative bg-white w-full max-w-7xl rounded-[2.5rem] p-8 shadow-2xl border border-zinc-100 flex flex-col gap-6 max-h-[90vh] overflow-y-auto xl:overflow-hidden z-[170]"
             >
-              {/* Left Column: Form & Configuration */}
-              <div className="flex-1 space-y-6 xl:max-h-[75vh] xl:overflow-y-auto xl:pr-4">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-cyan-50 rounded-full flex items-center justify-center border border-cyan-100">
-                      <Award className="w-6 h-6 text-cyan-500 animate-pulse" />
-                    </div>
-                    <div>
-                      <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Issue Event Certificates</h3>
-                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{selectedCertEvent.title}</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Info Cards / Registrants Counter */}
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-slate-50 border border-slate-100/80 rounded-2xl p-4 text-center">
-                    <span className="block text-2xl font-black text-slate-800 font-mono">
-                      {loadingRegistrants ? "..." : registrantsForCert.length}
-                    </span>
-                    <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Registered</span>
-                  </div>
-                  <div className="bg-emerald-50 border border-emerald-100/50 rounded-2xl p-4 text-center">
-                    <span className="block text-2xl font-black text-emerald-600 font-mono">
-                      {loadingRegistrants ? "..." : registrantsForCert.filter(r => r.attended).length}
-                    </span>
-                    <span className="text-[10px] uppercase font-bold text-emerald-500 tracking-wider">Present</span>
-                  </div>
-                  <div className="bg-amber-50 border border-amber-100/50 rounded-2xl p-4 text-center">
-                    <span className="block text-2xl font-black text-amber-600 font-mono">
-                      {loadingRegistrants ? "..." : registrantsForCert.filter(r => !r.attended).length}
-                    </span>
-                    <span className="text-[10px] uppercase font-bold text-amber-500 tracking-wider">Absent</span>
-                  </div>
-                </div>
-
-                {/* Upload Section */}
-                <div className="bg-zinc-50 border border-zinc-200/80 rounded-3xl p-5 space-y-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 block">1. Set Certificate Template</span>
-                  <div className="space-y-3">
-                    <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-300 rounded-2xl cursor-pointer bg-white hover:bg-zinc-50/50 transition-all">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <Download className="w-8 h-8 text-zinc-400 mb-2 rotate-180 text-center" />
-                        <p className="text-xs text-zinc-500 font-semibold mb-1 text-center truncate max-w-sm px-4">
-                          {pdfTemplateName ? `Selected: ${pdfTemplateName}` : "Click to select custom PDF template"}
-                        </p>
-                        <p className="text-[10px] text-zinc-400 font-mono uppercase tracking-widest text-center">Supports .PDF formats</p>
+              <div className="flex flex-col xl:flex-row gap-8 flex-1 xl:overflow-hidden w-full">
+                {/* Left Column: Form & Configuration */}
+                <div className="flex-1 space-y-6 xl:max-h-[65vh] xl:overflow-y-auto xl:pr-4">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-cyan-50 rounded-full flex items-center justify-center border border-cyan-100">
+                        <Award className="w-6 h-6 text-cyan-500 animate-pulse" />
                       </div>
-                      <input
-                        type="file"
-                        accept=".pdf"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            setPdfTemplateName(file.name);
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              const arrayBuffer = reader.result as ArrayBuffer;
-                              setPdfTemplateBytes(new Uint8Array(arrayBuffer));
-                            };
-                            reader.readAsArrayBuffer(file);
-                          }
-                        }}
-                      />
-                    </label>
+                      <div>
+                        <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Issue Event Certificates</h3>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{selectedCertEvent.title}</p>
+                      </div>
+                    </div>
+                  </div>
 
-                    {pdfTemplateBytes && (
+                  {/* Info Cards / Registrants Counter */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-slate-50 border border-slate-100/80 rounded-2xl p-4 text-center">
+                      <span className="block text-2xl font-black text-slate-800 font-mono">
+                        {loadingRegistrants ? "..." : registrantsForCert.length}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Registered</span>
+                    </div>
+                    <div className="bg-emerald-50 border border-emerald-100/50 rounded-2xl p-4 text-center">
+                      <span className="block text-2xl font-black text-emerald-600 font-mono">
+                        {loadingRegistrants ? "..." : registrantsForCert.filter(r => r.attended).length}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold text-emerald-500 tracking-wider">Present</span>
+                    </div>
+                    <div className="bg-amber-50 border border-amber-100/50 rounded-2xl p-4 text-center">
+                      <span className="block text-2xl font-black text-amber-600 font-mono">
+                        {loadingRegistrants ? "..." : registrantsForCert.filter(r => !r.attended).length}
+                      </span>
+                      <span className="text-[10px] uppercase font-bold text-amber-500 tracking-wider">Absent</span>
+                    </div>
+                  </div>
+
+                  {/* Signature Upload and Configuration Section */}
+                  <div className="bg-white border-2 border-zinc-100 rounded-[2rem] p-6 space-y-4">
+                    <div className="flex justify-between items-center pb-2 border-b border-zinc-100">
+                      <div>
+                        <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800">Authorized Signatures</h4>
+                        <p className="text-[10px] text-zinc-400 font-semibold mt-0.5">Customize up to 4 signees on the final certificates.</p>
+                      </div>
+                      <span className="text-[10px] uppercase font-black px-2.5 py-1 bg-cyan-50 text-cyan-600 rounded-full font-mono">
+                        {uploadedSignatures.length} / 4
+                      </span>
+                    </div>
+
+                    {/* Notice for uploading background removed signatures */}
+                    <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-100 flex items-start gap-3">
+                      <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                      <div className="text-[10px] leading-relaxed text-amber-950 font-bold">
+                        <strong>Quality Notice:</strong> Please upload signatures with <strong>transparent backgrounds</strong> (PNG format) so that they render neatly without white boxes on the certificate artwork.
+                        <span className="block mt-1 font-semibold text-amber-800">
+                          💡 You can remove any signature image background for free using online tools like <a href="https://www.remove.bg" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-900">remove.bg</a> or Adobe Express.
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Signatures List Builder */}
+                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                      {uploadedSignatures.map((sig) => (
+                        <div key={sig.id} className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 flex flex-col md:flex-row gap-4 items-center">
+                          {/* Left: Signature File Upload / Preview Box */}
+                          <div className="w-32 h-16 shrink-0 bg-white border border-zinc-200 rounded-xl relative overflow-hidden flex flex-col items-center justify-center group cursor-pointer shadow-sm">
+                            {sig.image ? (
+                              <img src={sig.image} className="max-h-full max-w-full object-contain p-1" alt="Signature preview" />
+                            ) : (
+                              <div className="text-center p-1">
+                                <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">No Signature</span>
+                                <span className="block text-[8px] text-zinc-300 font-semibold mt-0.5">(Click to Add)</span>
+                              </div>
+                            )}
+                            <input 
+                              type="file" 
+                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleSignatureUpload(sig.id, file);
+                              }}
+                            />
+                          </div>
+
+                          {/* Middle: Name and Position Inputs */}
+                          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                            <div className="space-y-1">
+                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest pl-1">Holder Name</label>
+                              <input 
+                                type="text"
+                                value={sig.name}
+                                onChange={(e) => {
+                                  setUploadedSignatures(prev => prev.map(s => s.id === sig.id ? { ...s, name: e.target.value } : s));
+                                }}
+                                placeholder="e.g. Dr. Arthur Dent"
+                                className="w-full px-3 py-1.5 bg-white border border-zinc-200 rounded-lg text-xs font-bold text-slate-805 focus:border-cyan-500 outline-none"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest pl-1">Position / Office</label>
+                              <input 
+                                type="text"
+                                value={sig.position}
+                                onChange={(e) => {
+                                  setUploadedSignatures(prev => prev.map(s => s.id === sig.id ? { ...s, position: e.target.value } : s));
+                                }}
+                                placeholder="e.g. Convener, Infinitium"
+                                className="w-full px-3 py-1.5 bg-white border border-zinc-200 rounded-lg text-xs font-bold text-slate-805 focus:border-cyan-500 outline-none"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Right: Remove button */}
+                          <button
+                            type="button"
+                            onClick={() => removeSignatureField(sig.id)}
+                            className="p-2 bg-red-100 hover:bg-red-500 hover:text-white text-red-500 rounded-lg transition-all border border-red-500/10 shrink-0"
+                            title="Remove signee"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      
+                      {uploadedSignatures.length === 0 && (
+                        <div className="py-8 text-center text-xs font-bold text-slate-400 border border-dashed border-zinc-200 rounded-2xl bg-zinc-50/50">
+                          No authorized signatures configured. Use the button below to add signees.
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add Signee Button */}
+                    {uploadedSignatures.length < 4 && (
                       <button
                         type="button"
-                        onClick={() => {
-                          setPdfTemplateBytes(null);
-                          setPdfTemplateName('');
-                        }}
-                        className="w-full py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border border-red-100/40"
+                        onClick={addSignatureField}
+                        className="w-full py-2.5 bg-slate-50 border border-zinc-200 text-slate-700 hover:bg-slate-100 hover:border-zinc-300 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
                       >
-                        Reset to Minimalist Built-in Template
+                        <Plus className="w-4 h-4" />
+                        <span>Add Authorized Signee ({4 - uploadedSignatures.length} remaining)</span>
                       </button>
                     )}
                   </div>
                 </div>
 
-                {/* Categories & Configuration */}
-                <div className="bg-zinc-50 border border-zinc-200/80 rounded-3xl p-5 space-y-4">
-                  <span className="text-xs font-bold uppercase tracking-wider text-zinc-500 block">2. Text Placement & Design Categories</span>
-                  
-                  <div className="space-y-4">
-                    {/* Name Config */}
-                    <div className="space-y-2 border-b border-zinc-100 pb-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={selectedPlaceholders.name}
-                            onChange={(e) => setSelectedPlaceholders(prev => ({ ...prev, name: e.target.checked }))}
-                            className="w-4 h-4 text-cyan-600 rounded border-zinc-300 focus:ring-cyan-500"
-                          />
-                          <span>Student Name</span>
-                        </label>
-                        <span className="text-[10px] font-mono text-zinc-400 font-semibold uppercase">PREVIEW VALUE: uppercase</span>
-                      </div>
-                      {selectedPlaceholders.name && (
-                        <div className="grid grid-cols-2 gap-4 pl-6">
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Vertical (Y): {textPositions.name.y}px</span>
-                            <input
-                              type="range"
-                              min="50"
-                              max="550"
-                              value={textPositions.name.y}
-                              onChange={(e) => setTextPositions(prev => ({ ...prev, name: { ...prev.name, y: parseInt(e.target.value) } }))}
-                              className="w-full accent-cyan-500"
-                            />
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Font Size: {textPositions.name.fontSize}px</span>
-                            <input
-                              type="range"
-                              min="12"
-                              max="48"
-                              value={textPositions.name.fontSize}
-                              onChange={(e) => setTextPositions(prev => ({ ...prev, name: { ...prev.name, fontSize: parseInt(e.target.value) } }))}
-                              className="w-full accent-cyan-500"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                {/* Right Column: PDF Previews (First Generated Certificate) */}
+                <div className="w-full xl:w-[540px] bg-slate-50 rounded-[2rem] p-6 border border-slate-100 flex flex-col gap-4 xl:max-h-[65vh] xl:overflow-y-auto">
+                  <div>
+                    <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800 flex items-center gap-1">
+                      <span>Generated PDF Preview</span>
+                      {generatingPreviews && <span className="text-cyan-500 text-[10px] lowercase italic">(regenerating...)</span>}
+                    </h4>
+                    <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
+                      Displays a preview of how certificates look for marked attendees using the minimalist standard template.
+                    </p>
+                  </div>
 
-                    {/* Course Config */}
-                    <div className="space-y-2 border-b border-zinc-100 pb-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={selectedPlaceholders.course}
-                            onChange={(e) => setSelectedPlaceholders(prev => ({ ...prev, course: e.target.checked }))}
-                            className="w-4 h-4 text-cyan-600 rounded border-zinc-300 focus:ring-cyan-500"
-                          />
-                          <span>Course Title</span>
-                        </label>
-                      </div>
-                      {selectedPlaceholders.course && (
-                        <div className="grid grid-cols-2 gap-4 pl-6">
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Vertical (Y): {textPositions.course.y}px</span>
-                            <input
-                              type="range"
-                              min="50"
-                              max="550"
-                              value={textPositions.course.y}
-                              onChange={(e) => setTextPositions(prev => ({ ...prev, course: { ...prev.course, y: parseInt(e.target.value) } }))}
-                              className="w-full accent-cyan-500"
-                            />
+                {loadingRegistrants ? (
+                  <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
+                    <Clock className="w-8 h-8 text-cyan-500 animate-spin mb-2" />
+                    <span className="text-xs font-black uppercase tracking-wider text-zinc-400 font-mono">Syncing sheets attendee rolls...</span>
+                  </div>
+                ) : registrantsForCert.filter(r => r.attended).length === 0 ? (
+                  <div className="flex-1 border-2 border-dashed border-zinc-200 rounded-2xl p-8 text-center flex flex-col items-center justify-center bg-white">
+                    <span className="text-2xl text-zinc-300">⚠️</span>
+                    <span className="text-xs font-bold text-zinc-500 mt-2 uppercase tracking-wide">No attendants present</span>
+                    <p className="text-[10px] text-zinc-400 leading-normal max-w-xs mt-1 text-center">
+                      No registrants are currently marked as attended ("Yes" in column L) in Google Sheets for this event. 
+                      Displaying default mock certificate sample preview.
+                    </p>
+                    <div className="w-full mt-4 flex flex-col gap-4">
+                      {previewImgDataUrls.slice(0, 1).map((imgUrl, idx) => {
+                        const pdfUrl = previewBlobUrls[idx];
+                        return (
+                          <div key={idx} className="border border-zinc-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                            <div className="px-4 py-2 border-b border-zinc-100 flex justify-between items-center bg-zinc-50">
+                              <span className="text-[10px] font-black uppercase text-slate-500 truncate">
+                                Sample Certificate Preview
+                              </span>
+                              {pdfUrl && (
+                                <a 
+                                  href={pdfUrl} 
+                                  target="_blank" 
+                                  rel="noreferrer noopener"
+                                  className="p-1 px-2.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-all flex items-center gap-1 text-[10px] font-bold"
+                                  title="Open full sample certificate"
+                                >
+                                  <span>Open PDF</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                            <div className="relative w-full aspect-[1123/794] overflow-hidden bg-slate-100 flex items-center justify-center p-2">
+                              <img 
+                                src={imgUrl} 
+                                className="w-full h-auto object-contain border border-zinc-200 shadow-sm rounded-lg" 
+                                alt="Sample Certificate Preview" 
+                              />
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Font Size: {textPositions.course.fontSize}px</span>
-                            <input
-                              type="range"
-                              min="10"
-                              max="32"
-                              value={textPositions.course.fontSize}
-                              onChange={(e) => setTextPositions(prev => ({ ...prev, course: { ...prev.course, fontSize: parseInt(e.target.value) } }))}
-                              className="w-full accent-cyan-500"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* College Config */}
-                    <div className="space-y-2 border-b border-zinc-100 pb-3">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={selectedPlaceholders.college}
-                            onChange={(e) => setSelectedPlaceholders(prev => ({ ...prev, college: e.target.checked }))}
-                            className="w-4 h-4 text-cyan-600 rounded border-zinc-300 focus:ring-cyan-500"
-                          />
-                          <span>Event Name / College</span>
-                        </label>
-                      </div>
-                      {selectedPlaceholders.college && (
-                        <div className="grid grid-cols-2 gap-4 pl-6">
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Vertical (Y): {textPositions.college.y}px</span>
-                            <input
-                              type="range"
-                              min="50"
-                              max="550"
-                              value={textPositions.college.y}
-                              onChange={(e) => setTextPositions(prev => ({ ...prev, college: { ...prev.college, y: parseInt(e.target.value) } }))}
-                              className="w-full accent-cyan-500"
-                            />
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Font Size: {textPositions.college.fontSize}px</span>
-                            <input
-                              type="range"
-                              min="10"
-                              max="32"
-                              value={textPositions.college.fontSize}
-                              onChange={(e) => setTextPositions(prev => ({ ...prev, college: { ...prev.college, fontSize: parseInt(e.target.value) } }))}
-                              className="w-full accent-cyan-500"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Year Config */}
-                    <div className="space-y-4">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <label className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-700">
-                          <input
-                            type="checkbox"
-                            checked={selectedPlaceholders.year}
-                            onChange={(e) => setSelectedPlaceholders(prev => ({ ...prev, year: e.target.checked }))}
-                            className="w-4 h-4 text-cyan-600 rounded border-zinc-300 focus:ring-cyan-500"
-                          />
-                          <span>Year of Study</span>
-                        </label>
-                      </div>
-                      {selectedPlaceholders.year && (
-                        <div className="grid grid-cols-2 gap-4 pl-6">
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Vertical (Y): {textPositions.year.y}px</span>
-                            <input
-                              type="range"
-                              min="50"
-                              max="550"
-                              value={textPositions.year.y}
-                              onChange={(e) => setTextPositions(prev => ({ ...prev, year: { ...prev.year, y: parseInt(e.target.value) } }))}
-                              className="w-full accent-cyan-500"
-                            />
-                          </div>
-                          <div>
-                            <span className="text-[10px] font-extrabold uppercase text-zinc-400 block mb-1">Font Size: {textPositions.year.fontSize}px</span>
-                            <input
-                              type="range"
-                              min="10"
-                              max="32"
-                              value={textPositions.year.fontSize}
-                              onChange={(e) => setTextPositions(prev => ({ ...prev, year: { ...prev.year, fontSize: parseInt(e.target.value) } }))}
-                              className="w-full accent-cyan-500"
-                            />
-                          </div>
-                        </div>
+                        );
+                      })}
+                      {previewImgDataUrls.length === 0 && (
+                        <div className="py-12 text-center text-[11px] text-zinc-400 font-mono">Generating default certificate preview...</div>
                       )}
                     </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="space-y-4">
+                    {previewImgDataUrls.slice(0, 1).map((imgUrl, index) => {
+                      const student = registrantsForCert.filter(r => r.attended)[index] || { studentName: 'Attendant' };
+                      const pdfUrl = previewBlobUrls[index];
+                      return (
+                        <div key={index} className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
+                          <div className="px-4 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-100/50">
+                            <span className="text-[10px] font-black uppercase text-slate-500 truncate max-w-[240px]">
+                              {student.studentName} ({student['collegeName'] || 'ARSD'})
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[9px] font-mono font-bold text-emerald-500 leading-none bg-emerald-50 px-2 py-1 rounded-full">Attended</span>
+                              {pdfUrl && (
+                                <a 
+                                  href={pdfUrl} 
+                                  target="_blank" 
+                                  rel="noreferrer noopener"
+                                  className="p-1 px-2.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-all flex items-center gap-1 text-[10px] font-bold"
+                                  title="Open full certificate"
+                                >
+                                  <span>Open PDF</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              )}
+                            </div>
+                          </div>
+                          <div className="relative w-full aspect-[1123/794] overflow-hidden bg-zinc-800 flex items-center justify-center p-2">
+                            <img 
+                              src={imgUrl} 
+                              className="w-full h-auto object-contain border border-zinc-200 shadow-sm rounded-lg" 
+                              alt="Certificate Preview" 
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {previewImgDataUrls.length === 0 && (
+                      <div className="py-12 text-center text-[11px] text-zinc-400 font-mono">Generating certificate preview...</div>
+                    )}
+                  </div>
+                )}
 
-                {/* Status / Log Console */}
+                {/* Status / Log Console (Placed after preview) */}
                 {(certError || certSuccessMessage || sendingCertificates) && (
-                  <div className="p-4 rounded-2xl bg-zinc-900 text-zinc-100 border border-zinc-800 space-y-2">
+                  <div className="p-4 rounded-2xl bg-zinc-900 text-zinc-100 border border-zinc-800 space-y-2 mt-2 shrink-0">
                     <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-extrabold">Dispatch Console Output</span>
                     
                     {sendingCertificates && (
@@ -3775,119 +4339,85 @@ export default function Admin_Page() {
                     )}
                   </div>
                 )}
+              </div>
+            </div>
 
-                {/* Buttons block */}
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => setSelectedCertEvent(null)}
-                    className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all font-bold"
-                  >
-                    Close Setup
-                  </button>
-                  <button
-                    onClick={handleSendCertificates}
-                    disabled={sendingCertificates || loadingRegistrants || registrantsForCert.filter(r => r.attended).length === 0}
-                    className="flex-2 py-4 bg-cyan-500 hover:bg-cyan-600 disabled:bg-zinc-100 disabled:text-zinc-400 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-cyan-500/20 flex items-center justify-center gap-2 font-bold"
-                  >
-                    {sendingCertificates ? (
-                      <>
-                        <Clock className="w-4 h-4 animate-spin" />
-                        <span>Sending {certSendingProgress.sent}/{certSendingProgress.total}...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Award className="w-4 h-4" />
-                        <span>Send Certificates</span>
-                      </>
-                    )}
-                  </button>
+            {/* Custom Aligned Setup Actions at the very end of the popup */}
+            <div className="flex flex-col sm:flex-row gap-4 border-t border-zinc-100 pt-5 mt-auto w-full shrink-0">
+              <button
+                type="button"
+                onClick={() => setSelectedCertEvent(null)}
+                className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all font-bold"
+              >
+                Close Setup
+              </button>
+              <button
+                type="button"
+                onClick={handleSendCertificates}
+                disabled={sendingCertificates || loadingRegistrants || registrantsForCert.filter(r => r.attended).length === 0}
+                className="flex-2 py-4 bg-cyan-500 hover:bg-cyan-600 disabled:bg-zinc-100 disabled:text-zinc-400 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-cyan-500/20 flex items-center justify-center gap-2 font-bold"
+              >
+                {sendingCertificates ? (
+                  <>
+                    <Clock className="w-4 h-4 animate-spin" />
+                    <span>Sending {certSendingProgress.sent}/{certSendingProgress.total}...</span>
+                  </>
+                ) : (
+                  <>
+                    <Award className="w-4 h-4" />
+                    <span>Send Certificates</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </motion.div>
+          </div>
+        )}
+
+        {showCertSendConfirm && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm shadow-xl" onClick={() => setShowCertSendConfirm(false)} />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative bg-white w-full max-w-md rounded-[3rem] p-8 shadow-2xl border border-zinc-100 flex flex-col gap-6 z-[210] text-center"
+            >
+              <div className="mx-auto w-16 h-16 bg-cyan-50 rounded-full flex items-center justify-center border border-cyan-100">
+                <Send className="w-8 h-8 text-cyan-500 animate-bounce" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Confirm Sending</h3>
+                <p className="text-sm text-zinc-500 font-semibold px-2">
+                  You are about to generate and email certificates to all <span className="text-cyan-500 font-black">{registrantsForCert.filter(r => r.attended).length} attendees</span> marked as Present.
+                </p>
+                <div className="bg-zinc-50 rounded-2xl p-4 mt-4 text-left border border-zinc-100 space-y-2">
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-400 font-bold uppercase font-mono">Event:</span>
+                    <span className="text-zinc-700 font-black truncate max-w-[200px]">{selectedCertEvent?.title}</span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <span className="text-zinc-400 font-bold uppercase font-mono">Recipient Count:</span>
+                    <span className="text-zinc-700 font-black">{registrantsForCert.filter(r => r.attended).length} people</span>
+                  </div>
+
                 </div>
               </div>
-
-              {/* Right Column: PDF Previews (First Generated Certificate) */}
-              <div className="w-full xl:w-[540px] bg-slate-50 rounded-[2rem] p-6 border border-slate-100 flex flex-col gap-4 xl:max-h-[75vh] xl:overflow-y-auto">
-                <div>
-                  <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800 flex items-center gap-1">
-                    <span>3. Generated PDF Preview</span>
-                    {generatingPreviews && <span className="text-cyan-500 text-[10px] lowercase italic">(regenerating...)</span>}
-                  </h4>
-                  <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
-                    Displays how certificates look for marked attendees. Adjust vertical sliders to coordinate text layouts!
-                  </p>
-                </div>
-
-                {loadingRegistrants ? (
-                  <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
-                    <Clock className="w-8 h-8 text-cyan-500 animate-spin mb-2" />
-                    <span className="text-xs font-black uppercase tracking-wider text-zinc-400 font-mono">Syncing sheets attendee rolls...</span>
-                  </div>
-                ) : registrantsForCert.filter(r => r.attended).length === 0 ? (
-                  <div className="flex-1 border-2 border-dashed border-zinc-200 rounded-2xl p-8 text-center flex flex-col items-center justify-center bg-white">
-                    <span className="text-2xl text-zinc-300">⚠️</span>
-                    <span className="text-xs font-bold text-zinc-500 mt-2 uppercase tracking-wide">No attendants present</span>
-                    <p className="text-[10px] text-zinc-400 leading-normal max-w-xs mt-1 text-center">
-                      No registrants are currently marked as attended ("Yes" in column L) in Google Sheets for this event. 
-                      Displaying default mock certificate sample preview.
-                    </p>
-                    <div className="w-full mt-4 flex flex-col gap-4">
-                      {previewBlobUrls.slice(0, 1).map((url, idx) => (
-                        <div key={idx} className="border border-zinc-200 rounded-xl overflow-hidden shadow-sm bg-zinc-950">
-                          <div className="px-4 py-2 border-b border-zinc-100 flex justify-between items-center bg-zinc-50">
-                            <span className="text-[10px] font-black uppercase text-slate-500 truncate">
-                              Sample Certificate Preview
-                            </span>
-                            <a 
-                              href={url} 
-                              target="_blank" 
-                              rel="noreferrer noopener"
-                              className="p-1 px-2.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-all flex items-center gap-1 text-[10px] font-bold"
-                              title="Open full sample certificate"
-                            >
-                              <span>Open PDF</span>
-                              <ExternalLink className="w-3 h-3" />
-                            </a>
-                          </div>
-                          <iframe src={url + "#toolbar=0&navpanes=0&scrollbar=0"} className="w-full h-[390px]" title="Mock Preview" />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {previewBlobUrls.slice(0, 1).map((url, index) => {
-                      const student = registrantsForCert.filter(r => r.attended)[index] || { studentName: 'Attendant' };
-                      return (
-                        <div key={index} className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
-                          <div className="px-4 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-100/50">
-                            <span className="text-[10px] font-black uppercase text-slate-500 truncate max-w-[240px]">
-                              {student.studentName} ({student['collegeName'] || 'ARSD'})
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[9px] font-mono font-bold text-emerald-500 leading-none bg-emerald-50 px-2 py-1 rounded-full">Attended</span>
-                              <a 
-                                href={url} 
-                                target="_blank" 
-                                rel="noreferrer noopener"
-                                className="p-1 px-2.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-all flex items-center gap-1 text-[10px] font-bold"
-                                title="Open full certificate"
-                              >
-                                <span>Open PDF</span>
-                                <ExternalLink className="w-3 h-3" />
-                              </a>
-                            </div>
-                          </div>
-                          <div className="bg-zinc-800">
-                            <iframe 
-                              src={`${url}#toolbar=0&navpanes=0&scrollbar=0`} 
-                              className="w-full h-[390px]" 
-                              title={`Preview ${index + 1}`}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setShowCertSendConfirm(false)}
+                  className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={executeSendCertificates}
+                  className="flex-1 py-4 bg-cyan-500 hover:bg-cyan-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-cyan-500/20"
+                >
+                  Confirm & Send
+                </button>
               </div>
             </motion.div>
           </div>

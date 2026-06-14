@@ -250,10 +250,10 @@ export default function Events_Page() {
 
         {/* Events Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEvents.map((event: any) => (
+          {filteredEvents.map((event: any, index: number) => (
             <motion.div
               layout
-              key={event.id}
+              key={`events-page-list-${event.id || index}`}
               className="bento-card group flex flex-col p-0 overflow-hidden shadow-md shadow-slate-200/50 relative"
             >
               <div className="aspect-[16/9] w-full relative overflow-hidden bg-slate-100">
