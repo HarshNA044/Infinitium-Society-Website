@@ -106,6 +106,7 @@ export default function Home_Page() {
 
   const formatTime = (timeStr: string) => {
     if (!timeStr) return '';
+    if (/am|pm/i.test(timeStr)) return timeStr;
     if (!timeStr.includes(':')) return timeStr;
     const [hours, minutes] = timeStr.split(':');
     const h = parseInt(hours);

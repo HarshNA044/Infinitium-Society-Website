@@ -110,6 +110,7 @@ export default function EventDetail_Page() {
 
   const formatTime = (timeStr: string) => {
     if (!timeStr) return '';
+    if (/am|pm/i.test(timeStr)) return timeStr;
     if (!timeStr.includes(':')) return timeStr; // Fallback if already formatted
     const [hours, minutes] = timeStr.split(':');
     const h = parseInt(hours);
