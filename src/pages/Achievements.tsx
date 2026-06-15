@@ -1,25 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Trophy, Star, Award, Medal } from 'lucide-react';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { getDocsCached } from '../lib/cachedFirestore';
 
 export default function Achievements_Page() {
   const [achievements, setAchievements] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchAchievements = async () => {
-      const path = 'achievements';
       try {
-        const q = query(collection(db, path), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const data = await getDocsCached('achievements', 'createdAt', 'desc');
         setAchievements(data);
       } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, path);
+        console.error("Failed to load achievements", error);
       }
     };
     fetchAchievements();

@@ -8,8 +8,7 @@ import {
   Database, Binary, Compass
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { db } from '../lib/firebase';
-import { collection, getDocs, orderBy, query, limit } from 'firebase/firestore';
+import { getDocsCached } from '../lib/cachedFirestore';
 import { cn } from '../lib/utils';
 
 const RetroGrid = ({
@@ -161,18 +160,14 @@ export default function Home_Page() {
   useEffect(() => {
     const loadHomeData = async () => {
       try {
-        const eventsQuery = query(collection(db, 'events'), orderBy('date', 'desc'));
-        const eventsSnap = await getDocs(eventsQuery);
-        const eventsList = eventsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const eventsList = await getDocsCached('events', 'date', 'desc');
         setEvents(eventsList);
 
-        const achQuery = query(collection(db, 'achievements'), orderBy('createdAt', 'desc'), limit(1));
-        const achSnap = await getDocs(achQuery);
-        setAchievements(achSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const achievementsList = await getDocsCached('achievements', 'createdAt', 'desc', 1);
+        setAchievements(achievementsList);
 
-        const galleryQuery = query(collection(db, 'gallery'), orderBy('createdAt', 'desc'));
-        const gallerySnap = await getDocs(galleryQuery);
-        setGalleryImages(gallerySnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const galleryList = await getDocsCached('gallery', 'createdAt', 'desc');
+        setGalleryImages(galleryList);
       } catch (error) {
         console.error("Error loading home data", error);
       } finally {

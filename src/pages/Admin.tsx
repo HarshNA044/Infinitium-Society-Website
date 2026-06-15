@@ -30,6 +30,7 @@ import {
   onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User
 } from 'firebase/auth';
 import { cn, compressImage } from '../lib/utils';
+import { invalidateFirestoreCache } from '../lib/cachedFirestore';
 
 export default function Admin_Page() {
   const { request, loading: apiLoading } = useApi();
@@ -527,7 +528,7 @@ export default function Admin_Page() {
 
     // Calculate dynamic name font size based on text length to prevent line-wrapping or overlapping
     const nameLength = (student.studentName || '').length;
-    const recipientFontSize = nameLength > 28 ? '24px' : nameLength > 22 ? '28px' : nameLength > 16 ? '32px' : '36px';
+    const recipientFontSize = nameLength > 28 ? '30px' : nameLength > 22 ? '35px' : nameLength > 16 ? '42px' : '48px';
 
     // Create a hidden iframe for clean rendering completely isolated from parent stylesheets / oklch problems
     const iframe = document.createElement('iframe');
@@ -707,7 +708,7 @@ export default function Admin_Page() {
 
               .certificate-for {
                   font-family: 'Cinzel', serif;
-                  font-size: 40px;
+                  font-size: 60px;
                   color: #aa7c11;
                   margin: 0 0 4px 0;
                   letter-spacing: 6px;
@@ -717,7 +718,7 @@ export default function Admin_Page() {
 
               .sub-purpose {
                   font-family: 'Cinzel', serif;
-                  font-size: 15px;
+                  font-size: 19px;
                   color: #b58d3d;
                   margin: 4px 0 16px 0;
                   letter-spacing: 4px;
@@ -728,7 +729,7 @@ export default function Admin_Page() {
               .proudly-presented {
                   font-family: 'Cormorant Garamond', serif;
                   font-style: italic;
-                  font-size: 18px;
+                  font-size: 23px;
                   color: #555;
                   margin: 14px 0 14px 0;
                   line-height: 1.4;
@@ -770,7 +771,7 @@ export default function Admin_Page() {
               /* Description / Recognition Text */
               .recognition-text {
                   font-family: 'Cormorant Garamond', serif;
-                  font-size: 18px;
+                  font-size: 22px;
                   line-height: 1.45;
                   color: #444;
                   max-width: 85%;
@@ -780,7 +781,7 @@ export default function Admin_Page() {
               .highlight {
                   font-family: 'Montserrat', sans-serif;
                   font-weight: 700;
-                  font-size: 15px;
+                  font-size: 19px;
                   color: #222;
               }
 
@@ -819,7 +820,7 @@ export default function Admin_Page() {
               }
 
               .signer-name {
-                  font-size: 11px;
+                  font-size: 13px;
                   font-weight: 700;
                   color: #c59b27;
                   text-transform: uppercase;
@@ -827,7 +828,7 @@ export default function Admin_Page() {
               }
 
               .signer-title {
-                  font-size: 10px;
+                  font-size: 11.5px;
                   font-weight: 600;
                   color: #666;
                   text-transform: uppercase;
@@ -883,7 +884,7 @@ export default function Admin_Page() {
                   
                   <p class="recognition-text">
                       of <span class="highlight">${student.course || 'Course Title'}</span>, <span class="highlight">${yearStr}</span>, 
-                      for their outstanding participation and achievement in the event<br>
+                      for their outstanding participation and achievement in the event 
                       <span class="highlight" style="color: #c59b27;">${eventTitle || 'Event Name'}</span> organized by the <span class="highlight">Infinitium Society</span>, held on <span class="highlight">${eventDate || 'Event Date'}</span>.
                   </p>
               </div>
@@ -1868,6 +1869,7 @@ export default function Admin_Page() {
         const docRef = doc(collection(db, path));
         await setDoc(docRef, { ...data, createdAt: serverTimestamp() });
       }
+      invalidateFirestoreCache('members');
       setShowMemberModal(false);
       setEditingMember(null);
       loadFirebaseData();
@@ -1880,6 +1882,7 @@ export default function Admin_Page() {
     const path = `members/${id}`;
     try {
       await deleteDoc(doc(db, 'members', id));
+      invalidateFirestoreCache('members');
       loadFirebaseData();
       setDeleteConfirm(null);
     } catch (error) {
@@ -1974,6 +1977,8 @@ export default function Admin_Page() {
         }
       }
 
+      invalidateFirestoreCache('events');
+      invalidateFirestoreCache('gallery');
       setShowAddEvent(false);
       setEditingEvent(null);
       setEventImagePreview(null);
@@ -2012,6 +2017,7 @@ export default function Admin_Page() {
         const docRef = doc(collection(db, path));
         await setDoc(docRef, { ...data, createdAt: serverTimestamp() });
       }
+      invalidateFirestoreCache('achievements');
       setShowAchievementModal(false);
       setEditingAchievement(null);
       loadFirebaseData();
@@ -2050,6 +2056,7 @@ export default function Admin_Page() {
         const docRef = doc(collection(db, path));
         await setDoc(docRef, { ...data, createdAt: serverTimestamp() });
       }
+      invalidateFirestoreCache('gallery');
       setShowGalleryModal(false);
       setEditingGallery(null);
       setGalleryImagePreview(null);
@@ -4314,6 +4321,10 @@ export default function Admin_Page() {
                               }
 
                               await deleteDoc(doc(db, col, deleteConfirm.id));
+                              invalidateFirestoreCache(col);
+                              if (deleteConfirm.type === 'gallery') {
+                                 invalidateFirestoreCache('events');
+                              }
                               loadFirebaseData();
                               setDeleteConfirm(null);
                             } catch (err) {

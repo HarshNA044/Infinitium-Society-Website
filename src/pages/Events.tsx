@@ -7,8 +7,7 @@ import {
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { getDocsCached } from '../lib/cachedFirestore';
 import { cn } from '../lib/utils';
 import { Logo } from '../App';
 
@@ -34,14 +33,8 @@ export default function Events_Page() {
   useEffect(() => {
     const fetchEvents = async () => {
       setLoading(true);
-      const path = 'events';
       try {
-        const q = query(collection(db, path), orderBy('date', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const data = await getDocsCached('events', 'date', 'desc');
         setEvents(data);
         if (registerId) {
           const ev = data.find((e: any) => e.id === registerId);
@@ -51,7 +44,7 @@ export default function Events_Page() {
           }
         }
       } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, path);
+        console.error("Failed to load events", error);
       } finally {
         setLoading(false);
       }

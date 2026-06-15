@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
 import { Linkedin, Twitter, Github, Mail, Users } from 'lucide-react';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { getDocsCached } from '../lib/cachedFirestore';
 
 export default function Team_Page() {
   const [allMembers, setAllMembers] = useState<any[]>([]);
@@ -10,15 +9,8 @@ export default function Team_Page() {
 
   useEffect(() => {
     const fetchTeam = async () => {
-      const path = 'members';
       try {
-        const q = query(collection(db, path), orderBy('tenure', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) as any[];
-        
+        const data = await getDocsCached('members', 'tenure', 'desc');
         setAllMembers(data);
         if (data.length > 0) {
           const availableTenures = Array.from(new Set(data.map((m: any) => m.tenure))).sort().reverse() as string[];
@@ -27,7 +19,7 @@ export default function Team_Page() {
           }
         }
       } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, path);
+        console.error("Failed to load team members", error);
       }
     };
     fetchTeam();

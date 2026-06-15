@@ -2,8 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ZoomIn, X, ChevronDown } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { db, handleFirestoreError, OperationType } from '../lib/firebase';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { getDocsCached } from '../lib/cachedFirestore';
 
 export default function Gallery_Page() {
   const [items, setItems] = useState<any[]>([]);
@@ -15,28 +14,16 @@ export default function Gallery_Page() {
   useEffect(() => {
     const fetchData = async () => {
       // 1. Fetch gallery items
-      const galleryPath = 'gallery';
       try {
-        const q = query(collection(db, galleryPath), orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const data = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const data = await getDocsCached('gallery', 'createdAt', 'desc');
         setItems(data);
       } catch (error) {
-        handleFirestoreError(error, OperationType.LIST, galleryPath);
+        console.error("Failed to load gallery items", error);
       }
 
-      // 2. Fetch events to populate dropdown (ordered by date desc, so options are nice and chronological)
-      const eventsPath = 'events';
+      // 2. Fetch events to populate dropdown
       try {
-        const q = query(collection(db, eventsPath), orderBy('date', 'desc'));
-        const querySnapshot = await getDocs(q);
-        const eventsData = querySnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const eventsData = await getDocsCached('events', 'date', 'desc');
         setEvents(eventsData);
       } catch (error) {
         console.error("Failed to load events for gallery sorting", error);

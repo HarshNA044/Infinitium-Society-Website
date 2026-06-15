@@ -9,6 +9,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
 import { db, handleFirestoreError, OperationType } from '../lib/firebase';
 import { doc, getDoc, collection, getDocs, orderBy, query, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { getDocCached, getDocsCached } from '../lib/cachedFirestore';
 import { cn } from '../lib/utils';
 import QRCode from 'qrcode';
 
@@ -41,22 +42,19 @@ export default function EventDetail_Page() {
     const fetchEventData = async () => {
       if (!id) return;
       setLoading(true);
-      const eventRef = doc(db, 'events', id);
       try {
-        const docSnap = await getDoc(eventRef);
-        if (docSnap.exists()) {
-          setEvent({ id: docSnap.id, ...docSnap.data() });
+        const cachedEvent = await getDocCached('events', id);
+        if (cachedEvent) {
+          setEvent(cachedEvent);
           
-          // Fetch photos subcollection
-          const photosRef = collection(db, 'events', id, 'photos');
-          const q = query(photosRef, orderBy('createdAt', 'desc'));
-          const photosSnap = await getDocs(q);
-          setPhotos(photosSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+          // Fetch photos subcollection from cache
+          const cachedPhotos = await getDocsCached(`events/${id}/photos`, 'createdAt', 'desc');
+          setPhotos(cachedPhotos);
         } else {
           navigate('/events');
         }
       } catch (error) {
-        handleFirestoreError(error, OperationType.GET, `events/${id}`);
+        console.error("Failed to load event details", error);
       } finally {
         setLoading(false);
       }

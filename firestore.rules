@@ -138,13 +138,16 @@ service cloud.firestore {
           && (!data.keys().hasAll(['stats']) || data.stats is map || data.stats == null)
           && (!data.keys().hasAll(['startTime']) || data.startTime is string || data.startTime == null)
           && (!data.keys().hasAll(['whatsappGroup']) || data.whatsappGroup is string || data.whatsappGroup == null)
+          && (!data.keys().hasAll(['tag']) || data.tag is string || data.tag == null)
+          && (!data.keys().hasAll(['remindersSent']) || data.remindersSent is bool || data.remindersSent == null)
+          && (!data.keys().hasAll(['remindersSentAt']) || data.remindersSentAt is timestamp || data.remindersSentAt is string || data.remindersSentAt == null)
           && (!data.keys().hasAll(['createdAt']) || data.createdAt is timestamp || data.createdAt is string || data.createdAt == null);
       }
 
       allow read: if true;
       allow create: if isAdmin() && isValidId(eventId) && isValidEvent(incoming()) && incoming().createdAt == request.time;
       allow update: if isAdmin() && isValidId(eventId) && isValidEvent(incoming()) && (
-        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'subtitle', 'description', 'date', 'location', 'image', 'type', 'status', 'sheetId', 'stats', 'createdAt', 'isInterCollege', 'startTime', 'whatsappGroup'])
+        incoming().diff(existing()).affectedKeys().hasOnly(['title', 'subtitle', 'description', 'date', 'location', 'image', 'type', 'status', 'sheetId', 'stats', 'createdAt', 'isInterCollege', 'startTime', 'whatsappGroup', 'tag', 'remindersSent', 'remindersSentAt'])
       );
       allow delete: if isAdmin();
 
