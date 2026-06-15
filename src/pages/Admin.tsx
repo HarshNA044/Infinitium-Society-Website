@@ -993,6 +993,7 @@ export default function Admin_Page() {
                   color: #444;
                   max-width: 85%;
                   margin: 0 auto;
+                  text-align: center;
               }
 
               .highlight {
@@ -1101,7 +1102,9 @@ export default function Admin_Page() {
                   <p class="recognition-text">
                       of <span class="highlight">${student.course || "Course Title"}</span>, <span class="highlight">${yearStr}</span>, 
                       for their outstanding participation and achievement in the event 
-                      <span class="highlight" style="color: #c59b27;">${eventTitle || "Event Name"}</span> organised by <span class="highlight">INFINITIUM: Physical Science Society</span> held on <span class="highlight">${formatEventDate(eventDate)}</span>.
+                      <span class="highlight" style="color: #c59b27;">${eventTitle || "Event Name"}</span> organised by
+                      <br>
+                      <span class="highlight">INFINITIUM: Physical Science Society</span> held on <span class="highlight">${formatEventDate(eventDate)}</span>.
                   </p>
               </div>
 
