@@ -113,6 +113,7 @@
         "sheetId": { "type": "string", "description": "The ID of the Google Sheet for registrations" },
         "startTime": { "type": "string", "description": "Display time e.g. 10:00 AM" },
         "whatsappGroup": { "type": "string", "description": "Optional WhatsApp group link for the event" },
+        "tag": { "type": "string", "description": "Academic year session, e.g., 2025-26" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["title", "description", "date", "type", "sheetId"]

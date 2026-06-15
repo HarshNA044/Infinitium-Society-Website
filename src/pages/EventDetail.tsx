@@ -500,6 +500,20 @@ export default function EventDetail_Page() {
                   <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">{event.type}</span>
                 </div>
                 
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-brand-600 shrink-0" />
+                  <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest">
+                    {event.tag || (() => {
+                      if (!event.date) return '';
+                      const dateVal = new Date(event.date);
+                      if (isNaN(dateVal.getTime())) return '';
+                      const yr = dateVal.getFullYear();
+                      const mo = dateVal.getMonth();
+                      return mo >= 6 ? `${yr}-${(yr + 1).toString().slice(-2)}` : `${yr - 1}-${yr.toString().slice(-2)}`;
+                    })()}
+                  </span>
+                </div>
+                
                 <button
                   onClick={handleShare}
                   className="flex items-center gap-1.5 text-zinc-600 hover:text-brand-600 transition-all text-[9px] sm:text-[10px] font-black uppercase tracking-widest shrink-0"
@@ -595,9 +609,9 @@ export default function EventDetail_Page() {
             </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              {photos.map((photo) => (
+              {photos.map((photo, idx) => (
                 <motion.div 
-                  key={photo.id}
+                  key={photo.id || idx}
                   initial={{ opacity: 0, y: 10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}

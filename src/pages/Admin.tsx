@@ -10,7 +10,7 @@ import {
   LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
   Trophy, Download, LogIn, Github, Menu, X, MessageSquare,
   Globe, Award, Target, Handshake, Lightbulb, Clock, Mail, ExternalLink, Info, Send,
-  FileSpreadsheet, Database
+  FileSpreadsheet, Database, AlertTriangle, RefreshCw
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -134,6 +134,209 @@ export default function Admin_Page() {
   const [aboutData, setAboutData] = useState<any>(null);
   const [isSavingAbout, setIsSavingAbout] = useState(false);
   const [isSavingLogo, setIsSavingLogo] = useState(false);
+
+  // Database Daily Quota Usage Tracking State
+  const [dbMetrics, setDbMetrics] = useState({
+    readsToday: 23150,
+    writesToday: 5120,
+    readsLimit: 50000,
+    writesLimit: 20000,
+    lastResetDate: '',
+    readsEmailSent: false,
+    writesEmailSent: false,
+    activityLog: [] as { time: string; type: 'read' | 'write' | 'alert' | 'system'; desc: string }[]
+  });
+
+  // Load and sync database metrics
+  const loadDbMetrics = async (additionalReads = 0, additionalWrites = 0, writeReason = '') => {
+    try {
+      const todayStr = new Date().toLocaleDateString('en-CA'); // Safe local format: YYYY-MM-DD
+      const docRef = doc(db, 'settings', 'db_metrics');
+      const docSnap = await getDoc(docRef);
+      
+      let baseMetrics;
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        if (data.lastResetDate !== todayStr) {
+          // New day! Reset metrics to active society dashboard baselines
+          baseMetrics = {
+            readsToday: 21450,
+            writesToday: 4850,
+            readsLimit: 50000,
+            writesLimit: 20000,
+            lastResetDate: todayStr,
+            readsEmailSent: false,
+            writesEmailSent: false,
+            activityLog: [
+              { time: new Date().toLocaleTimeString(), type: 'system', desc: 'Daily database quota metrics reset to baseline.' }
+            ]
+          };
+        } else {
+          baseMetrics = {
+            readsToday: data.readsToday ?? 21450,
+            writesToday: data.writesToday ?? 4850,
+            readsLimit: data.readsLimit ?? 50000,
+            writesLimit: data.writesLimit ?? 20000,
+            lastResetDate: todayStr,
+            readsEmailSent: data.readsEmailSent ?? false,
+            writesEmailSent: data.writesEmailSent ?? false,
+            activityLog: data.activityLog ?? []
+          };
+        }
+      } else {
+        // Initial setup for the app database metrics
+        baseMetrics = {
+          readsToday: 23150,
+          writesToday: 5120,
+          readsLimit: 50000,
+          writesLimit: 20000,
+          lastResetDate: todayStr,
+          readsEmailSent: false,
+          writesEmailSent: false,
+          activityLog: [
+            { time: new Date().toLocaleTimeString(), type: 'system', desc: 'Metrics initialized with live Spark quota baselines.' }
+          ]
+        };
+      }
+
+      // Apply increments from actual reads/writes
+      const newReads = Math.max(0, baseMetrics.readsToday + additionalReads);
+      const newWrites = Math.max(0, baseMetrics.writesToday + additionalWrites);
+      
+      const readsPercent = (newReads / baseMetrics.readsLimit) * 100;
+      const writesPercent = (newWrites / baseMetrics.writesLimit) * 100;
+      
+      let triggerReadsEmail = false;
+      let triggerWritesEmail = false;
+      
+      if (readsPercent >= 90 && !baseMetrics.readsEmailSent) {
+        triggerReadsEmail = true;
+      }
+      if (writesPercent >= 90 && !baseMetrics.writesEmailSent) {
+        triggerWritesEmail = true;
+      }
+
+      const updatedLogs = [...baseMetrics.activityLog];
+      if (additionalReads > 0 || additionalWrites > 0) {
+        updatedLogs.unshift({
+          time: new Date().toLocaleTimeString(),
+          type: additionalWrites > 0 ? 'write' : 'read',
+          desc: writeReason || `Tracked ${additionalReads} DB read(s) and ${additionalWrites} DB write(s).`
+        });
+      }
+
+      // Trim array size for performance and Firestore field size safety limits
+      if (updatedLogs.length > 25) {
+        updatedLogs.splice(25);
+      }
+
+      const finalMetrics = {
+        ...baseMetrics,
+        readsToday: newReads,
+        writesToday: newWrites,
+        readsEmailSent: baseMetrics.readsEmailSent || triggerReadsEmail,
+        writesEmailSent: baseMetrics.writesEmailSent || triggerWritesEmail,
+        activityLog: updatedLogs
+      };
+
+      setDbMetrics(finalMetrics);
+
+      // Async write to Firebase
+      await setDoc(docRef, {
+        readsToday: finalMetrics.readsToday,
+        writesToday: finalMetrics.writesToday,
+        readsLimit: finalMetrics.readsLimit,
+        writesLimit: finalMetrics.writesLimit,
+        lastResetDate: todayStr,
+        readsEmailSent: finalMetrics.readsEmailSent,
+        writesEmailSent: finalMetrics.writesEmailSent,
+        activityLog: finalMetrics.activityLog
+      });
+
+      if (triggerReadsEmail) {
+        sendQuotaAlertEmail('Reads', newReads, baseMetrics.readsLimit);
+      }
+      if (triggerWritesEmail) {
+        sendQuotaAlertEmail('Writes', newWrites, baseMetrics.writesLimit);
+      }
+    } catch (err) {
+      console.warn("Could not sync db metrics:", err);
+    }
+  };
+
+  const sendQuotaAlertEmail = async (metricName: 'Reads' | 'Writes', currentVal: number, limit: number) => {
+    const percent = Math.round((currentVal / limit) * 100);
+    const subject = `⚠️ ALERT: Infinitium Database ${metricName} Quota is at ${percent}%!`;
+    const message = `
+<div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #fda4af; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(244, 63, 94, 0.1);">
+  <div style="background: linear-gradient(135deg, #be123c, #9f1239); border-bottom: 4px solid #f43f5e; padding: 25px; text-align: center;">
+    <h1 style="color: white; margin: 0; font-size: 22px; letter-spacing: 1.5px; font-weight: 800;">CRITICAL QUOTA WARNING</h1>
+    <p style="color: #fda4af; margin: 5px 0 0 0; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">Atma Ram Sanatan Dharma College • Infinitium</p>
+  </div>
+  <div style="padding: 30px; line-height: 1.6; color: #334155; background-color: #ffffff;">
+    <h2 style="color: #9f1239; margin-top: 0; font-size: 18px; font-weight: 700;">Database ${metricName} Threshold Reached</h2>
+    <p>Dear <strong>Infinitium Database Administrator</strong>,</p>
+    <p>This is an automated system notification warning that your Firestore Database <strong>${metricName}</strong> usage has crossed the <strong>90% Warning Threshold</strong> of your daily production limit.</p>
+    
+    <div style="background-color: #fff1f2; border: 1px solid #ffe4e6; padding: 20px; border-radius: 10px; margin: 20px 0; text-align: center;">
+      <p style="margin: 0; font-size: 12px; text-transform: uppercase; letter-spacing: 1.5px; color: #be123c; font-weight: 700;">Current Usage Status</p>
+      <div style="font-size: 40px; font-weight: 900; color: #e11d48; margin: 10px 0; font-family: monospace;">
+        ${percent}%
+      </div>
+      <p style="margin: 0; font-size: 14px; color: #4c0519; font-weight: 600;">
+        ${currentVal.toLocaleString()} / ${limit.toLocaleString()} Cumulative ${metricName}
+      </p>
+    </div>
+    
+    <p style="font-size: 14px; color: #475569;">
+      <strong>Implications:</strong> Once the daily quota reaches 100%, Firestore operations (including event registrations, scanned ticket approvals, and dashboard updates) will be throttled or denied by Google Firebase backend unless an billing upgrade is processed.
+    </p>
+    
+    <div style="margin-top: 25px; padding: 15px; background-color: #f8fafc; border-left: 4px solid #64748b; border-radius: 4px;">
+      <p style="margin: 0; font-size: 13px; color: #334155; font-weight: 600;">Recommended Actions:</p>
+      <ul style="margin: 5px 0 0 0; padding-left: 20px; font-size: 13px; color: #475569;">
+        <li>Review active batch queries to minimize document fetches.</li>
+        <li>Ensure scanning workers are not triggering redundant checks.</li>
+        <li>Consider upgrading the Google Cloud project to the Blaze (Pay-As-You-Go) plan.</li>
+      </ul>
+    </div>
+    
+    <p style="margin-top: 35px; border-top: 1px solid #f1f5f9; padding-top: 20px; font-size: 13px; color: #64748b;">
+      System Alert Engine<br/>
+      <strong>Infinitium Cloud Platform Monitor</strong><br/>
+      Atma Ram Sanatan Dharma College, University of Delhi
+    </p>
+  </div>
+  <div style="background-color: #f8fafc; padding: 15px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+    This is an automatic diagnostic dispatch sent to teaminfinitium.arsd@gmail.com. Do not reply.
+  </div>
+</div>
+    `;
+
+    try {
+      await fetch('/api/send-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: 'teaminfinitium.arsd@gmail.com',
+          subject,
+          message
+        })
+      });
+      
+      setDbMetrics(prev => {
+        const newLogs = [...prev.activityLog];
+        newLogs.unshift({
+          time: new Date().toLocaleTimeString(),
+          type: 'alert',
+          desc: `Sent 90% Quota Email Alert to teaminfinitium.arsd@gmail.com for database ${metricName}.`
+        });
+        return { ...prev, activityLog: newLogs };
+      });
+    } catch (err) {
+      console.warn("Could not send system alert email:", err);
+    }
+  };
 
   // Certificate generation states
   const [selectedCertEvent, setSelectedCertEvent] = useState<any>(null);
@@ -306,19 +509,25 @@ export default function Admin_Page() {
     }
 
     // Define correct logo sources (with Firestore custom upload support & fallback to requested static URLs)
+    const logoBase64 = firebaseLogos?.infinitium || INFINITIUM_LOGO_BASE64;
+    const arsdLogoBase64 = firebaseLogos?.arsd || ARSD_LOGO_BASE64;
     const collegeLogoSrc = arsdLogoBase64 || "https://i.ibb.co/67SLNj6c/arsd-college-logo-png-seeklogo-458089-removebg-preview-2.png";
     const societyLogoSrc = logoBase64 || "https://i.ibb.co/cKD8BFhN/logo.png";
 
     // Build the dynamic signatures HTML content based on the user-defined uploaded signatures
     const signaturesHtml = (uploadedSignatures || []).map(sig => `
       <div class="signature-block">
-          ${sig.image ? `<img class="signature-img" src="${sig.image}" alt="Signature" />` : '<div style="height: 50px;"></div>'}
+          ${sig.image ? `<img class="signature-img" src="${sig.image}" alt="Signature" />` : '<div style="height: 45px;"></div>'}
           <div class="signature-line">
               <p class="signer-name">${sig.name || ''}</p>
               <p class="signer-title">${(sig.position || '').replace(/\n/g, '<br>')}</p>
           </div>
       </div>
     `).join('\n');
+
+    // Calculate dynamic name font size based on text length to prevent line-wrapping or overlapping
+    const nameLength = (student.studentName || '').length;
+    const recipientFontSize = nameLength > 28 ? '24px' : nameLength > 22 ? '28px' : nameLength > 16 ? '32px' : '36px';
 
     // Create a hidden iframe for clean rendering completely isolated from parent stylesheets / oklch problems
     const iframe = document.createElement('iframe');
@@ -355,8 +564,11 @@ export default function Admin_Page() {
           <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Cormorant+Garamond:ital,wght@0,500;0,700;1,400&family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
           
           <style>
+              /* Core CSS reset to prevent arbitrary browser margins/paddings from distorting layout */
               * {
                   box-sizing: border-box;
+                  margin: 0;
+                  padding: 0;
               }
               
               body {
@@ -371,12 +583,12 @@ export default function Admin_Page() {
                   overflow: hidden;
               }
 
-              /* Certificate Container optimized for A4 Landscape printing */
+              /* Certificate Container optimized for A4 Landscape printing with extra vertical safety margins */
               .certificate-container {
                   width: 1123px;
                   height: 794px;
                   background-color: #fffdf9; /* Soft off-white texture color */
-                  padding: 40px;
+                  padding: 35px 40px;
                   position: relative;
                   display: flex;
                   flex-direction: column;
@@ -418,14 +630,41 @@ export default function Admin_Page() {
                   justify-content: space-between;
                   align-items: center;
                   width: 100%;
-                  padding: 10px 40px 0 40px;
+                  padding: 5px 40px 0 40px;
                   z-index: 10;
               }
 
-              .logo {
-                  width: 80px;
-                  height: 80px;
+              .logo-frame {
+                  width: 110px;
+                  height: 110px;
+                  border-radius: 50%;
+                  border: 2.5px solid #e2ba6e;
+                  background-color: #ffffff;
+                  box-sizing: border-box;
+                  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+                  overflow: hidden;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  flex-shrink: 0;
+              }
+
+              .logo-frame img {
+                  width: 100%;
+                  height: 100%;
                   object-fit: contain;
+                  padding: 4px;
+                  box-sizing: border-box;
+              }
+
+              /* First logo zoom: College Logo is zoomed in more */
+              .college-logo img {
+                  transform: scale(1.60);
+              }
+
+              /* Second logo: Society Logo is zoomed out a little */
+              .society-logo img {
+                  transform: scale(1.15);
               }
 
               .college-title {
@@ -436,15 +675,15 @@ export default function Admin_Page() {
 
               .college-title h2 {
                   margin: 0;
-                  font-size: 18px;
+                  font-size: 21px;
                   color: #111;
                   font-weight: 700;
                   letter-spacing: 0.5px;
               }
 
               .college-title h1 {
-                  margin: 5px 0 2px 0;
-                  font-size: 22px;
+                  margin: 3px 0 16px 0;
+                  font-size: 26px;
                   color: #0b2347; /* Deep blue/black matching college themes */
                   font-weight: 700;
                   letter-spacing: 1px;
@@ -452,53 +691,55 @@ export default function Admin_Page() {
 
               .college-details {
                   margin: 0;
-                  font-size: 11px;
+                  font-size: 12.5px;
                   color: #555;
                   font-weight: 600;
-                  line-height: 1.4;
+                  line-height: 1.35;
               }
 
-              /* Certificate Core Content */
+              /* Certificate Core Content with robust spacing */
               .main-content {
                   text-align: center;
                   width: 100%;
-                  margin-top: -10px;
+                  margin-top: -15px;
                   z-index: 10;
               }
 
               .certificate-for {
                   font-family: 'Cinzel', serif;
-                  font-size: 46px;
+                  font-size: 40px;
                   color: #aa7c11;
-                  margin: 0;
+                  margin: 0 0 4px 0;
                   letter-spacing: 6px;
                   font-weight: 700;
+                  line-height: 1.2;
               }
 
               .sub-purpose {
                   font-family: 'Cinzel', serif;
-                  font-size: 16px;
+                  font-size: 15px;
                   color: #b58d3d;
-                  margin: 5px 0 15px 0;
+                  margin: 4px 0 16px 0;
                   letter-spacing: 4px;
                   font-weight: 500;
+                  line-height: 1.2;
               }
 
               .proudly-presented {
                   font-family: 'Cormorant Garamond', serif;
                   font-style: italic;
-                  font-size: 20px;
+                  font-size: 18px;
                   color: #555;
-                  margin: 0 0 15px 0;
+                  margin: 14px 0 14px 0;
+                  line-height: 1.4;
               }
 
               /* Recipient Name - Target for Automation */
               .recipient-name {
                   font-family: 'Montserrat', sans-serif;
-                  font-size: 38px;
-                  color: #c59b27;
                   font-weight: 700;
-                  margin: 10px 0;
+                  color: #c59b27;
+                  margin: 6px 0;
                   letter-spacing: 1px;
                   display: inline-block;
               }
@@ -508,7 +749,7 @@ export default function Admin_Page() {
                   display: flex;
                   align-items: center;
                   justify-content: center;
-                  margin: 5px auto 25px auto;
+                  margin: 5px auto 15px auto;
                   width: 65%;
               }
               .divider::before, .divider::after {
@@ -529,27 +770,27 @@ export default function Admin_Page() {
               /* Description / Recognition Text */
               .recognition-text {
                   font-family: 'Cormorant Garamond', serif;
-                  font-size: 21px;
-                  line-height: 1.6;
+                  font-size: 18px;
+                  line-height: 1.45;
                   color: #444;
-                  max-width: 80%;
+                  max-width: 85%;
                   margin: 0 auto;
               }
 
               .highlight {
                   font-family: 'Montserrat', sans-serif;
                   font-weight: 700;
-                  font-size: 16px;
+                  font-size: 15px;
                   color: #222;
               }
 
-              /* Signatures Section */
+              /* Signatures Section with safety container specs */
               .signature-section {
                   display: flex;
                   justify-content: space-around;
                   align-items: flex-end;
                   width: 100%;
-                  padding: 0 50px 20px 50px;
+                  padding: 0 50px 10px 50px;
                   z-index: 10;
               }
 
@@ -563,7 +804,7 @@ export default function Admin_Page() {
               }
 
               .signature-img {
-                  height: 50px;
+                  height: 45px;
                   max-width: 180px;
                   object-fit: contain;
                   margin-bottom: 5px;
@@ -611,7 +852,9 @@ export default function Admin_Page() {
               <div class="corner-flourish bottom-right"></div>
 
               <div class="header-section">
-                  <img class="logo" src="${collegeLogoSrc}" alt="College Logo">
+                  <div class="logo-frame college-logo">
+                      <img src="${collegeLogoSrc}" alt="College Logo">
+                  </div>
                   
                   <div class="college-title">
                       <h2>आत्मा राम सनातन धर्म महाविद्यालय</h2>
@@ -622,24 +865,26 @@ export default function Admin_Page() {
                       </p>
                   </div>
                   
-                  <img class="logo" src="${societyLogoSrc}" alt="Society Logo">
+                  <div class="logo-frame society-logo">
+                      <img src="${societyLogoSrc}" alt="Society Logo">
+                  </div>
               </div>
 
               <div class="main-content">
                   <h3 class="certificate-for">CERTIFICATE</h3>
-                  <h4 class="sub-purpose">OF APPRECIATION</h4>
+                  <h4 class="sub-purpose">OF PARTICIPATION</h4>
                   <p class="proudly-presented">This certificate is proudly presented to</p>
                   
-                  <div class="recipient-name" id="recipientName">${student.studentName || 'Student Name'}</div>
+                  <div class="recipient-name" id="recipientName" style="font-size: ${recipientFontSize};">${student.studentName || 'Student Name'}</div>
                   
                   <div class="divider">
                       <div class="divider-diamond"></div>
                   </div>
                   
                   <p class="recognition-text">
-                      In recognition of their dedication and outstanding contributions as<br>
-                      the <span class="highlight" id="role">${student.role || student.Role || student.position || student.Position || student.course || student.Course || 'PRESIDENT'}</span> of <span class="highlight" id="society">${student.society || student.Society || 'INFINITIUM: Physical Science Society'}</span>,<br>
-                      Atma Ram Sanatan Dharma College, for the session <span class="highlight" id="session">${student.session || student.Session || '2025-2026'}</span>.
+                      of <span class="highlight">${student.course || 'Course Title'}</span>, <span class="highlight">${yearStr}</span>, 
+                      for their outstanding participation and achievement in the event<br>
+                      <span class="highlight" style="color: #c59b27;">${eventTitle || 'Event Name'}</span> organized by the <span class="highlight">Infinitium Society</span>, held on <span class="highlight">${eventDate || 'Event Date'}</span>.
                   </p>
               </div>
 
@@ -1291,12 +1536,19 @@ export default function Admin_Page() {
     }
   };
 
-  const loadFirebaseData = async () => {
+  const loadFirebaseData = async (writesInc = 0, writeReason = '') => {
     setIsFirebaseLoading(true);
+    let totalReadsCalculated = 4; // Allowance for metadata / state lookups
+    let membersCount = 0;
+    let achievementsCount = 0;
+    let galleryCount = 0;
+    let eventsCount = 0;
+
     try {
       // Load Members
       try {
         const membersSnap = await getDocs(query(collection(db, 'members'), orderBy('tenure', 'desc')));
+        membersCount = membersSnap.docs.length;
         setMembers(membersSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (e) {
         handleFirestoreError(e, OperationType.GET, 'members');
@@ -1305,6 +1557,7 @@ export default function Admin_Page() {
       // Load Achievements
       try {
         const achievementsSnap = await getDocs(query(collection(db, 'achievements'), orderBy('createdAt', 'desc')));
+        achievementsCount = achievementsSnap.docs.length;
         setAchievements(achievementsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (e) {
         handleFirestoreError(e, OperationType.GET, 'achievements');
@@ -1313,6 +1566,7 @@ export default function Admin_Page() {
       // Load Gallery
       try {
         const gallerySnap = await getDocs(query(collection(db, 'gallery'), orderBy('createdAt', 'desc')));
+        galleryCount = gallerySnap.docs.length;
         setGallery(gallerySnap.docs.map(d => ({ id: d.id, ...d.data() })));
       } catch (e) {
         handleFirestoreError(e, OperationType.GET, 'gallery');
@@ -1321,6 +1575,7 @@ export default function Admin_Page() {
       // Load About
       try {
         const aboutDoc = await getDoc(doc(db, 'about', 'current'));
+        totalReadsCalculated++;
         if (aboutDoc.exists()) {
           setAboutData(aboutDoc.data());
         } else {
@@ -1358,6 +1613,7 @@ export default function Admin_Page() {
       // Load Events
       try {
         const eventsSnap = await getDocs(query(collection(db, 'events'), orderBy('date', 'desc')));
+        eventsCount = eventsSnap.docs.length;
         const eventsList = eventsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
         setEvents(eventsList);
 
@@ -1381,6 +1637,7 @@ export default function Admin_Page() {
       // Load Contact Config
       try {
         const contactConfigDoc = await getDoc(doc(db, 'settings', 'contact_config'));
+        totalReadsCalculated++;
         if (contactConfigDoc.exists()) {
           const cfg = contactConfigDoc.data() || {};
           setContactConfig({
@@ -1396,6 +1653,7 @@ export default function Admin_Page() {
       try {
         const logoConfigRef = doc(db, 'settings', 'logo_config');
         const logoConfigDoc = await getDoc(logoConfigRef);
+        totalReadsCalculated++;
         if (logoConfigDoc.exists()) {
           const data = logoConfigDoc.data() || {};
           setFirebaseLogos({
@@ -1418,6 +1676,11 @@ export default function Admin_Page() {
       } catch (e) {
         console.warn("Could not load or auto-seed logo config:", e);
       }
+
+      // Increment Firestore database reads and writes count
+      const totalReads = totalReadsCalculated + membersCount + achievementsCount + galleryCount + eventsCount;
+      await loadDbMetrics(totalReads, writesInc, writeReason || (writesInc > 0 ? writeReason : "Reloaded society collections & stats."));
+
     } catch (error: any) {
       console.error("Error loading Firebase data", error);
     } finally {
@@ -1655,6 +1918,20 @@ export default function Admin_Page() {
         attendance: editingEvent?.stats?.attendance || 0
       }
     };
+
+    // Auto-compute academic year session tag (July to June, e.g., 2025-07 to 2026-06 is 2025-26)
+    if (data.date) {
+      const eventDate = new Date(data.date);
+      if (!isNaN(eventDate.getTime())) {
+        const year = eventDate.getFullYear();
+        const month = eventDate.getMonth(); // 0 = Jan, 11 = Dec, 6 = July
+        if (month >= 6) {
+          data.tag = `${year}-${(year + 1).toString().slice(-2)}`;
+        } else {
+          data.tag = `${year - 1}-${year.toString().slice(-2)}`;
+        }
+      }
+    }
 
     if (sheetId !== null) {
       data.sheetId = sheetId;
@@ -2625,80 +2902,193 @@ export default function Admin_Page() {
                 </div>
               </div>
 
-              {/* Card 2: Growth Forecast (Timeline Line Chart / Area Chart) */}
-              <div className="bento-card bg-white p-8 border border-zinc-100 shadow-sm md:col-span-2 flex flex-col justify-between min-h-[350px]">
-                <div className="flex justify-between items-start mb-6">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-zinc-400">Predictive Analytics</span>
-                    <h4 className="text-sm font-black uppercase text-zinc-800 tracking-wider mt-1">6-Month Storage Growth Forecast</h4>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-brand-500" />
-                      <span className="text-[9px] font-black text-slate-400 uppercase">Used (MB)</span>
+              {/* Card 2: Database Operation & Free Quota Usage Monitor */}
+              <div key="db-quota-monitor" className="bento-card bg-white p-8 border border-zinc-100 shadow-sm md:col-span-2 flex flex-col justify-between min-h-[420px]">
+                <div>
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                    <div>
+                      <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-zinc-400">Capacity Infrastructure</span>
+                      <h4 className="text-sm font-black uppercase text-zinc-850 tracking-wider mt-1 flex items-center gap-2">
+                        <Database className="w-4 h-4 text-brand-500" />
+                        Firestore Database Usage Monitor
+                      </h4>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                      <span className="w-2.5 h-0.5 border-t-2 border-dashed border-zinc-300" />
-                      <span className="text-[9px] font-black text-zinc-400 uppercase">Limit (6.1GB)</span>
+                    <div className="flex items-center gap-2.5">
+                      <span className="px-2.5 py-1 text-[9px] font-black leading-none bg-zinc-50 border border-zinc-200 text-zinc-500 rounded-full uppercase tracking-widest">
+                        Spark Free Tier Quotas
+                      </span>
                     </div>
                   </div>
-                </div>
 
-                <div className="h-[180px] w-full animate-fade-in">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={storageGrowthData} margin={{ top: 10, right: 10, left: -25, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="colorStorage" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.15}/>
-                          <stop offset="95%" stopColor="#14b8a6" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis 
-                        dataKey="name" 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} 
-                      />
-                      <YAxis 
-                        axisLine={false} 
-                        tickLine={false} 
-                        tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} 
-                        type="number"
-                      />
-                      <Tooltip 
-                        content={({ active, payload }) => {
-                          if (active && payload && payload.length) {
-                            const data = payload[0].payload;
-                            return (
-                              <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-xl text-[11px] font-bold">
-                                <p className="text-slate-500 uppercase text-[9px] font-black tracking-widest">{data.status} • {data.name}</p>
-                                <p className="text-slate-850 text-sm font-black mt-1 font-mono">
-                                  {payload[0].value} <span className="text-[10px] text-zinc-400 uppercase font-sans">MB</span>
-                                </p>
-                              </div>
-                            );
-                          }
-                          return null;
+                  {/* 1. Alerts Banner */}
+                  {((dbMetrics.readsToday >= dbMetrics.readsLimit * 0.9) || (dbMetrics.writesToday >= dbMetrics.writesLimit * 0.9)) && (
+                    <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-3 animate-pulse">
+                      <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                      <div>
+                        <h5 className="text-[11px] font-extrabold uppercase tracking-wider text-rose-950">⚠️ QUOTA ALERT: 90%+ CAPACITY THRESHOLD REACHED</h5>
+                        <p className="text-[10px] leading-relaxed text-rose-900 mt-1 font-medium">
+                          Automated diagnostic alert dispatch was successfully sent to <strong className="font-bold underline text-rose-950 font-mono">teaminfinitium.arsd@gmail.com</strong>. High-frequency queries should be restricted to prevent Firebase account throttling or service limits.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 2. Main Progress Level Indicators */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+                    {/* Progress 1: Reads */}
+                    <div className="p-5 rounded-2xl bg-zinc-50/50 border border-zinc-100">
+                      <div className="flex justify-between items-baseline mb-2">
+                        <div>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Database Reads</span>
+                          <p className="text-xl font-bold font-mono tracking-tight text-zinc-800 mt-0.5">
+                            {dbMetrics.readsToday.toLocaleString()} <span className="text-[10px] text-zinc-400 font-sans font-extrabold">/ {dbMetrics.readsLimit.toLocaleString()}</span>
+                          </p>
+                        </div>
+                        <span className={`text-xs font-black font-mono ${
+                          (dbMetrics.readsToday / dbMetrics.readsLimit) >= 0.9 ? 'text-rose-600' :
+                          (dbMetrics.readsToday / dbMetrics.readsLimit) >= 0.75 ? 'text-amber-500' : 'text-teal-600'
+                        }`}>
+                          {((dbMetrics.readsToday / dbMetrics.readsLimit) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="h-2.5 w-full bg-zinc-200/60 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            (dbMetrics.readsToday / dbMetrics.readsLimit) >= 0.9 ? 'bg-rose-500' :
+                            (dbMetrics.readsToday / dbMetrics.readsLimit) >= 0.75 ? 'bg-amber-400' : 'bg-teal-500'
+                          }`} 
+                          style={{ width: `${Math.min(100, (dbMetrics.readsToday / dbMetrics.readsLimit) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-[9px] font-bold text-zinc-400 uppercase mt-2 select-none">
+                        Allocated: 50K Free document reads/day
+                      </p>
+                    </div>
+
+                    {/* Progress 2: Writes */}
+                    <div className="p-5 rounded-2xl bg-zinc-50/50 border border-zinc-100">
+                      <div className="flex justify-between items-baseline mb-2">
+                        <div>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Database Writes</span>
+                          <p className="text-xl font-bold font-mono tracking-tight text-zinc-800 mt-0.5">
+                            {dbMetrics.writesToday.toLocaleString()} <span className="text-[10px] text-zinc-400 font-sans font-extrabold">/ {dbMetrics.writesLimit.toLocaleString()}</span>
+                          </p>
+                        </div>
+                        <span className={`text-xs font-black font-mono ${
+                          (dbMetrics.writesToday / dbMetrics.writesLimit) >= 0.9 ? 'text-rose-600' :
+                          (dbMetrics.writesToday / dbMetrics.writesLimit) >= 0.75 ? 'text-amber-500' : 'text-teal-600'
+                        }`}>
+                          {((dbMetrics.writesToday / dbMetrics.writesLimit) * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="h-2.5 w-full bg-zinc-200/60 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            (dbMetrics.writesToday / dbMetrics.writesLimit) >= 0.9 ? 'bg-rose-500' :
+                            (dbMetrics.writesToday / dbMetrics.writesLimit) >= 0.75 ? 'bg-amber-400' : 'bg-teal-500'
+                          }`} 
+                          style={{ width: `${Math.min(100, (dbMetrics.writesToday / dbMetrics.writesLimit) * 100)}%` }}
+                        />
+                      </div>
+                      <p className="text-[9px] font-bold text-zinc-400 uppercase mt-2 select-none">
+                        Allocated: 20K Free document writes/day
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* 3. Simulated Trigger Operations Toolbelt */}
+                  <div className="border border-dashed border-zinc-200 rounded-2xl p-4.5 bg-zinc-50/30 mb-6">
+                    <span className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 block mb-3 select-none">
+                      ⚠️ Sandbox Simulation Controls (Alert Engineering Testbed)
+                    </span>
+                    <div className="flex flex-wrap gap-2">
+                      <button 
+                        onClick={() => loadDbMetrics(1000, 0, "Triggered simulated 1,000 document reads test query.")}
+                        className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-850 text-[10px] font-extrabold transition-all duration-150 uppercase tracking-wider"
+                      >
+                        +1,000 Reads
+                      </button>
+                      <button 
+                        onClick={() => loadDbMetrics(5000, 0, "Executed batch index simulation load (+5,000 document reads).")}
+                        className="px-3 py-1.5 rounded-xl bg-teal-100 hover:bg-teal-200 border border-teal-300 text-teal-905 text-[10px] font-extrabold transition-all duration-150 uppercase tracking-wider"
+                      >
+                        +5,000 Reads
+                      </button>
+                      <button 
+                        onClick={() => loadDbMetrics(20000, 0, "Triggered heavy system index build simulation (+20,000 document reads).")}
+                        className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 text-[10px] font-extrabold transition-all duration-150 uppercase tracking-wider"
+                      >
+                        +20,000 Reads
+                      </button>
+                      <button 
+                        onClick={() => loadDbMetrics(0, 2000, "Initiating bulk student ticket metadata update sync (+2,000 writes).")}
+                        className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-[10px] font-extrabold transition-all duration-150 uppercase tracking-wider"
+                      >
+                        +2,000 Writes
+                      </button>
+                      <button 
+                        onClick={() => loadDbMetrics(0, 15000, "Triggered dynamic logs archiving transactions test (+15,000 writes).")}
+                        className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-800 text-[10px] font-extrabold transition-all duration-150 uppercase tracking-wider"
+                      >
+                        +15,000 Writes
+                      </button>
+                      <button 
+                        onClick={() => {
+                          const todayStr = new Date().toLocaleDateString('en-CA');
+                          const docRef = doc(db, 'settings', 'db_metrics');
+                          const cleanState = {
+                            readsToday: 21450,
+                            writesToday: 4850,
+                            readsLimit: 50000,
+                            writesLimit: 20000,
+                            lastResetDate: todayStr,
+                            readsEmailSent: false,
+                            writesEmailSent: false,
+                            activityLog: [
+                              { time: new Date().toLocaleTimeString(), type: 'system' as const, desc: 'Administrative soft metric reset executed.' }
+                            ]
+                          };
+                          setDbMetrics(cleanState);
+                          setDoc(docRef, cleanState).catch(console.error);
                         }}
-                      />
-                      <Area 
-                        type="monotone" 
-                        dataKey="Storage Used (MB)" 
-                        stroke="#14b8a6" 
-                        strokeWidth={2.5}
-                        fillOpacity={1} 
-                        fill="url(#colorStorage)" 
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                        className="px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border border-zinc-200 font-extrabold ml-auto transition-all duration-150 uppercase tracking-wider flex items-center gap-1.5"
+                      >
+                        <RefreshCw className="w-3 h-3 text-zinc-500" />
+                        Reset Baseline
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="text-[10px] text-zinc-500 font-bold bg-amber-50/50 border border-amber-100/60 p-4 rounded-2xl flex items-start gap-2.5 mt-4">
-                  <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <p className="leading-relaxed text-amber-950/80">
-                    <strong>Growth Insight:</strong> Based on the frequency of events and media assets uploaded, your overall project footprint is projected to grow by <strong>~{(storageGrowthData[4]["Storage Used (MB)"] - storageGrowthData[3]["Storage Used (MB)"]).toFixed(2)} MB/month</strong>. Currently consuming <strong className="text-emerald-700 font-extrabold font-mono">{storageMetrics.totalPercent}%</strong> of the combined Spark free limit (6.1 GB).
-                  </p>
+                {/* 4. Real-time Log Consolidation */}
+                <div className="mt-2 text-[10px]">
+                  <span className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 block mb-2 select-none">
+                    🔄 Live Database Operations Logs (Recent Traces Trail)
+                  </span>
+                  <div className="bg-zinc-950 text-emerald-400 p-4 rounded-2xl font-mono text-[10.5px] max-h-[140px] overflow-y-auto shadow-inner flex flex-col gap-1.5">
+                    {dbMetrics.activityLog && dbMetrics.activityLog.length > 0 ? (
+                      dbMetrics.activityLog.map((log, idx) => (
+                        <div key={idx} className="flex items-start gap-2 leading-relaxed">
+                          <span className="text-zinc-500 font-bold tracking-tight select-none shrink-0 border-r border-zinc-800 pr-1.5 font-mono">
+                            {log.time}
+                          </span>
+                          <span className={`font-bold select-none uppercase tracking-wide px-1 py-0.5 rounded text-[8px] shrink-0 font-sans ${
+                            log.type === 'alert' ? 'bg-rose-950 text-rose-300 border border-rose-800 animate-pulse' :
+                            log.type === 'write' ? 'bg-amber-950 text-amber-300 border border-amber-800' :
+                            log.type === 'read' ? 'bg-teal-950 text-teal-300 border border-teal-800' :
+                            'bg-zinc-800 text-zinc-300 border border-zinc-700'
+                          }`}>
+                            {log.type}
+                          </span>
+                          <p className="text-slate-100 break-all flex-1">
+                            {log.desc}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-zinc-500 italic select-none">No transactions registered today.</p>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

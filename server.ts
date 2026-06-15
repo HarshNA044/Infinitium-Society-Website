@@ -461,10 +461,34 @@ async function startServer() {
 
   app.get('/api/contact-messages', (req, res) => res.json(contactMessages));
 
-  app.post('/api/send-email', (req, res) => {
+  app.post('/api/send-email', async (req, res) => {
     const { email, subject, message } = req.body;
-    console.log(`[EMAIL DISPATCH] To: ${email} | Subject: ${subject} | Body: ${message}`);
-    res.json({ success: true, message: 'Simulated email sent successfully' });
+    console.log(`[EMAIL DISPATCH] To: ${email} | Subject: ${subject}`);
+    
+    // Check if Apps Script Webhook is configured
+    const appsScriptUrl = process.env.VITE_APPS_SCRIPT_URL || process.env.APPS_SCRIPT_URL;
+    if (appsScriptUrl) {
+      try {
+        const response = await fetch(appsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain' },
+          body: JSON.stringify({
+            type: 'send_email',
+            email: email,
+            subject: subject,
+            message: message
+          })
+        });
+        const result = await response.json().catch(() => ({}));
+        console.log("[SERVER-EMAIL] Forwarded email to Apps Script Webhook successfully. Result:", result);
+      } catch (err: any) {
+        console.error("[SERVER-EMAIL] Failed to forward email to Apps Script Webhook:", err?.message || err);
+      }
+    } else {
+      console.log(`[SERVER-EMAIL] (Mock Simulation) Output: Email successfully logged but draft not dispatched. Set APPS_SCRIPT_URL in your environment to send active mail to ${email}.`);
+    }
+
+    res.json({ success: true, message: 'Email dispatch request processed successfully' });
   });
 
   app.post('/api/register', (req, res) => {

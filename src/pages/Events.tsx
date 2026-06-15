@@ -3,7 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   Calendar, MapPin, Search, Filter, ArrowRight, X, 
-  CheckCircle2, Download, QrCode as QrIcon, Share2, MessageSquare
+  CheckCircle2, Download, QrCode as QrIcon, Share2, MessageSquare, ChevronDown
 } from 'lucide-react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { jsPDF } from 'jspdf';
@@ -22,6 +22,8 @@ export default function Events_Page() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [registrationSuccess, setRegistrationSuccess] = useState<any>(null);
   const [filter, setFilter] = useState('All');
+  const [sortOption, setSortOption] = useState<string>('dateDesc'); // dateDesc, dateAsc, regDesc
+  const [selectedSession, setSelectedSession] = useState<string>('all');
 
   const [formData, setFormData] = useState({
     studentName: '',
@@ -195,6 +197,19 @@ export default function Events_Page() {
     }
   };
 
+  const getEventTag = (event: any) => {
+    if (event.tag) return event.tag;
+    if (!event.date) return '';
+    const dateVal = new Date(event.date);
+    if (isNaN(dateVal.getTime())) return '';
+    const year = dateVal.getFullYear();
+    const month = dateVal.getMonth(); // 0 = Jan, 11 = Dec, 6 = July
+    return month >= 6 ? `${year}-${(year + 1).toString().slice(-2)}` : `${year - 1}-${year.toString().slice(-2)}`;
+  };
+
+  // Extract unique academic year sessions from fests/events
+  const sessions = Array.from(new Set(events.map(e => getEventTag(e)).filter(Boolean))).sort((a: any, b: any) => b.localeCompare(a));
+
   const handleShare = async (e: React.MouseEvent, event: any) => {
     e.preventDefault();
     e.stopPropagation();
@@ -216,7 +231,38 @@ export default function Events_Page() {
     }
   };
 
-  const filteredEvents = events.filter((e: any) => filter === 'All' || e.type === filter);
+  const getProcessedEvents = () => {
+    // 1. Filter by category
+    let processed = events.filter((e: any) => filter === 'All' || e.type === filter);
+
+    // 2. Filter by selected session
+    if (selectedSession !== 'all') {
+      processed = processed.filter((e: any) => getEventTag(e) === selectedSession);
+    }
+
+    // 3. Sort events
+    processed.sort((a, b) => {
+      const getEventDateVal = (e: any) => {
+        if (!e.date) return 0;
+        return new Date(e.date).getTime();
+      };
+
+      switch (sortOption) {
+        case 'dateDesc':
+          return getEventDateVal(b) - getEventDateVal(a);
+        case 'dateAsc':
+          return getEventDateVal(a) - getEventDateVal(b);
+        case 'regDesc':
+          return (b.stats?.registrations || 0) - (a.stats?.registrations || 0);
+        default:
+          return 0;
+      }
+    });
+
+    return processed;
+  };
+
+  const filteredEvents = getProcessedEvents();
 
   return (
     <div className="pt-10 pb-20 px-4 min-h-screen bg-[#fcfcfc]">
@@ -234,18 +280,68 @@ export default function Events_Page() {
         <div className="flex flex-wrap justify-center gap-2 mb-12">
           {['All', 'Seminar', 'Fest', 'Workshop', 'Field Trip'].map(f => (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={cn(
-                "px-6 py-2 rounded-full font-bold transition-all",
-                filter === f 
-                  ? "bg-brand-600 text-white shadow-lg shadow-brand-100" 
-                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
-              )}
+               key={f}
+               onClick={() => setFilter(f)}
+               className={cn(
+                 "px-6 py-2 rounded-full font-bold transition-all",
+                 filter === f 
+                   ? "bg-brand-600 text-white shadow-lg shadow-brand-100" 
+                   : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+               )}
             >
               {f}
             </button>
           ))}
+        </div>
+
+        {/* Controls Panel */}
+        <div className="mb-10 bg-zinc-50 border border-zinc-100 p-6 rounded-3xl flex flex-col md:flex-row justify-between items-center gap-6 shadow-sm" id="events-controls">
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+            {/* Filter by Session */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
+              <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest whitespace-nowrap pl-1">Session</span>
+              <div className="relative w-full sm:w-56">
+                <select
+                  value={selectedSession}
+                  onChange={(e) => setSelectedSession(e.target.value)}
+                  className="w-full text-[11px] font-black uppercase tracking-wider text-slate-900 bg-white border-2 border-zinc-200 px-4 py-3.5 pr-10 rounded-2xl outline-none focus:border-brand-500 cursor-pointer transition-all appearance-none"
+                  id="events-filter-session"
+                >
+                  <option value="all">All Sessions</option>
+                  {sessions.map((sess, i) => (
+                    <option key={`session-opt-${sess || i}`} value={sess}>
+                      Session {sess}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+            {/* Sort Order */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full md:w-auto">
+              <span className="text-[10px] font-black uppercase text-zinc-400 tracking-widest whitespace-nowrap pl-1">Sort By</span>
+              <div className="relative w-full sm:w-64">
+                <select
+                  value={sortOption}
+                  onChange={(e) => setSortOption(e.target.value)}
+                  className="w-full text-[11px] font-black uppercase tracking-wider text-slate-900 bg-white border-2 border-zinc-200 px-4 py-3.5 pr-10 rounded-2xl outline-none focus:border-brand-500 cursor-pointer transition-all appearance-none"
+                  id="events-sort-order"
+                >
+                  <option value="dateDesc">Date (Newest First)</option>
+                  <option value="dateAsc">Date (Oldest First)</option>
+                  <option value="regDesc">Registrations (Highest First)</option>
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-400">
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Events Grid */}
@@ -276,8 +372,11 @@ export default function Events_Page() {
                   <div className="bg-brand-50 w-12 h-12 rounded-2xl flex items-center justify-center text-brand-600 shadow-sm border border-brand-100 group-hover:scale-110 transition-transform">
                     <Calendar className="w-6 h-6" />
                   </div>
-                  <div className="flex flex-col items-end gap-2">
-                     <span className="text-[9px] bento-tag bg-brand-950 text-brand-300 font-black uppercase tracking-widest">{event.type}</span>
+                  <div className="flex flex-col items-end gap-2 text-right">
+                     <div className="flex flex-wrap gap-1.5 justify-end">
+                       <span className="text-[9px] bento-tag bg-brand-950 text-brand-300 font-black uppercase tracking-widest">{event.type}</span>
+                       <span className="text-[9px] bento-tag bg-zinc-900 text-zinc-300 font-black uppercase tracking-widest">{getEventTag(event)}</span>
+                     </div>
                      <button 
                       onClick={(e) => handleShare(e, event)}
                       className="p-2 bg-slate-50 text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-xl transition-all active:scale-90 border border-slate-100"

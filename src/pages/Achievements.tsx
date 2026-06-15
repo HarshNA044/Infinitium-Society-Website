@@ -40,7 +40,7 @@ export default function Achievements_Page() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {achievements.map((item: any, idx: number) => (
             <motion.div
-              key={item.id}
+              key={item.id || idx}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
