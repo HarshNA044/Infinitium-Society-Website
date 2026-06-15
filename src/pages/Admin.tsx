@@ -2996,68 +2996,7 @@ export default function Admin_Page() {
                     </div>
                   </div>
 
-                  {/* 3. Simulated Trigger Operations Toolbelt */}
-                  <div className="border border-dashed border-zinc-200 rounded-2xl p-4.5 bg-zinc-50/30 mb-6">
-                    <span className="text-[9px] font-extrabold uppercase tracking-widest text-zinc-400 block mb-3 select-none">
-                      ⚠️ Sandbox Simulation Controls (Alert Engineering Testbed)
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      <button 
-                        onClick={() => loadDbMetrics(1000, 0, "Triggered simulated 1,000 document reads test query.")}
-                        className="px-3 py-1.5 rounded-xl bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-850 text-[10px] font-extrabold transition-all duration-150 uppercase tracking-wider"
-                      >
-                        +1,000 Reads
-                      </button>
-                      <button 
-                        onClick={() => loadDbMetrics(5000, 0, "Executed batch index simulation load (+5,000 document reads).")}
-                        className="px-3 py-1.5 rounded-xl bg-teal-100 hover:bg-teal-200 border border-teal-300 text-teal-905 text-[10px] font-extrabold transition-all duration-150 uppercase tracking-wider"
-                      >
-                        +5,000 Reads
-                      </button>
-                      <button 
-                        onClick={() => loadDbMetrics(20000, 0, "Triggered heavy system index build simulation (+20,000 document reads).")}
-                        className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-800 text-[10px] font-extrabold transition-all duration-150 uppercase tracking-wider"
-                      >
-                        +20,000 Reads
-                      </button>
-                      <button 
-                        onClick={() => loadDbMetrics(0, 2000, "Initiating bulk student ticket metadata update sync (+2,000 writes).")}
-                        className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-800 text-[10px] font-extrabold transition-all duration-150 uppercase tracking-wider"
-                      >
-                        +2,000 Writes
-                      </button>
-                      <button 
-                        onClick={() => loadDbMetrics(0, 15000, "Triggered dynamic logs archiving transactions test (+15,000 writes).")}
-                        className="px-3 py-1.5 rounded-xl bg-red-50 hover:bg-red-100 border border-red-200 text-red-800 text-[10px] font-extrabold transition-all duration-150 uppercase tracking-wider"
-                      >
-                        +15,000 Writes
-                      </button>
-                      <button 
-                        onClick={() => {
-                          const todayStr = new Date().toLocaleDateString('en-CA');
-                          const docRef = doc(db, 'settings', 'db_metrics');
-                          const cleanState = {
-                            readsToday: 21450,
-                            writesToday: 4850,
-                            readsLimit: 50000,
-                            writesLimit: 20000,
-                            lastResetDate: todayStr,
-                            readsEmailSent: false,
-                            writesEmailSent: false,
-                            activityLog: [
-                              { time: new Date().toLocaleTimeString(), type: 'system' as const, desc: 'Administrative soft metric reset executed.' }
-                            ]
-                          };
-                          setDbMetrics(cleanState);
-                          setDoc(docRef, cleanState).catch(console.error);
-                        }}
-                        className="px-3 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 text-zinc-900 border border-zinc-200 font-extrabold ml-auto transition-all duration-150 uppercase tracking-wider flex items-center gap-1.5"
-                      >
-                        <RefreshCw className="w-3 h-3 text-zinc-500" />
-                        Reset Baseline
-                      </button>
-                    </div>
-                  </div>
+
                 </div>
 
                 {/* 4. Real-time Log Consolidation */}
