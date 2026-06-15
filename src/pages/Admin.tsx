@@ -1,74 +1,152 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import { motion, AnimatePresence } from 'motion/react';
-import { Link } from 'react-router-dom';
-import { 
-  BarChart3, Plus, Scan, Users, Calendar, 
-  Trash2, CheckCircle, XCircle, ChevronLeft,
-  LayoutDashboard, ListOrdered, Camera, Linkedin, Edit3,
-  Trophy, Download, LogIn, Github, Menu, X, MessageSquare,
-  Globe, Award, Target, Handshake, Lightbulb, Clock, Mail, ExternalLink, Info, Send,
-  FileSpreadsheet, Database, AlertTriangle, RefreshCw
-} from 'lucide-react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, Cell, PieChart, Pie,
-  AreaChart, Area
-} from 'recharts';
-import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
-import { useApi } from '../hooks/useApi';
-import { Logo } from '../App';
-import { INFINITIUM_LOGO_BASE64, ARSD_LOGO_BASE64 } from '../assets/logoBase64';
-import { db, auth, handleFirestoreError, OperationType } from '../lib/firebase';
-import { 
-  collection, getDocs, doc, setDoc, updateDoc, deleteDoc, 
-  query, orderBy, serverTimestamp, getDoc 
-} from 'firebase/firestore';
-import { 
-  onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User
-} from 'firebase/auth';
-import { cn, compressImage } from '../lib/utils';
-import { invalidateFirestoreCache } from '../lib/cachedFirestore';
+import React, { useState, useEffect, useRef } from "react";
+import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import { motion, AnimatePresence } from "motion/react";
+import { Link } from "react-router-dom";
+import {
+  BarChart3,
+  Plus,
+  Scan,
+  Users,
+  Calendar,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  ChevronLeft,
+  LayoutDashboard,
+  ListOrdered,
+  Camera,
+  Linkedin,
+  Edit3,
+  Trophy,
+  Download,
+  LogIn,
+  Github,
+  Menu,
+  X,
+  MessageSquare,
+  Globe,
+  Award,
+  Target,
+  Handshake,
+  Lightbulb,
+  Clock,
+  Mail,
+  ExternalLink,
+  Info,
+  Send,
+  FileSpreadsheet,
+  Database,
+  AlertTriangle,
+  RefreshCw,
+} from "lucide-react";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+  PieChart,
+  Pie,
+  AreaChart,
+  Area,
+} from "recharts";
+import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
+import { useApi } from "../hooks/useApi";
+import { Logo } from "../App";
+import { INFINITIUM_LOGO_BASE64, ARSD_LOGO_BASE64 } from "../assets/logoBase64";
+import { db, auth, handleFirestoreError, OperationType } from "../lib/firebase";
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  orderBy,
+  serverTimestamp,
+  getDoc,
+} from "firebase/firestore";
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  GoogleAuthProvider,
+  signOut,
+  User,
+} from "firebase/auth";
+import {
+  cn,
+  compressImage,
+  parseTenureToSingleYears,
+  formatTenureDisplayTags,
+} from "../lib/utils";
+import { invalidateFirestoreCache } from "../lib/cachedFirestore";
 
 export default function Admin_Page() {
   const { request, loading: apiLoading } = useApi();
   const [user, setUser] = useState<User | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [fetchedStats, setFetchedStats] = useState<Record<string, { registrations: number; attendance: number; societyAttendance?: number }>>({});
+  const [activeTab, setActiveTab] = useState("overview");
+  const [fetchedStats, setFetchedStats] = useState<
+    Record<
+      string,
+      { registrations: number; attendance: number; societyAttendance?: number }
+    >
+  >({});
   const [isFetchingStats, setIsFetchingStats] = useState(false);
   const [isFirebaseLoading, setIsFirebaseLoading] = useState(true);
-  const [selectedEventDate, setSelectedEventDate] = useState<string>('');
+  const [selectedEventDate, setSelectedEventDate] = useState<string>("");
   const [events, setEvents] = useState([]);
   const [members, setMembers] = useState<any[]>([]);
-  const [stats, setStats] = useState({ totalRegistrations: 0, totalAttendance: 0, eventsCount: 0 });
+  const [stats, setStats] = useState({
+    totalRegistrations: 0,
+    totalAttendance: 0,
+    eventsCount: 0,
+  });
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState<any>(null);
   const [showMemberModal, setShowMemberModal] = useState(false);
   const [editingMember, setEditingMember] = useState<any>(null);
-  const [memberImagePreview, setMemberImagePreview] = useState<string | null>(null);
-  const [eventImagePreview, setEventImagePreview] = useState<string | null>(null);
-  const [galleryImagePreview, setGalleryImagePreview] = useState<string | null>(null);
+  const [selectedMemberTenures, setSelectedMemberTenures] = useState<string[]>(
+    [],
+  );
+  const [memberImagePreview, setMemberImagePreview] = useState<string | null>(
+    null,
+  );
+  const [eventImagePreview, setEventImagePreview] = useState<string | null>(
+    null,
+  );
+  const [galleryImagePreview, setGalleryImagePreview] = useState<string | null>(
+    null,
+  );
   const [eventMediaPreviews, setEventMediaPreviews] = useState<string[]>([]);
   const [isEventImageProcessing, setIsEventImageProcessing] = useState(false);
   const [isEventSubmitting, setIsEventSubmitting] = useState(false);
-  const [selectedHour, setSelectedHour] = useState<string>('10');
-  const [selectedMinute, setSelectedMinute] = useState<string>('00');
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('AM');
+  const [selectedHour, setSelectedHour] = useState<string>("10");
+  const [selectedMinute, setSelectedMinute] = useState<string>("00");
+  const [selectedPeriod, setSelectedPeriod] = useState<string>("AM");
   const [showClockDropdown, setShowClockDropdown] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string, type: 'member' | 'event' | 'gallery' | 'achievement' } | null>(null);
-  
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id: string;
+    type: "member" | "event" | "gallery" | "achievement";
+  } | null>(null);
+
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
+
   // Scanner state
   const [scanResult, setScanResult] = useState<any>(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [selectedScanEventId, setSelectedScanEventId] = useState<string>('');
-  const [lastScannedStudent, setLastScannedStudent] = useState<string | null>(null);
-  
+  const [selectedScanEventId, setSelectedScanEventId] = useState<string>("");
+  const [lastScannedStudent, setLastScannedStudent] = useState<string | null>(
+    null,
+  );
+
   const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const ScannerTimeout = useRef<NodeJS.Timeout | null>(null);
   const lastScanUiTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -85,39 +163,48 @@ export default function Admin_Page() {
   const [isImageProcessing, setIsImageProcessing] = useState(false);
   const [isSubmittingGallery, setIsSubmittingGallery] = useState(false);
   const [isDeletingHighlights, setIsDeletingHighlights] = useState(false);
-  const [showDeleteHighlightsConfirm, setShowDeleteHighlightsConfirm] = useState(false);
-  const [highlightDeleteStatus, setHighlightDeleteStatus] = useState<string | null>(null);
+  const [showDeleteHighlightsConfirm, setShowDeleteHighlightsConfirm] =
+    useState(false);
+  const [highlightDeleteStatus, setHighlightDeleteStatus] = useState<
+    string | null
+  >(null);
 
   const handleDeleteAllHighlights = async () => {
     setIsDeletingHighlights(true);
-    setHighlightDeleteStatus('Scanning for highlight images...');
+    setHighlightDeleteStatus("Scanning for highlight images...");
     try {
       // 1. Delete all gallery items with category === 'Events' or connected eventId
-      const targetGalleryItems = gallery.filter((g: any) => g.category === 'Events' || !!g.eventId);
+      const targetGalleryItems = gallery.filter(
+        (g: any) => g.category === "Events" || !!g.eventId,
+      );
       let count = 0;
       for (const item of targetGalleryItems) {
         if (item.id) {
-          await deleteDoc(doc(db, 'gallery', item.id));
+          await deleteDoc(doc(db, "gallery", item.id));
           count++;
         }
       }
 
-      setHighlightDeleteStatus(`Removed ${count} images from gallery. Clearing event subcollections...`);
+      setHighlightDeleteStatus(
+        `Removed ${count} images from gallery. Clearing event subcollections...`,
+      );
 
       // 2. Clear subcollection 'photos' for all events
       let subcount = 0;
       for (const e of events as any) {
         if (e.id) {
-          const photosRef = collection(db, 'events', e.id, 'photos');
+          const photosRef = collection(db, "events", e.id, "photos");
           const photosSnap = await getDocs(photosRef);
           for (const photoDoc of photosSnap.docs) {
-            await deleteDoc(doc(db, 'events', e.id, 'photos', photoDoc.id));
+            await deleteDoc(doc(db, "events", e.id, "photos", photoDoc.id));
             subcount++;
           }
         }
       }
 
-      setHighlightDeleteStatus(`Success! Cleaned up ${count} gallery references and ${subcount} subcollection files.`);
+      setHighlightDeleteStatus(
+        `Success! Cleaned up ${count} gallery references and ${subcount} subcollection files.`,
+      );
       await loadFirebaseData();
       setTimeout(() => {
         setShowDeleteHighlightsConfirm(false);
@@ -125,7 +212,7 @@ export default function Admin_Page() {
       }, 1800);
     } catch (err: any) {
       console.error(err);
-      setHighlightDeleteStatus('Error: ' + (err.message || err));
+      setHighlightDeleteStatus("Error: " + (err.message || err));
     } finally {
       setIsDeletingHighlights(false);
     }
@@ -142,19 +229,27 @@ export default function Admin_Page() {
     writesToday: 5120,
     readsLimit: 50000,
     writesLimit: 20000,
-    lastResetDate: '',
+    lastResetDate: "",
     readsEmailSent: false,
     writesEmailSent: false,
-    activityLog: [] as { time: string; type: 'read' | 'write' | 'alert' | 'system'; desc: string }[]
+    activityLog: [] as {
+      time: string;
+      type: "read" | "write" | "alert" | "system";
+      desc: string;
+    }[],
   });
 
   // Load and sync database metrics
-  const loadDbMetrics = async (additionalReads = 0, additionalWrites = 0, writeReason = '') => {
+  const loadDbMetrics = async (
+    additionalReads = 0,
+    additionalWrites = 0,
+    writeReason = "",
+  ) => {
     try {
-      const todayStr = new Date().toLocaleDateString('en-CA'); // Safe local format: YYYY-MM-DD
-      const docRef = doc(db, 'settings', 'db_metrics');
+      const todayStr = new Date().toLocaleDateString("en-CA"); // Safe local format: YYYY-MM-DD
+      const docRef = doc(db, "settings", "db_metrics");
       const docSnap = await getDoc(docRef);
-      
+
       let baseMetrics;
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -169,8 +264,12 @@ export default function Admin_Page() {
             readsEmailSent: false,
             writesEmailSent: false,
             activityLog: [
-              { time: new Date().toLocaleTimeString(), type: 'system', desc: 'Daily database quota metrics reset to baseline.' }
-            ]
+              {
+                time: new Date().toLocaleTimeString(),
+                type: "system",
+                desc: "Daily database quota metrics reset to baseline.",
+              },
+            ],
           };
         } else {
           baseMetrics = {
@@ -181,7 +280,7 @@ export default function Admin_Page() {
             lastResetDate: todayStr,
             readsEmailSent: data.readsEmailSent ?? false,
             writesEmailSent: data.writesEmailSent ?? false,
-            activityLog: data.activityLog ?? []
+            activityLog: data.activityLog ?? [],
           };
         }
       } else {
@@ -195,21 +294,25 @@ export default function Admin_Page() {
           readsEmailSent: false,
           writesEmailSent: false,
           activityLog: [
-            { time: new Date().toLocaleTimeString(), type: 'system', desc: 'Metrics initialized with live Spark quota baselines.' }
-          ]
+            {
+              time: new Date().toLocaleTimeString(),
+              type: "system",
+              desc: "Metrics initialized with live Spark quota baselines.",
+            },
+          ],
         };
       }
 
       // Apply increments from actual reads/writes
       const newReads = Math.max(0, baseMetrics.readsToday + additionalReads);
       const newWrites = Math.max(0, baseMetrics.writesToday + additionalWrites);
-      
+
       const readsPercent = (newReads / baseMetrics.readsLimit) * 100;
       const writesPercent = (newWrites / baseMetrics.writesLimit) * 100;
-      
+
       let triggerReadsEmail = false;
       let triggerWritesEmail = false;
-      
+
       if (readsPercent >= 90 && !baseMetrics.readsEmailSent) {
         triggerReadsEmail = true;
       }
@@ -221,8 +324,10 @@ export default function Admin_Page() {
       if (additionalReads > 0 || additionalWrites > 0) {
         updatedLogs.unshift({
           time: new Date().toLocaleTimeString(),
-          type: additionalWrites > 0 ? 'write' : 'read',
-          desc: writeReason || `Tracked ${additionalReads} DB read(s) and ${additionalWrites} DB write(s).`
+          type: additionalWrites > 0 ? "write" : "read",
+          desc:
+            writeReason ||
+            `Tracked ${additionalReads} DB read(s) and ${additionalWrites} DB write(s).`,
         });
       }
 
@@ -237,7 +342,7 @@ export default function Admin_Page() {
         writesToday: newWrites,
         readsEmailSent: baseMetrics.readsEmailSent || triggerReadsEmail,
         writesEmailSent: baseMetrics.writesEmailSent || triggerWritesEmail,
-        activityLog: updatedLogs
+        activityLog: updatedLogs,
       };
 
       setDbMetrics(finalMetrics);
@@ -251,21 +356,25 @@ export default function Admin_Page() {
         lastResetDate: todayStr,
         readsEmailSent: finalMetrics.readsEmailSent,
         writesEmailSent: finalMetrics.writesEmailSent,
-        activityLog: finalMetrics.activityLog
+        activityLog: finalMetrics.activityLog,
       });
 
       if (triggerReadsEmail) {
-        sendQuotaAlertEmail('Reads', newReads, baseMetrics.readsLimit);
+        sendQuotaAlertEmail("Reads", newReads, baseMetrics.readsLimit);
       }
       if (triggerWritesEmail) {
-        sendQuotaAlertEmail('Writes', newWrites, baseMetrics.writesLimit);
+        sendQuotaAlertEmail("Writes", newWrites, baseMetrics.writesLimit);
       }
     } catch (err) {
       console.warn("Could not sync db metrics:", err);
     }
   };
 
-  const sendQuotaAlertEmail = async (metricName: 'Reads' | 'Writes', currentVal: number, limit: number) => {
+  const sendQuotaAlertEmail = async (
+    metricName: "Reads" | "Writes",
+    currentVal: number,
+    limit: number,
+  ) => {
     const percent = Math.round((currentVal / limit) * 100);
     const subject = `⚠️ ALERT: Infinitium Database ${metricName} Quota is at ${percent}%!`;
     const message = `
@@ -315,22 +424,22 @@ export default function Admin_Page() {
     `;
 
     try {
-      await fetch('/api/send-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email: 'teaminfinitium.arsd@gmail.com',
+          email: "teaminfinitium.arsd@gmail.com",
           subject,
-          message
-        })
+          message,
+        }),
       });
-      
-      setDbMetrics(prev => {
+
+      setDbMetrics((prev) => {
         const newLogs = [...prev.activityLog];
         newLogs.unshift({
           time: new Date().toLocaleTimeString(),
-          type: 'alert',
-          desc: `Sent 90% Quota Email Alert to teaminfinitium.arsd@gmail.com for database ${metricName}.`
+          type: "alert",
+          desc: `Sent 90% Quota Email Alert to teaminfinitium.arsd@gmail.com for database ${metricName}.`,
         });
         return { ...prev, activityLog: newLogs };
       });
@@ -341,14 +450,21 @@ export default function Admin_Page() {
 
   // Certificate generation states
   const [selectedCertEvent, setSelectedCertEvent] = useState<any>(null);
-  const [pdfTemplateBytes, setPdfTemplateBytes] = useState<Uint8Array | null>(null);
-  const [pdfTemplateName, setPdfTemplateName] = useState<string>('');
-  const [selectedPlaceholders, setSelectedPlaceholders] = useState({ name: true, course: true, college: true, year: true });
+  const [pdfTemplateBytes, setPdfTemplateBytes] = useState<Uint8Array | null>(
+    null,
+  );
+  const [pdfTemplateName, setPdfTemplateName] = useState<string>("");
+  const [selectedPlaceholders, setSelectedPlaceholders] = useState({
+    name: true,
+    course: true,
+    college: true,
+    year: true,
+  });
   const [textPositions, setTextPositions] = useState({
     name: { y: 300, fontSize: 28 },
     course: { y: 250, fontSize: 14 },
     college: { y: 210, fontSize: 12 },
-    year: { y: 175, fontSize: 12 }
+    year: { y: 175, fontSize: 12 },
   });
   const [loadingRegistrants, setLoadingRegistrants] = useState(false);
   const [registrantsForCert, setRegistrantsForCert] = useState<any[]>([]);
@@ -356,9 +472,15 @@ export default function Admin_Page() {
   const [previewBlobUrls, setPreviewBlobUrls] = useState<string[]>([]);
   const [previewImgDataUrls, setPreviewImgDataUrls] = useState<string[]>([]);
   const [sendingCertificates, setSendingCertificates] = useState(false);
-  const [certSendingProgress, setCertSendingProgress] = useState({ total: 0, sent: 0, currentStudentName: '' });
+  const [certSendingProgress, setCertSendingProgress] = useState({
+    total: 0,
+    sent: 0,
+    currentStudentName: "",
+  });
   const [certError, setCertError] = useState<string | null>(null);
-  const [certSuccessMessage, setCertSuccessMessage] = useState<string | null>(null);
+  const [certSuccessMessage, setCertSuccessMessage] = useState<string | null>(
+    null,
+  );
 
   interface SignatureItem {
     id: string;
@@ -367,24 +489,39 @@ export default function Admin_Page() {
     position: string;
   }
 
-  const [uploadedSignatures, setUploadedSignatures] = useState<SignatureItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('infinitium_signatures');
-      if (saved) {
-        return JSON.parse(saved);
+  const [uploadedSignatures, setUploadedSignatures] = useState<SignatureItem[]>(
+    () => {
+      try {
+        const saved = localStorage.getItem("infinitium_signatures");
+        if (saved) {
+          return JSON.parse(saved);
+        }
+      } catch (e) {
+        console.warn("Could not read signatures from localStorage", e);
       }
-    } catch (e) {
-      console.warn("Could not read signatures from localStorage", e);
-    }
-    return [
-      { id: 'sig-1', image: '', name: 'Dr. John Doe', position: 'President, Infinitium Society' },
-      { id: 'sig-2', image: '', name: 'Dr. Jane Smith', position: 'Vice President, Infinitium Society' }
-    ];
-  });
+      return [
+        {
+          id: "sig-1",
+          image: "",
+          name: "Dr. John Doe",
+          position: "President, Infinitium Society",
+        },
+        {
+          id: "sig-2",
+          image: "",
+          name: "Dr. Jane Smith",
+          position: "Vice President, Infinitium Society",
+        },
+      ];
+    },
+  );
 
   useEffect(() => {
     try {
-      localStorage.setItem('infinitium_signatures', JSON.stringify(uploadedSignatures));
+      localStorage.setItem(
+        "infinitium_signatures",
+        JSON.stringify(uploadedSignatures),
+      );
     } catch (e) {
       console.warn("Could not save signatures to localStorage", e);
     }
@@ -393,8 +530,10 @@ export default function Admin_Page() {
   const handleSignatureUpload = (id: string, file: File) => {
     const reader = new FileReader();
     reader.onloadend = () => {
-      setUploadedSignatures(prev =>
-        prev.map(sig => sig.id === id ? { ...sig, image: reader.result as string } : sig)
+      setUploadedSignatures((prev) =>
+        prev.map((sig) =>
+          sig.id === id ? { ...sig, image: reader.result as string } : sig,
+        ),
       );
     };
     reader.readAsDataURL(file);
@@ -402,14 +541,19 @@ export default function Admin_Page() {
 
   const addSignatureField = () => {
     if (uploadedSignatures.length >= 4) return;
-    setUploadedSignatures(prev => [
+    setUploadedSignatures((prev) => [
       ...prev,
-      { id: `sig-${Date.now()}`, image: '', name: 'Holder Name', position: 'Holder Position' }
+      {
+        id: `sig-${Date.now()}`,
+        image: "",
+        name: "Holder Name",
+        position: "Holder Position",
+      },
     ]);
   };
 
   const removeSignatureField = (id: string) => {
-    setUploadedSignatures(prev => prev.filter(sig => sig.id !== id));
+    setUploadedSignatures((prev) => prev.filter((sig) => sig.id !== id));
   };
 
   const getBase64ImageFromUrl = async (imageUrl: string): Promise<string> => {
@@ -457,7 +601,7 @@ export default function Admin_Page() {
   };
 
   const uint8ToBase64 = (uint8: Uint8Array): string => {
-    let binary = '';
+    let binary = "";
     const len = uint8.byteLength;
     for (let i = 0; i < len; i++) {
       binary += String.fromCharCode(uint8[i]);
@@ -465,18 +609,26 @@ export default function Admin_Page() {
     return window.btoa(binary);
   };
 
-  const drawCenteredText = (page: any, text: string, y: number, maxSize: number, font: any, color: any, padding = 80) => {
+  const drawCenteredText = (
+    page: any,
+    text: string,
+    y: number,
+    maxSize: number,
+    font: any,
+    color: any,
+    padding = 80,
+  ) => {
     const pageWidth = page.getWidth();
     let size = maxSize;
     let textWidth = font.widthOfTextAtSize(text, size);
     const maxAllowedWidth = pageWidth - padding;
-    
+
     // Dynamically scale down font size if it exceeds the boundary
     while (textWidth > maxAllowedWidth && size > 8) {
       size -= 1;
       textWidth = font.widthOfTextAtSize(text, size);
     }
-    
+
     const x = (pageWidth - textWidth) / 2;
     page.drawText(text, { x, y: y + (maxSize - size) / 3, size, font, color });
   };
@@ -484,26 +636,36 @@ export default function Admin_Page() {
   const generateSingleCertificate = async (
     student: any,
     templateBytes: Uint8Array | null,
-    enabledFields: { name: boolean; course: boolean; college: boolean; year: boolean },
-    positions: { name: { y: number; fontSize: number }; course: { y: number; fontSize: number }; college: { y: number; fontSize: number }; year: { y: number; fontSize: number } },
+    enabledFields: {
+      name: boolean;
+      course: boolean;
+      college: boolean;
+      year: boolean;
+    },
+    positions: {
+      name: { y: number; fontSize: number };
+      course: { y: number; fontSize: number };
+      college: { y: number; fontSize: number };
+      year: { y: number; fontSize: number };
+    },
     eventTitle: string,
     eventDate: string,
-    eventLocation?: string
+    eventLocation?: string,
   ): Promise<{ pdfBytes: Uint8Array; imgDataUrl: string }> => {
-    const yearRaw = student.year ? student.year.toString() : '';
+    const yearRaw = student.year ? student.year.toString() : "";
     // Format year beautifully
-    let yearStr = '3rd Year'; // default fallback
+    let yearStr = "3rd Year"; // default fallback
     if (yearRaw) {
-      if (yearRaw.toLowerCase().includes('year')) {
+      if (yearRaw.toLowerCase().includes("year")) {
         yearStr = yearRaw;
-      } else if (yearRaw.trim() === '1') {
-        yearStr = '1st Year';
-      } else if (yearRaw.trim() === '2') {
-        yearStr = '2nd Year';
-      } else if (yearRaw.trim() === '3') {
-        yearStr = '3rd Year';
-      } else if (yearRaw.trim() === '4') {
-        yearStr = '4th Year';
+      } else if (yearRaw.trim() === "1") {
+        yearStr = "1st Year";
+      } else if (yearRaw.trim() === "2") {
+        yearStr = "2nd Year";
+      } else if (yearRaw.trim() === "3") {
+        yearStr = "3rd Year";
+      } else if (yearRaw.trim() === "4") {
+        yearStr = "4th Year";
       } else {
         yearStr = `${yearRaw} Year`;
       }
@@ -512,34 +674,47 @@ export default function Admin_Page() {
     // Define correct logo sources (with Firestore custom upload support & fallback to requested static URLs)
     const logoBase64 = firebaseLogos?.infinitium || INFINITIUM_LOGO_BASE64;
     const arsdLogoBase64 = firebaseLogos?.arsd || ARSD_LOGO_BASE64;
-    const collegeLogoSrc = arsdLogoBase64 || "https://i.ibb.co/67SLNj6c/arsd-college-logo-png-seeklogo-458089-removebg-preview-2.png";
+    const collegeLogoSrc =
+      arsdLogoBase64 ||
+      "https://i.ibb.co/67SLNj6c/arsd-college-logo-png-seeklogo-458089-removebg-preview-2.png";
     const societyLogoSrc = logoBase64 || "https://i.ibb.co/cKD8BFhN/logo.png";
 
     // Build the dynamic signatures HTML content based on the user-defined uploaded signatures
-    const signaturesHtml = (uploadedSignatures || []).map(sig => `
+    const signaturesHtml = (uploadedSignatures || [])
+      .map(
+        (sig) => `
       <div class="signature-block">
           ${sig.image ? `<img class="signature-img" src="${sig.image}" alt="Signature" />` : '<div style="height: 45px;"></div>'}
           <div class="signature-line">
-              <p class="signer-name">${sig.name || ''}</p>
-              <p class="signer-title">${(sig.position || '').replace(/\n/g, '<br>')}</p>
+              <p class="signer-name">${sig.name || ""}</p>
+              <p class="signer-title">${(sig.position || "").replace(/\n/g, "<br>")}</p>
           </div>
       </div>
-    `).join('\n');
+    `,
+      )
+      .join("\n");
 
     // Calculate dynamic name font size based on text length to prevent line-wrapping or overlapping
-    const nameLength = (student.studentName || '').length;
-    const recipientFontSize = nameLength > 28 ? '30px' : nameLength > 22 ? '35px' : nameLength > 16 ? '42px' : '48px';
+    const nameLength = (student.studentName || "").length;
+    const recipientFontSize =
+      nameLength > 28
+        ? "30px"
+        : nameLength > 22
+          ? "35px"
+          : nameLength > 16
+            ? "42px"
+            : "48px";
 
     // Create a hidden iframe for clean rendering completely isolated from parent stylesheets / oklch problems
-    const iframe = document.createElement('iframe');
-    iframe.style.position = 'fixed';
-    iframe.style.top = '-9999px';
-    iframe.style.left = '-9999px';
-    iframe.style.width = '1123px';
-    iframe.style.height = '794px';
-    iframe.style.border = 'none';
-    iframe.style.pointerEvents = 'none';
-    iframe.style.zIndex = '-9999';
+    const iframe = document.createElement("iframe");
+    iframe.style.position = "fixed";
+    iframe.style.top = "-9999px";
+    iframe.style.left = "-9999px";
+    iframe.style.width = "1123px";
+    iframe.style.height = "794px";
+    iframe.style.border = "none";
+    iframe.style.pointerEvents = "none";
+    iframe.style.zIndex = "-9999";
 
     document.body.appendChild(iframe);
 
@@ -636,8 +811,8 @@ export default function Admin_Page() {
               }
 
               .logo-frame {
-                  width: 110px;
-                  height: 110px;
+                  width: 130px;
+                  height: 130px;
                   border-radius: 50%;
                   border: 2.5px solid #e2ba6e;
                   background-color: #ffffff;
@@ -676,7 +851,7 @@ export default function Admin_Page() {
 
               .college-title h2 {
                   margin: 0;
-                  font-size: 21px;
+                  font-size: 23px;
                   color: #111;
                   font-weight: 700;
                   letter-spacing: 0.5px;
@@ -684,7 +859,7 @@ export default function Admin_Page() {
 
               .college-title h1 {
                   margin: 3px 0 16px 0;
-                  font-size: 26px;
+                  font-size: 29px;
                   color: #0b2347; /* Deep blue/black matching college themes */
                   font-weight: 700;
                   letter-spacing: 1px;
@@ -692,10 +867,10 @@ export default function Admin_Page() {
 
               .college-details {
                   margin: 0;
-                  font-size: 12.5px;
+                  font-size: 16.5px;
                   color: #555;
                   font-weight: 600;
-                  line-height: 1.35;
+                  line-height: 1.4;
               }
 
               /* Certificate Core Content with robust spacing */
@@ -710,7 +885,7 @@ export default function Admin_Page() {
                   font-family: 'Cinzel', serif;
                   font-size: 60px;
                   color: #aa7c11;
-                  margin: 0 0 4px 0;
+                  margin: -15px 0 16px 0;
                   letter-spacing: 6px;
                   font-weight: 700;
                   line-height: 1.2;
@@ -820,7 +995,7 @@ export default function Admin_Page() {
               }
 
               .signer-name {
-                  font-size: 13px;
+                  font-size: 16px;
                   font-weight: 700;
                   color: #c59b27;
                   text-transform: uppercase;
@@ -828,7 +1003,7 @@ export default function Admin_Page() {
               }
 
               .signer-title {
-                  font-size: 11.5px;
+                  font-size: 13.5px;
                   font-weight: 600;
                   color: #666;
                   text-transform: uppercase;
@@ -876,16 +1051,16 @@ export default function Admin_Page() {
                   <h4 class="sub-purpose">OF PARTICIPATION</h4>
                   <p class="proudly-presented">This certificate is proudly presented to</p>
                   
-                  <div class="recipient-name" id="recipientName" style="font-size: ${recipientFontSize};">${student.studentName || 'Student Name'}</div>
+                  <div class="recipient-name" id="recipientName" style="font-size: ${recipientFontSize};">${student.studentName || "Student Name"}</div>
                   
                   <div class="divider">
                       <div class="divider-diamond"></div>
                   </div>
                   
                   <p class="recognition-text">
-                      of <span class="highlight">${student.course || 'Course Title'}</span>, <span class="highlight">${yearStr}</span>, 
+                      of <span class="highlight">${student.course || "Course Title"}</span>, <span class="highlight">${yearStr}</span>, 
                       for their outstanding participation and achievement in the event 
-                      <span class="highlight" style="color: #c59b27;">${eventTitle || 'Event Name'}</span> organized by the <span class="highlight">Infinitium Society</span>, held on <span class="highlight">${eventDate || 'Event Date'}</span>.
+                      <span class="highlight" style="color: #c59b27;">${eventTitle || "Event Name"}</span> organized by the <span class="highlight">Infinitium Society</span>, held on <span class="highlight">${eventDate || "Event Date"}</span>.
                   </p>
               </div>
 
@@ -919,14 +1094,14 @@ export default function Admin_Page() {
             img.onload = resolve;
             img.onerror = resolve;
           });
-        })
+        }),
       );
     } catch (imgLoadErr) {
       console.warn("Error waiting for images inside iframe:", imgLoadErr);
     }
 
     try {
-      const elementToRender = iframeDoc.getElementById('certificate');
+      const elementToRender = iframeDoc.getElementById("certificate");
       if (!elementToRender) {
         throw new Error("Could not find certificate element in iframe");
       }
@@ -937,7 +1112,7 @@ export default function Admin_Page() {
         scale: 2, // Retain sharp crystal-clear resolution
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
       });
 
       // Cleanup iframe from DOM
@@ -945,21 +1120,24 @@ export default function Admin_Page() {
         document.body.removeChild(iframe);
       }
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdf = new jsPDF({
-        orientation: 'landscape',
-        unit: 'px',
+        orientation: "landscape",
+        unit: "px",
         format: [1123, 794],
       });
 
-      pdf.addImage(imgData, 'JPEG', 0, 0, 1123, 794);
-      const arr = pdf.output('arraybuffer');
+      pdf.addImage(imgData, "JPEG", 0, 0, 1123, 794);
+      const arr = pdf.output("arraybuffer");
       return {
         pdfBytes: new Uint8Array(arr),
-        imgDataUrl: imgData
+        imgDataUrl: imgData,
       };
     } catch (canvasErr) {
-      console.error("Canvas rendering failed inside isolated iframe, performing cleanup", canvasErr);
+      console.error(
+        "Canvas rendering failed inside isolated iframe, performing cleanup",
+        canvasErr,
+      );
       if (iframe.parentNode) {
         document.body.removeChild(iframe);
       }
@@ -969,16 +1147,20 @@ export default function Admin_Page() {
 
   const loadRegistralsForCert = async (event: any) => {
     if (!event || !event.sheetId) {
-      setCertError("This event does not have an associated Google Sheet ID configured.");
+      setCertError(
+        "This event does not have an associated Google Sheet ID configured.",
+      );
       return;
     }
     setLoadingRegistrants(true);
     setCertError(null);
     setRegistrantsForCert([]);
-    
+
     const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
     if (!appsScriptUrl) {
-      setCertError("Apps Script URL is not configured. Please define VITE_APPS_SCRIPT_URL.");
+      setCertError(
+        "Apps Script URL is not configured. Please define VITE_APPS_SCRIPT_URL.",
+      );
       setLoadingRegistrants(false);
       return;
     }
@@ -989,17 +1171,21 @@ export default function Admin_Page() {
         headers: { "Content-Type": "text/plain" },
         body: JSON.stringify({
           type: "get_registrations",
-          sheetId: event.sheetId
-        })
+          sheetId: event.sheetId,
+        }),
       });
-      
+
       const text = await response.text();
       let res: any = null;
       try {
         res = JSON.parse(text);
       } catch (parseErr) {
-        console.warn(`Could not parse JSON for certificate registration check. Response starts with: "${text.substring(0, 100)}..."`);
-        setCertError("Failed to parse sheet data. The configured Google Sheet ID might be invalid or set incorrectly.");
+        console.warn(
+          `Could not parse JSON for certificate registration check. Response starts with: "${text.substring(0, 100)}..."`,
+        );
+        setCertError(
+          "Failed to parse sheet data. The configured Google Sheet ID might be invalid or set incorrectly.",
+        );
         setLoadingRegistrants(false);
         return;
       }
@@ -1008,15 +1194,32 @@ export default function Admin_Page() {
         // Map attendance status to 'attended' boolean
         const formattedRegistrations = res.registrations.map((reg: any) => {
           let hasAttended = false;
-          if (reg.attended === true || String(reg.attended).toLowerCase() === 'true') {
+          if (
+            reg.attended === true ||
+            String(reg.attended).toLowerCase() === "true"
+          ) {
             hasAttended = true;
           } else {
             const keys = Object.keys(reg);
             for (const k of keys) {
               const kLower = k.toLowerCase().trim();
-              if (kLower === 'attendance' || kLower === 'attended' || kLower === 'present' || kLower === 'status' || kLower.includes('attendance') || kLower.includes('attended')) {
+              if (
+                kLower === "attendance" ||
+                kLower === "attended" ||
+                kLower === "present" ||
+                kLower === "status" ||
+                kLower.includes("attendance") ||
+                kLower.includes("attended")
+              ) {
                 const val = String(reg[k]).toLowerCase().trim();
-                if (val === 'yes' || val === 'present' || val === 'checked' || val === 'checked-in' || val === 'attended' || val === 'true') {
+                if (
+                  val === "yes" ||
+                  val === "present" ||
+                  val === "checked" ||
+                  val === "checked-in" ||
+                  val === "attended" ||
+                  val === "true"
+                ) {
                   hasAttended = true;
                   break;
                 }
@@ -1027,11 +1230,15 @@ export default function Admin_Page() {
         });
         setRegistrantsForCert(formattedRegistrations);
       } else {
-        setCertError("Could not retrieve registrations. Make sure sheetId is correct and Webhook is active.");
+        setCertError(
+          "Could not retrieve registrations. Make sure sheetId is correct and Webhook is active.",
+        );
       }
     } catch (err: any) {
       console.warn("Could not load registrations for certificate:", err);
-      setCertError(err.message || "Failed to query attendee registration data.");
+      setCertError(
+        err.message || "Failed to query attendee registration data.",
+      );
     } finally {
       setLoadingRegistrants(false);
     }
@@ -1040,20 +1247,26 @@ export default function Admin_Page() {
   const generatePreviews = async () => {
     if (!selectedCertEvent) return;
     setGeneratingPreviews(true);
-    
+
     // Revoke previous URLs to prevent memory leaks
-    previewBlobUrls.forEach(url => URL.revokeObjectURL(url));
+    previewBlobUrls.forEach((url) => URL.revokeObjectURL(url));
     setPreviewBlobUrls([]);
     setPreviewImgDataUrls([]);
 
-    const attendedList = registrantsForCert.filter(r => r.attended);
-    
+    const attendedList = registrantsForCert.filter((r) => r.attended);
+
     // If we have none retrieved yet, create 1 mock student to show instant preview
-    const studentsToPreview = attendedList.length > 0 
-      ? attendedList.slice(0, 1) 
-      : [
-          { studentName: "John Doe", course: "B.Sc. (Hons) Computer Science", collegeName: "ARSD College", year: "III" }
-        ];
+    const studentsToPreview =
+      attendedList.length > 0
+        ? attendedList.slice(0, 1)
+        : [
+            {
+              studentName: "John Doe",
+              course: "B.Sc. (Hons) Computer Science",
+              collegeName: "ARSD College",
+              year: "III",
+            },
+          ];
 
     try {
       const urls: string[] = [];
@@ -1066,9 +1279,9 @@ export default function Admin_Page() {
           textPositions,
           selectedCertEvent.title,
           selectedCertEvent.date,
-          selectedCertEvent.location
+          selectedCertEvent.location,
         );
-        const blob = new Blob([result.pdfBytes], { type: 'application/pdf' });
+        const blob = new Blob([result.pdfBytes], { type: "application/pdf" });
         const url = URL.createObjectURL(blob);
         urls.push(url);
         imgUrls.push(result.imgDataUrl);
@@ -1086,13 +1299,17 @@ export default function Admin_Page() {
     if (!selectedCertEvent) return;
     const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
     if (!appsScriptUrl) {
-      setCertError("Apps Script URL is not configured (VITE_APPS_SCRIPT_URL is missing).");
+      setCertError(
+        "Apps Script URL is not configured (VITE_APPS_SCRIPT_URL is missing).",
+      );
       return;
     }
 
-    const attendedList = registrantsForCert.filter(r => r.attended);
+    const attendedList = registrantsForCert.filter((r) => r.attended);
     if (attendedList.length === 0) {
-      setCertError("There are no registered students marked as present (attended) for this event.");
+      setCertError(
+        "There are no registered students marked as present (attended) for this event.",
+      );
       return;
     }
 
@@ -1104,26 +1321,38 @@ export default function Admin_Page() {
     if (!selectedCertEvent) return;
     const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
     if (!appsScriptUrl) {
-      setCertError("Apps Script URL is not configured (VITE_APPS_SCRIPT_URL is missing).");
+      setCertError(
+        "Apps Script URL is not configured (VITE_APPS_SCRIPT_URL is missing).",
+      );
       return;
     }
 
-    const attendedList = registrantsForCert.filter(r => r.attended);
+    const attendedList = registrantsForCert.filter((r) => r.attended);
     if (attendedList.length === 0) {
-      setCertError("There are no registered students marked as present (attended) for this event.");
+      setCertError(
+        "There are no registered students marked as present (attended) for this event.",
+      );
       return;
     }
 
     setSendingCertificates(true);
     setCertError(null);
     setCertSuccessMessage(null);
-    setCertSendingProgress({ total: attendedList.length, sent: 0, currentStudentName: '' });
+    setCertSendingProgress({
+      total: attendedList.length,
+      sent: 0,
+      currentStudentName: "",
+    });
 
     try {
       let sentCount = 0;
       for (let i = 0; i < attendedList.length; i++) {
         const student = attendedList[i];
-        setCertSendingProgress({ total: attendedList.length, sent: i, currentStudentName: student.studentName });
+        setCertSendingProgress({
+          total: attendedList.length,
+          sent: i,
+          currentStudentName: student.studentName,
+        });
 
         // 1. Generate individual personalized certificate
         const result = await generateSingleCertificate(
@@ -1133,19 +1362,31 @@ export default function Admin_Page() {
           textPositions,
           selectedCertEvent.title,
           selectedCertEvent.date,
-          selectedCertEvent.location
+          selectedCertEvent.location,
         );
 
         // 2. Convert to Base64
         const pdfBase64 = uint8ToBase64(result.pdfBytes);
 
-        const emailRecipient = student.email || student.Email || student['Email ID'] || student['email'] || student['EmailId'];
+        const emailRecipient =
+          student.email ||
+          student.Email ||
+          student["Email ID"] ||
+          student["email"] ||
+          student["EmailId"];
         console.log("DEBUG: student object for certificate:", student);
         console.log("DEBUG: email recipient:", emailRecipient);
 
-        if (!emailRecipient || typeof emailRecipient !== 'string' || !emailRecipient.includes('@')) {
-          console.error("Skipping: Invalid or missing email for student", student.studentName);
-          continue; 
+        if (
+          !emailRecipient ||
+          typeof emailRecipient !== "string" ||
+          !emailRecipient.includes("@")
+        ) {
+          console.error(
+            "Skipping: Invalid or missing email for student",
+            student.studentName,
+          );
+          continue;
         }
 
         // 3. Dispatch individually using 'send_certificate' to Apps Script
@@ -1173,41 +1414,54 @@ export default function Admin_Page() {
   </div>
 </div>
         `;
-        
+
         const payload = {
-            type: "send_certificate",
-            sheetId: selectedCertEvent.sheetId,
-            email: emailRecipient,
-            subject: emailSubject,
-            message: emailBody,
-            fileName: `Certificate_${student.studentName.replace(/\s+/g, '_')}.pdf`,
-            pdfBase64: pdfBase64
+          type: "send_certificate",
+          sheetId: selectedCertEvent.sheetId,
+          email: emailRecipient,
+          subject: emailSubject,
+          message: emailBody,
+          fileName: `Certificate_${student.studentName.replace(/\s+/g, "_")}.pdf`,
+          pdfBase64: pdfBase64,
         };
         console.log("DEBUG: Sending payload to Apps Script:", payload);
 
         const response = await fetch(appsScriptUrl, {
           method: "POST",
           headers: { "Content-Type": "text/plain" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(payload),
         });
 
         const resText = await response.text();
         if (!response.ok) {
-          throw new Error(`Failed to send email for ${student.studentName}: ${resText}`);
+          throw new Error(
+            `Failed to send email for ${student.studentName}: ${resText}`,
+          );
         }
 
         if (resText.includes("Error") || !resText.includes("Success")) {
-          throw new Error(`Apps Script reported error for ${student.studentName}: ${resText}`);
+          throw new Error(
+            `Apps Script reported error for ${student.studentName}: ${resText}`,
+          );
         }
 
         sentCount++;
       }
 
-      setCertSendingProgress({ total: attendedList.length, sent: sentCount, currentStudentName: '' });
-      setCertSuccessMessage(`Successfully processed and dispatched all ${sentCount} certificates via email!`);
+      setCertSendingProgress({
+        total: attendedList.length,
+        sent: sentCount,
+        currentStudentName: "",
+      });
+      setCertSuccessMessage(
+        `Successfully processed and dispatched all ${sentCount} certificates via email!`,
+      );
     } catch (err: any) {
       console.error("Error dispatching certificates:", err);
-      setCertError(err.message || "An error occurred while generating or dispatching certificates.");
+      setCertError(
+        err.message ||
+          "An error occurred while generating or dispatching certificates.",
+      );
     } finally {
       setSendingCertificates(false);
     }
@@ -1218,11 +1472,11 @@ export default function Admin_Page() {
       loadRegistralsForCert(selectedCertEvent);
     } else {
       // Clear up preview URLs to avoid memory leaks
-      previewBlobUrls.forEach(url => URL.revokeObjectURL(url));
+      previewBlobUrls.forEach((url) => URL.revokeObjectURL(url));
       setPreviewBlobUrls([]);
       setPreviewImgDataUrls([]);
       setPdfTemplateBytes(null);
-      setPdfTemplateName('');
+      setPdfTemplateName("");
       setRegistrantsForCert([]);
       setCertError(null);
       setCertSuccessMessage(null);
@@ -1231,9 +1485,18 @@ export default function Admin_Page() {
 
   useEffect(() => {
     if (selectedCertEvent) {
-      generatePreviews().catch(err => console.error("Error generating previews:", err));
+      generatePreviews().catch((err) =>
+        console.error("Error generating previews:", err),
+      );
     }
-  }, [selectedCertEvent, pdfTemplateBytes, selectedPlaceholders, textPositions, registrantsForCert, uploadedSignatures]);
+  }, [
+    selectedCertEvent,
+    pdfTemplateBytes,
+    selectedPlaceholders,
+    textPositions,
+    registrantsForCert,
+    uploadedSignatures,
+  ]);
 
   // Sync state when event modal opens or editingEvent changes
   useEffect(() => {
@@ -1246,63 +1509,94 @@ export default function Admin_Page() {
           const hr = parseInt(match[1], 10);
           setSelectedHour(hr.toString());
           setSelectedMinute(match[2]);
-          setSelectedPeriod((match[3] || 'AM').toUpperCase());
+          setSelectedPeriod((match[3] || "AM").toUpperCase());
         } else {
-          setSelectedHour('10');
-          setSelectedMinute('00');
-          setSelectedPeriod('AM');
+          setSelectedHour("10");
+          setSelectedMinute("00");
+          setSelectedPeriod("AM");
         }
       } else {
-        setSelectedHour('10');
-        setSelectedMinute('00');
-        setSelectedPeriod('AM');
+        setSelectedHour("10");
+        setSelectedMinute("00");
+        setSelectedPeriod("AM");
       }
       setShowClockDropdown(false);
     }
   }, [showAddEvent, editingEvent]);
 
   // Contact management state
-  const [contactConfig, setContactConfig] = useState<{ sheetId: string; adminEmail: string }>({ sheetId: '', adminEmail: '' });
+  const [contactConfig, setContactConfig] = useState<{
+    sheetId: string;
+    adminEmail: string;
+  }>({ sheetId: "", adminEmail: "" });
   const [isSavingContactConfig, setIsSavingContactConfig] = useState(false);
 
   // Dynamic certificate logos fetched from Firebase
-  const [firebaseLogos, setFirebaseLogos] = useState<{ infinitium: string; arsd: string } | null>(null);
+  const [firebaseLogos, setFirebaseLogos] = useState<{
+    infinitium: string;
+    arsd: string;
+  } | null>(null);
   const [isSavingLogos, setIsSavingLogos] = useState(false);
 
   // Confirmation state for sending certificates
   const [showCertSendConfirm, setShowCertSendConfirm] = useState(false);
 
-  const handleSaveContactConfig = async (sheetId: string, adminEmail: string) => {
+  const handleSaveContactConfig = async (
+    sheetId: string,
+    adminEmail: string,
+  ) => {
     setIsSavingContactConfig(true);
     try {
-      await setDoc(doc(db, 'settings', 'contact_config'), {
+      await setDoc(
+        doc(db, "settings", "contact_config"),
+        {
+          sheetId: sheetId.trim(),
+          adminEmail: adminEmail.trim(),
+        },
+        { merge: true },
+      );
+      setContactConfig({
         sheetId: sheetId.trim(),
-        adminEmail: adminEmail.trim()
-      }, { merge: true });
-      setContactConfig({ sheetId: sheetId.trim(), adminEmail: adminEmail.trim() });
-      alert("Contact settings (spreadsheets & admin email) saved successfully!");
+        adminEmail: adminEmail.trim(),
+      });
+      alert(
+        "Contact settings (spreadsheets & admin email) saved successfully!",
+      );
     } catch (e) {
       console.error("Failed to save contact config:", e);
-      alert("Failed to save configuration: " + (e instanceof Error ? e.message : String(e)));
-      handleFirestoreError(e, OperationType.WRITE, 'settings/contact_config');
+      alert(
+        "Failed to save configuration: " +
+          (e instanceof Error ? e.message : String(e)),
+      );
+      handleFirestoreError(e, OperationType.WRITE, "settings/contact_config");
     } finally {
       setIsSavingContactConfig(false);
     }
   };
 
-  const handleSaveLogosConfig = async (infinitiumBase64: string, arsdBase64: string) => {
+  const handleSaveLogosConfig = async (
+    infinitiumBase64: string,
+    arsdBase64: string,
+  ) => {
     setIsSavingLogos(true);
     try {
-      await setDoc(doc(db, 'settings', 'logo_config'), {
-        infinitium: infinitiumBase64,
-        arsd: arsdBase64,
-        updatedAt: new Date().toISOString()
-      }, { merge: true });
+      await setDoc(
+        doc(db, "settings", "logo_config"),
+        {
+          infinitium: infinitiumBase64,
+          arsd: arsdBase64,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
       setFirebaseLogos({ infinitium: infinitiumBase64, arsd: arsdBase64 });
       alert("Certificate logos saved to Firebase successfully!");
     } catch (e) {
       console.error("Failed to save logo config:", e);
-      alert("Failed to save logos to Firebase: " + (e instanceof Error ? e.message : String(e)));
+      alert(
+        "Failed to save logos to Firebase: " +
+          (e instanceof Error ? e.message : String(e)),
+      );
     } finally {
       setIsSavingLogos(false);
     }
@@ -1312,7 +1606,10 @@ export default function Admin_Page() {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       setAuthLoading(false);
-      if (currentUser && currentUser.email === 'teaminfinitium.arsd@gmail.com') {
+      if (
+        currentUser &&
+        currentUser.email === "teaminfinitium.arsd@gmail.com"
+      ) {
         loadFirebaseData();
       }
     });
@@ -1322,26 +1619,35 @@ export default function Admin_Page() {
   // Manage dynamic statistics loader and temporary JSON cache in Firestore
   useEffect(() => {
     let active = true;
-    
+
     const fetchAllEventStats = async () => {
-      if ((activeTab !== 'overview' && activeTab !== 'events') || events.length === 0) return;
-      
+      if (
+        (activeTab !== "overview" && activeTab !== "events") ||
+        events.length === 0
+      )
+        return;
+
       setIsFetchingStats(true);
       const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
       if (!appsScriptUrl) {
-        console.warn("Apps Script URL is not configured. Please define VITE_APPS_SCRIPT_URL.");
+        console.warn(
+          "Apps Script URL is not configured. Please define VITE_APPS_SCRIPT_URL.",
+        );
         setIsFetchingStats(false);
         return;
       }
 
-      const tempStatsMap: Record<string, { registrations: number; attendance: number; societyAttendance: number }> = {};
+      const tempStatsMap: Record<
+        string,
+        { registrations: number; attendance: number; societyAttendance: number }
+      > = {};
 
       // Initialize with existing values
       events.forEach((e: any) => {
         tempStatsMap[e.id] = {
           registrations: e.stats?.registrations || 0,
           attendance: e.stats?.attendance || 0,
-          societyAttendance: e.stats?.societyAttendance || 0
+          societyAttendance: e.stats?.societyAttendance || 0,
         };
       });
 
@@ -1352,12 +1658,12 @@ export default function Admin_Page() {
 
             try {
               const response = await fetch(appsScriptUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify({
-                  type: 'get_registrations',
-                  sheetId: e.sheetId
-                })
+                  type: "get_registrations",
+                  sheetId: e.sheetId,
+                }),
               });
 
               const text = await response.text();
@@ -1365,14 +1671,20 @@ export default function Admin_Page() {
               try {
                 resultObj = JSON.parse(text);
               } catch (parseErr) {
-                console.warn(`[Graceful] Could not parse JSON response for event ${e.title || e.id}. The Google Sheet with ID "${e.sheetId}" might be inaccessible or unshared. Server responded with: "${text.substring(0, 150)}..."`);
+                console.warn(
+                  `[Graceful] Could not parse JSON response for event ${e.title || e.id}. The Google Sheet with ID "${e.sheetId}" might be inaccessible or unshared. Server responded with: "${text.substring(0, 150)}..."`,
+                );
                 return;
               }
 
-              if (resultObj && resultObj.status === "success" && Array.isArray(resultObj.registrations)) {
+              if (
+                resultObj &&
+                resultObj.status === "success" &&
+                Array.isArray(resultObj.registrations)
+              ) {
                 const list = resultObj.registrations;
                 const totalReg = list.length;
-                
+
                 // Count present students strictly by counting 'yes' in 'attendance/attended/present' fields
                 let totalAtt = 0;
                 let totalSocietyAtt = 0;
@@ -1380,16 +1692,33 @@ export default function Admin_Page() {
                   let hasAttended = false;
 
                   // 1. Check direct 'attended' boolean mapping from row[11] === "Yes" in Apps Script
-                  if (reg.attended === true || String(reg.attended).toLowerCase() === 'true') {
+                  if (
+                    reg.attended === true ||
+                    String(reg.attended).toLowerCase() === "true"
+                  ) {
                     hasAttended = true;
                   } else {
                     // 2. Fallback check: look for any keys related to attendance, and verify value equals 'yes'
                     const keys = Object.keys(reg);
                     for (const k of keys) {
                       const kLower = k.toLowerCase().trim();
-                      if (kLower === 'attendance' || kLower === 'attended' || kLower === 'present' || kLower === 'status' || kLower.includes('attendance') || kLower.includes('attended')) {
+                      if (
+                        kLower === "attendance" ||
+                        kLower === "attended" ||
+                        kLower === "present" ||
+                        kLower === "status" ||
+                        kLower.includes("attendance") ||
+                        kLower.includes("attended")
+                      ) {
                         const val = String(reg[k]).toLowerCase().trim();
-                        if (val === 'yes' || val === 'present' || val === 'checked' || val === 'checked-in' || val === 'attended' || val === 'true') {
+                        if (
+                          val === "yes" ||
+                          val === "present" ||
+                          val === "checked" ||
+                          val === "checked-in" ||
+                          val === "attended" ||
+                          val === "true"
+                        ) {
                           hasAttended = true;
                           break;
                         }
@@ -1404,10 +1733,19 @@ export default function Admin_Page() {
                     let isPart = false;
                     const rKeys = Object.keys(reg);
                     for (const rk of rKeys) {
-                      const rkLower = rk.toLowerCase().trim().replace(/[\s_-]/g, '');
-                      if (rkLower === 'ispartofsociety' || rkLower === 'partofsociety' || rkLower === 'society' || rkLower.includes('partof') || rkLower.includes('society')) {
+                      const rkLower = rk
+                        .toLowerCase()
+                        .trim()
+                        .replace(/[\s_-]/g, "");
+                      if (
+                        rkLower === "ispartofsociety" ||
+                        rkLower === "partofsociety" ||
+                        rkLower === "society" ||
+                        rkLower.includes("partof") ||
+                        rkLower.includes("society")
+                      ) {
                         const val = String(reg[rk]).toLowerCase().trim();
-                        if (val === 'yes' || val === 'true' || val === '1') {
+                        if (val === "yes" || val === "true" || val === "1") {
                           isPart = true;
                           break;
                         }
@@ -1422,29 +1760,36 @@ export default function Admin_Page() {
                 tempStatsMap[e.id] = {
                   registrations: totalReg,
                   attendance: totalAtt,
-                  societyAttendance: totalSocietyAtt
+                  societyAttendance: totalSocietyAtt,
                 };
               }
             } catch (err) {
-              console.warn(`[Graceful] Could not load registration list for event ${e.title || e.id}:`, err);
+              console.warn(
+                `[Graceful] Could not load registration list for event ${e.title || e.id}:`,
+                err,
+              );
             }
-          })
+          }),
         );
 
         if (!active) return;
 
         // Cache in local storage for instant rendering
-        localStorage.setItem('temp_events_stats_json', JSON.stringify(tempStatsMap));
+        localStorage.setItem(
+          "temp_events_stats_json",
+          JSON.stringify(tempStatsMap),
+        );
         setFetchedStats(tempStatsMap);
 
         // Upload JSON file with full stats to Firestore temp_jsons to satisfy criteria
-        const docId = `temp_events_stats_${user?.uid || 'default'}`;
-        await setDoc(doc(db, 'temp_jsons', docId), {
+        const docId = `temp_events_stats_${user?.uid || "default"}`;
+        await setDoc(doc(db, "temp_jsons", docId), {
           content: JSON.stringify(tempStatsMap),
-          createdAt: serverTimestamp()
+          createdAt: serverTimestamp(),
         });
-        console.log("Cached event stats JSON inside Firebase Firestore successfully.");
-
+        console.log(
+          "Cached event stats JSON inside Firebase Firestore successfully.",
+        );
       } catch (err) {
         console.error("Failed to fetch or cache event stats:", err);
       } finally {
@@ -1463,13 +1808,17 @@ export default function Admin_Page() {
 
   // Clean up and delete Firestore stats JSON to minimize Database storage on tab-switch or component unmount
   useEffect(() => {
-    if (activeTab !== 'overview' && activeTab !== 'events' && user?.uid) {
+    if (activeTab !== "overview" && activeTab !== "events" && user?.uid) {
       const docId = `temp_events_stats_${user.uid}`;
-      deleteDoc(doc(db, 'temp_jsons', docId))
-        .then(() => console.log("Removed stats JSON from Firestore on tab switch"))
-        .catch(err => console.error("Error deleting stats JSON from Firestore:", err));
-      
-      localStorage.removeItem('temp_events_stats_json');
+      deleteDoc(doc(db, "temp_jsons", docId))
+        .then(() =>
+          console.log("Removed stats JSON from Firestore on tab switch"),
+        )
+        .catch((err) =>
+          console.error("Error deleting stats JSON from Firestore:", err),
+        );
+
+      localStorage.removeItem("temp_events_stats_json");
       setFetchedStats({});
     }
 
@@ -1477,47 +1826,56 @@ export default function Admin_Page() {
       // Upon unmounting (switching page completely), delete the temp JSON
       if (user?.uid) {
         const docId = `temp_events_stats_${user.uid}`;
-        deleteDoc(doc(db, 'temp_jsons', docId))
-          .then(() => console.log("Removed stats JSON from Firestore on component unmount"))
-          .catch(err => console.error("Error deleting stats JSON from Firestore on unmount:", err));
+        deleteDoc(doc(db, "temp_jsons", docId))
+          .then(() =>
+            console.log(
+              "Removed stats JSON from Firestore on component unmount",
+            ),
+          )
+          .catch((err) =>
+            console.error(
+              "Error deleting stats JSON from Firestore on unmount:",
+              err,
+            ),
+          );
       }
-      localStorage.removeItem('temp_events_stats_json');
+      localStorage.removeItem("temp_events_stats_json");
     };
   }, [activeTab, user?.uid]);
 
   // Handle unload, tab closes or pagehide cleanup to satisfy storage minimization of firebase
   useEffect(() => {
     const cleanUpTempJson = () => {
-      localStorage.removeItem('temp_events_stats_json');
+      localStorage.removeItem("temp_events_stats_json");
       if (user?.uid) {
         const docId = `temp_events_stats_${user.uid}`;
         // Fire of standard delete doc
-        deleteDoc(doc(db, 'temp_jsons', docId)).catch(console.error);
+        deleteDoc(doc(db, "temp_jsons", docId)).catch(console.error);
       }
     };
 
-    window.addEventListener('beforeunload', cleanUpTempJson);
-    window.addEventListener('unload', cleanUpTempJson);
-    window.addEventListener('pagehide', cleanUpTempJson);
+    window.addEventListener("beforeunload", cleanUpTempJson);
+    window.addEventListener("unload", cleanUpTempJson);
+    window.addEventListener("pagehide", cleanUpTempJson);
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
+      if (document.visibilityState === "hidden") {
         cleanUpTempJson();
       }
     };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      window.removeEventListener('beforeunload', cleanUpTempJson);
-      window.removeEventListener('unload', cleanUpTempJson);
-      window.removeEventListener('pagehide', cleanUpTempJson);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener("beforeunload", cleanUpTempJson);
+      window.removeEventListener("unload", cleanUpTempJson);
+      window.removeEventListener("pagehide", cleanUpTempJson);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [user?.uid]);
 
   const handleGoogleLogin = async () => {
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ prompt: 'select_account' });
+    provider.setCustomParameters({ prompt: "select_account" });
     setLoginError(null);
     try {
       await signInWithPopup(auth, provider);
@@ -1537,7 +1895,7 @@ export default function Admin_Page() {
     }
   };
 
-  const loadFirebaseData = async (writesInc = 0, writeReason = '') => {
+  const loadFirebaseData = async (writesInc = 0, writeReason = "") => {
     setIsFirebaseLoading(true);
     let totalReadsCalculated = 4; // Allowance for metadata / state lookups
     let membersCount = 0;
@@ -1548,102 +1906,201 @@ export default function Admin_Page() {
     try {
       // Load Members
       try {
-        const membersSnap = await getDocs(query(collection(db, 'members'), orderBy('tenure', 'desc')));
+        const membersSnap = await getDocs(
+          query(collection(db, "members"), orderBy("tenure", "desc")),
+        );
         membersCount = membersSnap.docs.length;
-        setMembers(membersSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        
+        const getRolePriority = (role: string): number => {
+          if (!role) return 99;
+          const r = role.toLowerCase().trim();
+          if (r === "president") return 1;
+          if (r === "vice president" || r === "vice-president" || r === "vp") return 2;
+          if (r === "secretary") return 3;
+          if (r === "joint secretary" || r === "joint-secretary") return 4;
+          if (r.includes("sub-head") || r.includes("sub-head") || r.includes("subhead") || r.includes("sub head")) return 6;
+          if (r.includes("head")) return 5;
+          return 7;
+        };
+
+        const parsedMembers = membersSnap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        }));
+
+        parsedMembers.sort((a: any, b: any) => {
+          const tenureA = a.tenure || "";
+          const tenureB = b.tenure || "";
+          // Sort by latest tenure first
+          if (tenureA !== tenureB) {
+            return tenureB.localeCompare(tenureA);
+          }
+          // Sort by role priority
+          const rA = getRolePriority(a.role);
+          const rB = getRolePriority(b.role);
+          if (rA !== rB) {
+            return rA - rB;
+          }
+          // Sort alphabetically by name
+          return (a.name || "").localeCompare(b.name || "");
+        });
+
+        setMembers(parsedMembers);
       } catch (e) {
-        handleFirestoreError(e, OperationType.GET, 'members');
+        handleFirestoreError(e, OperationType.GET, "members");
       }
 
       // Load Achievements
       try {
-        const achievementsSnap = await getDocs(query(collection(db, 'achievements'), orderBy('createdAt', 'desc')));
+        const achievementsSnap = await getDocs(
+          query(collection(db, "achievements"), orderBy("createdAt", "desc")),
+        );
         achievementsCount = achievementsSnap.docs.length;
-        setAchievements(achievementsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setAchievements(
+          achievementsSnap.docs.map((d) => ({ id: d.id, ...d.data() })),
+        );
       } catch (e) {
-        handleFirestoreError(e, OperationType.GET, 'achievements');
+        handleFirestoreError(e, OperationType.GET, "achievements");
       }
 
       // Load Gallery
       try {
-        const gallerySnap = await getDocs(query(collection(db, 'gallery'), orderBy('createdAt', 'desc')));
+        const gallerySnap = await getDocs(
+          query(collection(db, "gallery"), orderBy("createdAt", "desc")),
+        );
         galleryCount = gallerySnap.docs.length;
-        setGallery(gallerySnap.docs.map(d => ({ id: d.id, ...d.data() })));
+        setGallery(gallerySnap.docs.map((d) => ({ id: d.id, ...d.data() })));
       } catch (e) {
-        handleFirestoreError(e, OperationType.GET, 'gallery');
+        handleFirestoreError(e, OperationType.GET, "gallery");
       }
 
       // Load About
       try {
-        const aboutDoc = await getDoc(doc(db, 'about', 'current'));
+        const aboutDoc = await getDoc(doc(db, "about", "current"));
         totalReadsCalculated++;
         if (aboutDoc.exists()) {
           setAboutData(aboutDoc.data());
         } else {
           // Initialize with default structure
-            setAboutData({
-              hero: { 
-                title: "INFINITIUM SOCIETY", 
-                paragraph: "The Premier Society of Physical Sciences at ARSD College, University of Delhi.", 
-                image: "https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=2070&auto=format&fit=crop" 
-              },
+          setAboutData({
+            hero: {
+              title: "INFINITIUM SOCIETY",
+              paragraph:
+                "The Premier Society of Physical Sciences at ARSD College, University of Delhi.",
+              image:
+                "https://images.unsplash.com/photo-1507413245164-6160d8298b31?q=80&w=2070&auto=format&fit=crop",
+            },
             objectives: [
-              { id: 'obj1', title: 'Scientific Temper', text: 'Cultivating a curious and analytical mindset.' },
-              { id: 'obj2', title: 'Innovation', text: 'Providing a platform for creative solutions.' },
-              { id: 'obj3', title: 'Leadership', text: 'Developing organizational skills.' },
-              { id: 'obj4', title: 'Teamwork', text: 'Fostering a collaborative environment where students work together across disciplines to achieve common scientific goals.' },
-              { id: 'obj5', title: 'Equal opportunity to all', text: 'Ensuring 100% inclusivity and a meritocratic platform where every student has fair access to resources and mentorship.' },
-              { id: 'obj6', title: 'Networking', text: 'Building professional bridges by connecting students with faculty, alumni, and global scientific communities.' },
-              { id: 'obj7', title: 'Value', text: 'Instilling core scientific ethics and integrity, creating long-term academic and professional value for our members.' }
+              {
+                id: "obj1",
+                title: "Scientific Temper",
+                text: "Cultivating a curious and analytical mindset.",
+              },
+              {
+                id: "obj2",
+                title: "Innovation",
+                text: "Providing a platform for creative solutions.",
+              },
+              {
+                id: "obj3",
+                title: "Leadership",
+                text: "Developing organizational skills.",
+              },
+              {
+                id: "obj4",
+                title: "Teamwork",
+                text: "Fostering a collaborative environment where students work together across disciplines to achieve common scientific goals.",
+              },
+              {
+                id: "obj5",
+                title: "Equal opportunity to all",
+                text: "Ensuring 100% inclusivity and a meritocratic platform where every student has fair access to resources and mentorship.",
+              },
+              {
+                id: "obj6",
+                title: "Networking",
+                text: "Building professional bridges by connecting students with faculty, alumni, and global scientific communities.",
+              },
+              {
+                id: "obj7",
+                title: "Value",
+                text: "Instilling core scientific ethics and integrity, creating long-term academic and professional value for our members.",
+              },
             ],
             impacts: [
-              { id: 'imp1', title: '1000 +', text: 'Students reached annually' },
-              { id: 'imp2', title: '10 +', text: 'Events organised annually' }
+              {
+                id: "imp1",
+                title: "1000 +",
+                text: "Students reached annually",
+              },
+              { id: "imp2", title: "10 +", text: "Events organised annually" },
             ],
             departments: [
-              { id: 'dep1', title: 'Core Team', aim: 'Overall management', tasks: [] },
-              { id: 'dep2', title: 'Technical', aim: 'Research and Dev', tasks: ['Workshops', 'Coding'] },
-              { id: 'dep3', title: 'Content', aim: 'Knowledge Sharing', tasks: ['Blogs', 'Magazines'] }
-            ]
+              {
+                id: "dep1",
+                title: "Core Team",
+                aim: "Overall management",
+                tasks: [],
+              },
+              {
+                id: "dep2",
+                title: "Technical",
+                aim: "Research and Dev",
+                tasks: ["Workshops", "Coding"],
+              },
+              {
+                id: "dep3",
+                title: "Content",
+                aim: "Knowledge Sharing",
+                tasks: ["Blogs", "Magazines"],
+              },
+            ],
           });
         }
       } catch (e) {
-        handleFirestoreError(e, OperationType.GET, 'about');
+        handleFirestoreError(e, OperationType.GET, "about");
       }
 
       // Load Events
       try {
-        const eventsSnap = await getDocs(query(collection(db, 'events'), orderBy('date', 'desc')));
+        const eventsSnap = await getDocs(
+          query(collection(db, "events"), orderBy("date", "desc")),
+        );
         eventsCount = eventsSnap.docs.length;
-        const eventsList = eventsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+        const eventsList = eventsSnap.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as any[];
         setEvents(eventsList);
 
         // Compute stats
         let totalReg = 0;
         let totalAtt = 0;
         eventsList.forEach((e: any) => {
-          totalReg += (e.stats?.registrations || 0);
-          totalAtt += (e.stats?.attendance || 0);
+          totalReg += e.stats?.registrations || 0;
+          totalAtt += e.stats?.attendance || 0;
         });
 
         setStats({
           totalRegistrations: totalReg,
           totalAttendance: totalAtt,
-          eventsCount: eventsList.length
+          eventsCount: eventsList.length,
         });
       } catch (e) {
-        handleFirestoreError(e, OperationType.GET, 'events');
+        handleFirestoreError(e, OperationType.GET, "events");
       }
 
       // Load Contact Config
       try {
-        const contactConfigDoc = await getDoc(doc(db, 'settings', 'contact_config'));
+        const contactConfigDoc = await getDoc(
+          doc(db, "settings", "contact_config"),
+        );
         totalReadsCalculated++;
         if (contactConfigDoc.exists()) {
           const cfg = contactConfigDoc.data() || {};
           setContactConfig({
-            sheetId: cfg.sheetId || '',
-            adminEmail: cfg.adminEmail || ''
+            sheetId: cfg.sheetId || "",
+            adminEmail: cfg.adminEmail || "",
           });
         }
       } catch (e) {
@@ -1652,36 +2109,49 @@ export default function Admin_Page() {
 
       // Load Logo Config
       try {
-        const logoConfigRef = doc(db, 'settings', 'logo_config');
+        const logoConfigRef = doc(db, "settings", "logo_config");
         const logoConfigDoc = await getDoc(logoConfigRef);
         totalReadsCalculated++;
         if (logoConfigDoc.exists()) {
           const data = logoConfigDoc.data() || {};
           setFirebaseLogos({
             infinitium: data.infinitium || INFINITIUM_LOGO_BASE64,
-            arsd: data.arsd || ARSD_LOGO_BASE64
+            arsd: data.arsd || ARSD_LOGO_BASE64,
           });
         } else {
           // Auto-seed optimized JPEGs to Firebase Firestore!
           await setDoc(logoConfigRef, {
             infinitium: INFINITIUM_LOGO_BASE64,
             arsd: ARSD_LOGO_BASE64,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           });
           setFirebaseLogos({
             infinitium: INFINITIUM_LOGO_BASE64,
-            arsd: ARSD_LOGO_BASE64
+            arsd: ARSD_LOGO_BASE64,
           });
-          console.log("Certificate logos auto-seeded in Firebase Firestore successfully!");
+          console.log(
+            "Certificate logos auto-seeded in Firebase Firestore successfully!",
+          );
         }
       } catch (e) {
         console.warn("Could not load or auto-seed logo config:", e);
       }
 
       // Increment Firestore database reads and writes count
-      const totalReads = totalReadsCalculated + membersCount + achievementsCount + galleryCount + eventsCount;
-      await loadDbMetrics(totalReads, writesInc, writeReason || (writesInc > 0 ? writeReason : "Reloaded society collections & stats."));
-
+      const totalReads =
+        totalReadsCalculated +
+        membersCount +
+        achievementsCount +
+        galleryCount +
+        eventsCount;
+      await loadDbMetrics(
+        totalReads,
+        writesInc,
+        writeReason ||
+          (writesInc > 0
+            ? writeReason
+            : "Reloaded society collections & stats."),
+      );
     } catch (error: any) {
       console.error("Error loading Firebase data", error);
     } finally {
@@ -1689,7 +2159,9 @@ export default function Admin_Page() {
     }
   };
 
-  const handleMemberFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleMemberFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
@@ -1702,7 +2174,9 @@ export default function Admin_Page() {
     }
   };
 
-  const handleEventFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEventFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       try {
@@ -1715,7 +2189,9 @@ export default function Admin_Page() {
     }
   };
 
-  const handleGalleryFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleGalleryFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       setIsImageProcessing(true);
@@ -1724,22 +2200,28 @@ export default function Admin_Page() {
         setGalleryImagePreview(compressed);
       } catch (err) {
         console.error("Compression failed", err);
-        alert("Failed to process image. It might be too large or an unsupported format.");
+        alert(
+          "Failed to process image. It might be too large or an unsupported format.",
+        );
       } finally {
         setIsImageProcessing(false);
       }
     }
   };
 
-  const handleEventMediaChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEventMediaChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       setIsEventImageProcessing(true);
       try {
         const fileArray = Array.from(files) as File[];
-        const compressedPromises = fileArray.map(file => compressImage(file, 1024, 1024, 0.7));
+        const compressedPromises = fileArray.map((file) =>
+          compressImage(file, 1024, 1024, 0.7),
+        );
         const compressed = await Promise.all(compressedPromises);
-        setEventMediaPreviews(prev => [...prev, ...compressed]);
+        setEventMediaPreviews((prev) => [...prev, ...compressed]);
       } catch (err) {
         console.error("Media compression failed", err);
         alert("Failed to process one or more images.");
@@ -1750,10 +2232,12 @@ export default function Admin_Page() {
   };
 
   const removeEventMedia = (index: number) => {
-    setEventMediaPreviews(prev => prev.filter((_, i) => i !== index));
+    setEventMediaPreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleLogoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleLogoFileChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       setIsSavingLogo(true);
@@ -1761,78 +2245,135 @@ export default function Admin_Page() {
         const compressed = await compressImage(file, 256, 256, 0.8);
         const updatedAbout = {
           ...aboutData,
-          logo: compressed
+          logo: compressed,
         };
         setAboutData(updatedAbout);
-        await setDoc(doc(db, 'about', 'current'), updatedAbout);
-        alert("Website custom logo set and saved to the database successfully! The header navbar logo, bottom footer logo, and browser favicon will now be updated in real-time.");
+        await setDoc(doc(db, "about", "current"), updatedAbout);
+        alert(
+          "Website custom logo set and saved to the database successfully! The header navbar logo, bottom footer logo, and browser favicon will now be updated in real-time.",
+        );
       } catch (err) {
         console.error("Logo upload/save failed", err);
-        alert("Failed to process and save logo image: " + (err instanceof Error ? err.message : String(err)));
+        alert(
+          "Failed to process and save logo image: " +
+            (err instanceof Error ? err.message : String(err)),
+        );
       } finally {
         setIsSavingLogo(false);
       }
     }
   };
 
-  const handleAboutHeroImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAboutHeroImageChange = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       setIsSavingAbout(true);
       try {
         const compressed = await compressImage(file, 1200, 800, 0.8);
-        
+
         // Setup initial default aboutData structure if missing
         const currentAbout = aboutData || {
-          hero: { 
-            title: "INFINITIUM SOCIETY", 
-            paragraph: "The Premier Society of Physical Sciences at ARSD College, University of Delhi.", 
-            image: "" 
+          hero: {
+            title: "INFINITIUM SOCIETY",
+            paragraph:
+              "The Premier Society of Physical Sciences at ARSD College, University of Delhi.",
+            image: "",
           },
           objectives: [
-            { id: 'obj1', title: 'Scientific Temper', text: 'Cultivating a curious and analytical mindset.' },
-            { id: 'obj2', title: 'Innovation', text: 'Providing a platform for creative solutions.' },
-            { id: 'obj3', title: 'Leadership', text: 'Developing organizational skills.' },
-            { id: 'obj4', title: 'Teamwork', text: 'Fostering a collaborative environment where students work together across disciplines to achieve common scientific goals.' },
-            { id: 'obj5', title: 'Equal opportunity to all', text: 'Ensuring 100% inclusivity and a meritocratic platform where every student has fair access to resources and mentorship.' },
-            { id: 'obj6', title: 'Networking', text: 'Building professional bridges by connecting students with faculty, alumni, and global scientific communities.' },
-            { id: 'obj7', title: 'Value', text: 'Instilling core scientific ethics and integrity, creating long-term academic and professional value for our members.' }
+            {
+              id: "obj1",
+              title: "Scientific Temper",
+              text: "Cultivating a curious and analytical mindset.",
+            },
+            {
+              id: "obj2",
+              title: "Innovation",
+              text: "Providing a platform for creative solutions.",
+            },
+            {
+              id: "obj3",
+              title: "Leadership",
+              text: "Developing organizational skills.",
+            },
+            {
+              id: "obj4",
+              title: "Teamwork",
+              text: "Fostering a collaborative environment where students work together across disciplines to achieve common scientific goals.",
+            },
+            {
+              id: "obj5",
+              title: "Equal opportunity to all",
+              text: "Ensuring 100% inclusivity and a meritocratic platform where every student has fair access to resources and mentorship.",
+            },
+            {
+              id: "obj6",
+              title: "Networking",
+              text: "Building professional bridges by connecting students with faculty, alumni, and global scientific communities.",
+            },
+            {
+              id: "obj7",
+              title: "Value",
+              text: "Instilling core scientific ethics and integrity, creating long-term academic and professional value for our members.",
+            },
           ],
           impacts: [
-            { id: 'imp1', title: '1000 +', text: 'Students reached annually' },
-            { id: 'imp2', title: '10 +', text: 'Events organised annually' }
+            { id: "imp1", title: "1000 +", text: "Students reached annually" },
+            { id: "imp2", title: "10 +", text: "Events organised annually" },
           ],
           departments: [
-            { id: 'dep1', title: 'Core Team', aim: 'Overall management', tasks: [] },
-            { id: 'dep2', title: 'Technical', aim: 'Research and Dev', tasks: ['Workshops', 'Coding'] },
-            { id: 'dep3', title: 'Content', aim: 'Knowledge Sharing', tasks: ['Blogs', 'Magazines'] }
-          ]
+            {
+              id: "dep1",
+              title: "Core Team",
+              aim: "Overall management",
+              tasks: [],
+            },
+            {
+              id: "dep2",
+              title: "Technical",
+              aim: "Research and Dev",
+              tasks: ["Workshops", "Coding"],
+            },
+            {
+              id: "dep3",
+              title: "Content",
+              aim: "Knowledge Sharing",
+              tasks: ["Blogs", "Magazines"],
+            },
+          ],
         };
 
         const updatedAbout = {
           ...currentAbout,
           hero: {
             ...(currentAbout.hero || {}),
-            image: compressed
+            image: compressed,
           },
           // Proactively remove dynamic operations and strategy from core team department
           departments: (currentAbout.departments || []).map((dept: any) => {
-            if (dept.title === 'Core Team' || dept.id === 'dep1') {
+            if (dept.title === "Core Team" || dept.id === "dep1") {
               return {
                 ...dept,
-                tasks: (dept.tasks || []).filter((task: string) => task !== 'Operations' && task !== 'Strategy')
+                tasks: (dept.tasks || []).filter(
+                  (task: string) =>
+                    task !== "Operations" && task !== "Strategy",
+                ),
               };
             }
             return dept;
-          })
+          }),
         };
 
         setAboutData(updatedAbout);
-        await setDoc(doc(db, 'about', 'current'), updatedAbout);
+        await setDoc(doc(db, "about", "current"), updatedAbout);
         alert("About page cover image changed and saved successfully!");
       } catch (err) {
         console.error("Hero image update failed", err);
-        alert("Failed to process and save hero cover image: " + (err instanceof Error ? err.message : String(err)));
+        alert(
+          "Failed to process and save hero cover image: " +
+            (err instanceof Error ? err.message : String(err)),
+        );
       } finally {
         setIsSavingAbout(false);
       }
@@ -1841,26 +2382,27 @@ export default function Admin_Page() {
 
   const handleMemberSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!memberImagePreview) {
-      alert("Please upload a profile photo.");
-      return;
-    }
+    const finalImage =
+      memberImagePreview || "https://i.ibb.co/cKD8BFhN/logo.png";
     const formData = new FormData(e.currentTarget);
-    const startYear = formData.get('startYear');
-    const endYear = formData.get('endYear');
-    const tenure = `${startYear}-${endYear?.toString().slice(-2)}`;
+
+    // Sort and join selected tenures to form a clean, comma-separated list
+    const tenure =
+      selectedMemberTenures.length > 0
+        ? selectedMemberTenures.sort().join(", ")
+        : "2025-26"; // Fallback to current year if none checked
 
     const data = {
-      name: formData.get('name') as string,
-      role: formData.get('role') as string,
-      image: memberImagePreview,
-      linkedin: formData.get('linkedin') as string || '',
-      course: formData.get('course') as string || '',
-      year: formData.get('year') as string || '',
+      name: formData.get("name") as string,
+      role: formData.get("role") as string,
+      image: finalImage,
+      linkedin: (formData.get("linkedin") as string) || "",
+      course: (formData.get("course") as string) || "",
+      year: (formData.get("year") as string) || "",
       tenure: tenure,
     };
 
-    const path = 'members';
+    const path = "members";
     try {
       if (editingMember) {
         const docRef = doc(db, path, editingMember.id);
@@ -1869,20 +2411,24 @@ export default function Admin_Page() {
         const docRef = doc(collection(db, path));
         await setDoc(docRef, { ...data, createdAt: serverTimestamp() });
       }
-      invalidateFirestoreCache('members');
+      invalidateFirestoreCache("members");
       setShowMemberModal(false);
       setEditingMember(null);
       loadFirebaseData();
     } catch (error) {
-      handleFirestoreError(error, editingMember ? OperationType.UPDATE : OperationType.CREATE, path);
+      handleFirestoreError(
+        error,
+        editingMember ? OperationType.UPDATE : OperationType.CREATE,
+        path,
+      );
     }
   };
 
   const deleteMember = async (id: string) => {
     const path = `members/${id}`;
     try {
-      await deleteDoc(doc(db, 'members', id));
-      invalidateFirestoreCache('members');
+      await deleteDoc(doc(db, "members", id));
+      invalidateFirestoreCache("members");
       loadFirebaseData();
       setDeleteConfirm(null);
     } catch (error) {
@@ -1894,6 +2440,7 @@ export default function Admin_Page() {
     setShowMemberModal(false);
     setEditingMember(null);
     setMemberImagePreview(null);
+    setSelectedMemberTenures([]);
   };
 
   const handleEventSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -1903,23 +2450,23 @@ export default function Admin_Page() {
       return;
     }
     const formData = new FormData(e.currentTarget);
-    const sheetId = formData.get('sheetId') as string;
+    const sheetId = formData.get("sheetId") as string;
     const data: any = {
-      title: formData.get('title') as string,
-      subtitle: formData.get('subtitle') as string,
-      type: formData.get('type') as string,
-      date: formData.get('date') as string,
-      location: formData.get('location') as string,
+      title: formData.get("title") as string,
+      subtitle: formData.get("subtitle") as string,
+      type: formData.get("type") as string,
+      date: formData.get("date") as string,
+      location: formData.get("location") as string,
       image: eventImagePreview,
-      description: formData.get('description') as string,
-      startTime: formData.get('startTime') as string || '',
-      whatsappGroup: formData.get('whatsappGroup') as string || '',
-      status: editingEvent?.status || 'Upcoming',
-      isInterCollege: !!formData.get('isInterCollege'),
+      description: formData.get("description") as string,
+      startTime: (formData.get("startTime") as string) || "",
+      whatsappGroup: (formData.get("whatsappGroup") as string) || "",
+      status: editingEvent?.status || "Upcoming",
+      isInterCollege: !!formData.get("isInterCollege"),
       stats: {
         registrations: editingEvent?.stats?.registrations || 0,
-        attendance: editingEvent?.stats?.attendance || 0
-      }
+        attendance: editingEvent?.stats?.attendance || 0,
+      },
     };
 
     // Auto-compute academic year session tag (July to June, e.g., 2025-07 to 2026-06 is 2025-26)
@@ -1940,7 +2487,7 @@ export default function Admin_Page() {
       data.sheetId = sheetId;
     }
 
-    const path = 'events';
+    const path = "events";
     setIsEventSubmitting(true);
     try {
       let eventId = editingEvent?.id;
@@ -1957,28 +2504,28 @@ export default function Admin_Page() {
       if (eventMediaPreviews.length > 0 && eventId) {
         for (const src of eventMediaPreviews) {
           // Add to subcollection
-          const photoRef = doc(collection(db, 'events', eventId, 'photos'));
+          const photoRef = doc(collection(db, "events", eventId, "photos"));
           await setDoc(photoRef, {
             src,
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
           });
 
           // Add to gallery
-          const galleryRef = doc(collection(db, 'gallery'));
+          const galleryRef = doc(collection(db, "gallery"));
           await setDoc(galleryRef, {
             src,
             title: data.title,
             description: `A moment from ${data.title} on ${data.date}`,
-            category: 'Events',
+            category: "Events",
             eventId: eventId,
             eventDate: data.date,
-            createdAt: serverTimestamp()
+            createdAt: serverTimestamp(),
           });
         }
       }
 
-      invalidateFirestoreCache('events');
-      invalidateFirestoreCache('gallery');
+      invalidateFirestoreCache("events");
+      invalidateFirestoreCache("gallery");
       setShowAddEvent(false);
       setEditingEvent(null);
       setEventImagePreview(null);
@@ -1986,7 +2533,11 @@ export default function Admin_Page() {
       loadFirebaseData();
     } catch (error) {
       const errorPath = editingEvent ? `${path}/${editingEvent.id}` : path;
-      handleFirestoreError(error, editingEvent ? OperationType.UPDATE : OperationType.CREATE, errorPath);
+      handleFirestoreError(
+        error,
+        editingEvent ? OperationType.UPDATE : OperationType.CREATE,
+        errorPath,
+      );
     } finally {
       setIsEventSubmitting(false);
     }
@@ -1999,16 +2550,18 @@ export default function Admin_Page() {
     setEventMediaPreviews([]);
   };
 
-  const handleAchievementSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleAchievementSubmit = async (
+    e: React.FormEvent<HTMLFormElement>,
+  ) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     const data = {
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      date: formData.get('date') as string
+      title: formData.get("title") as string,
+      description: formData.get("description") as string,
+      date: formData.get("date") as string,
     };
 
-    const path = 'achievements';
+    const path = "achievements";
     try {
       if (editingAchievement) {
         const docRef = doc(db, path, editingAchievement.id);
@@ -2017,12 +2570,16 @@ export default function Admin_Page() {
         const docRef = doc(collection(db, path));
         await setDoc(docRef, { ...data, createdAt: serverTimestamp() });
       }
-      invalidateFirestoreCache('achievements');
+      invalidateFirestoreCache("achievements");
       setShowAchievementModal(false);
       setEditingAchievement(null);
       loadFirebaseData();
     } catch (error) {
-      handleFirestoreError(error, editingAchievement ? OperationType.UPDATE : OperationType.CREATE, path);
+      handleFirestoreError(
+        error,
+        editingAchievement ? OperationType.UPDATE : OperationType.CREATE,
+        path,
+      );
     }
   };
 
@@ -2036,18 +2593,18 @@ export default function Admin_Page() {
       alert("Please upload a photo from your device.");
       return;
     }
-    
+
     setIsSubmittingGallery(true);
     const formData = new FormData(e.currentTarget);
     const data = {
       src: galleryImagePreview,
-      title: formData.get('title') as string,
-      description: formData.get('description') as string,
-      category: formData.get('category') as string,
-      eventDate: formData.get('eventDate') as string || ''
+      title: formData.get("title") as string,
+      description: formData.get("description") as string,
+      category: formData.get("category") as string,
+      eventDate: (formData.get("eventDate") as string) || "",
     };
 
-    const path = 'gallery';
+    const path = "gallery";
     try {
       if (editingGallery) {
         const docRef = doc(db, path, editingGallery.id);
@@ -2056,13 +2613,17 @@ export default function Admin_Page() {
         const docRef = doc(collection(db, path));
         await setDoc(docRef, { ...data, createdAt: serverTimestamp() });
       }
-      invalidateFirestoreCache('gallery');
+      invalidateFirestoreCache("gallery");
       setShowGalleryModal(false);
       setEditingGallery(null);
       setGalleryImagePreview(null);
       loadFirebaseData();
     } catch (error) {
-      handleFirestoreError(error, editingGallery ? OperationType.UPDATE : OperationType.CREATE, path);
+      handleFirestoreError(
+        error,
+        editingGallery ? OperationType.UPDATE : OperationType.CREATE,
+        path,
+      );
     } finally {
       setIsSubmittingGallery(false);
     }
@@ -2076,185 +2637,225 @@ export default function Admin_Page() {
 
   // Effect to manage scanner initialization
   useEffect(() => {
-    if (isScanning && activeTab === 'scanner' && selectedScanEventId) {
+    if (isScanning && activeTab === "scanner" && selectedScanEventId) {
       isProcessingRef.current = false;
       ScannerTimeout.current = setTimeout(() => {
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         scannerRef.current = new Html5QrcodeScanner(
-          "reader", 
-          { 
-            fps: 25, 
+          "reader",
+          {
+            fps: 25,
             qrbox: { width: 250, height: 250 },
             facingMode: isMobile ? { exact: "environment" } : "user",
-            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-          } as any, 
-          false
+            supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
+          } as any,
+          false,
         );
-        
-        scannerRef.current.render(async (decodedText) => {
-          if (isProcessingRef.current) {
-            console.log("Scan already in progress. Ignoring duplicate frame.");
-            return;
-          }
-          isProcessingRef.current = true;
 
-          try {
-            setScanResult({ loading: true });
-            
-            let cleanTicketId = decodedText.trim();
-            // Fallback: If scanner decoded a full URL
-            if (cleanTicketId.includes("http")) {
-              try {
-                const url = new URL(cleanTicketId);
-                const ticketParam = url.searchParams.get("ticket") || url.searchParams.get("ticketId") || url.searchParams.get("id");
-                if (ticketParam) {
-                  cleanTicketId = ticketParam.trim();
-                } else {
-                  const segments = url.pathname.split('/');
-                  const lastSegment = segments[segments.length - 1];
-                  if (lastSegment && lastSegment.toUpperCase().startsWith("INF-")) {
-                    cleanTicketId = lastSegment.trim();
+        scannerRef.current.render(
+          async (decodedText) => {
+            if (isProcessingRef.current) {
+              console.log(
+                "Scan already in progress. Ignoring duplicate frame.",
+              );
+              return;
+            }
+            isProcessingRef.current = true;
+
+            try {
+              setScanResult({ loading: true });
+
+              let cleanTicketId = decodedText.trim();
+              // Fallback: If scanner decoded a full URL
+              if (cleanTicketId.includes("http")) {
+                try {
+                  const url = new URL(cleanTicketId);
+                  const ticketParam =
+                    url.searchParams.get("ticket") ||
+                    url.searchParams.get("ticketId") ||
+                    url.searchParams.get("id");
+                  if (ticketParam) {
+                    cleanTicketId = ticketParam.trim();
+                  } else {
+                    const segments = url.pathname.split("/");
+                    const lastSegment = segments[segments.length - 1];
+                    if (
+                      lastSegment &&
+                      lastSegment.toUpperCase().startsWith("INF-")
+                    ) {
+                      cleanTicketId = lastSegment.trim();
+                    }
                   }
+                } catch (urlErr) {
+                  console.error("Failed to parse scanned text as URL:", urlErr);
                 }
-              } catch (urlErr) {
-                console.error("Failed to parse scanned text as URL:", urlErr);
               }
-            }
 
-            // 1. Fetch, verify and mark attendance directly via Apps Script (Extremely fast, sub-second single request!)
-            const appsScriptUrl = (import.meta as any).env.VITE_APPS_SCRIPT_URL;
-            if (!appsScriptUrl) {
-              throw new Error("Apps Script URL is not configured (VITE_APPS_SCRIPT_URL).");
-            }
-
-            const targetEvent = events.find((e: any) => e.id === selectedScanEventId);
-            if (!targetEvent || !targetEvent.sheetId) {
-              throw new Error("Selected event does not have an associated Google Sheet ID.");
-            }
-
-            const response = await fetch(appsScriptUrl, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain' },
-              body: JSON.stringify({ 
-                type: 'attendance',
-                ticketId: cleanTicketId,
-                sheetId: targetEvent.sheetId
-              })
-            });
-
-            const resultText = await response.text();
-            console.log("Apps Script attendance check response:", resultText);
-
-            let resObj: any = null;
-            try {
-              resObj = JSON.parse(resultText);
-            } catch (err) {
-              // Fallback for older Apps Script returning raw text
-              if (resultText === "Attendance Marked") {
-                resObj = { status: "success", alreadyMarked: false, student: { studentName: "Attendee" } };
-              } else if (resultText.toLowerCase().includes("not found") || resultText.toLowerCase().includes("error")) {
-                resObj = { status: "error", message: resultText };
-              } else {
-                resObj = { status: "success", alreadyMarked: true, student: { studentName: "Attendee" } };
+              // 1. Fetch, verify and mark attendance directly via Apps Script (Extremely fast, sub-second single request!)
+              const appsScriptUrl = (import.meta as any).env
+                .VITE_APPS_SCRIPT_URL;
+              if (!appsScriptUrl) {
+                throw new Error(
+                  "Apps Script URL is not configured (VITE_APPS_SCRIPT_URL).",
+                );
               }
-            }
 
-            if (!resObj || resObj.status === "error") {
-              throw new Error(resObj?.message || "Invalid ticket or wrong event.");
-            }
+              const targetEvent = events.find(
+                (e: any) => e.id === selectedScanEventId,
+              );
+              if (!targetEvent || !targetEvent.sheetId) {
+                throw new Error(
+                  "Selected event does not have an associated Google Sheet ID.",
+                );
+              }
 
-            const regData = resObj.student || { studentName: "Attendee" };
-
-            // 2. Cache the scanning check-in concisely in Firebase temp_jsons to satisfy the blueprint/schema requirement cleanly
-            const tempId = `temp_scan_cache_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-            const tempDocRef = doc(db, 'temp_jsons', tempId);
-            try {
-              console.log(`Writing scanning check-in cache to Firebase: temp_jsons/${tempId}`);
-              await setDoc(tempDocRef, {
-                content: JSON.stringify({
-                  eventId: selectedScanEventId,
+              const response = await fetch(appsScriptUrl, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify({
+                  type: "attendance",
                   ticketId: cleanTicketId,
-                  studentName: regData.studentName || "Attendee",
-                  rollNo: regData.rollNo || "",
-                  status: "completed",
-                  timestamp: new Date().toISOString()
+                  sheetId: targetEvent.sheetId,
                 }),
-                createdAt: serverTimestamp()
               });
-              
-              // Verify cache exists (complying with storage-efficient cache requirement)
-              const cacheSnap = await getDoc(tempDocRef);
-              if (cacheSnap.exists()) {
-                console.log("Check-in cache verified successfully.");
-              }
-            } catch (cacheErr) {
-              console.error("Error managing check-in cache in Firebase:", cacheErr);
-            } finally {
-              // ALWAYS delete the temporary JSON document from Firestore immediately once duplicate check is complete
-              deleteDoc(tempDocRef).catch(delErr => console.error("Error deleting temp scan cache:", delErr));
-            }
 
-            // 3. Increment attendance stats on the local Event Firestore document if not already marked
-            if (!resObj.alreadyMarked) {
-              const eventRef = doc(db, 'events', selectedScanEventId);
-              const eventSnap = await getDoc(eventRef);
-              if (eventSnap.exists()) {
-                const currentAttendance = eventSnap.data().stats?.attendance || 0;
-                await updateDoc(eventRef, {
-                  'stats.attendance': currentAttendance + 1
+              const resultText = await response.text();
+              console.log("Apps Script attendance check response:", resultText);
+
+              let resObj: any = null;
+              try {
+                resObj = JSON.parse(resultText);
+              } catch (err) {
+                // Fallback for older Apps Script returning raw text
+                if (resultText === "Attendance Marked") {
+                  resObj = {
+                    status: "success",
+                    alreadyMarked: false,
+                    student: { studentName: "Attendee" },
+                  };
+                } else if (
+                  resultText.toLowerCase().includes("not found") ||
+                  resultText.toLowerCase().includes("error")
+                ) {
+                  resObj = { status: "error", message: resultText };
+                } else {
+                  resObj = {
+                    status: "success",
+                    alreadyMarked: true,
+                    student: { studentName: "Attendee" },
+                  };
+                }
+              }
+
+              if (!resObj || resObj.status === "error") {
+                throw new Error(
+                  resObj?.message || "Invalid ticket or wrong event.",
+                );
+              }
+
+              const regData = resObj.student || { studentName: "Attendee" };
+
+              // 2. Cache the scanning check-in concisely in Firebase temp_jsons to satisfy the blueprint/schema requirement cleanly
+              const tempId = `temp_scan_cache_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+              const tempDocRef = doc(db, "temp_jsons", tempId);
+              try {
+                console.log(
+                  `Writing scanning check-in cache to Firebase: temp_jsons/${tempId}`,
+                );
+                await setDoc(tempDocRef, {
+                  content: JSON.stringify({
+                    eventId: selectedScanEventId,
+                    ticketId: cleanTicketId,
+                    studentName: regData.studentName || "Attendee",
+                    rollNo: regData.rollNo || "",
+                    status: "completed",
+                    timestamp: new Date().toISOString(),
+                  }),
+                  createdAt: serverTimestamp(),
                 });
-              }
-            }
 
-            setScanResult({ 
-              success: true, 
-              student: regData,
-              alreadyMarked: !!resObj.alreadyMarked,
-              ticketId: decodedText
-            });
-            
-            setLastScannedStudent(regData.studentName || "Attendee");
-            if (lastScanUiTimeoutRef.current) {
-              clearTimeout(lastScanUiTimeoutRef.current);
+                // Verify cache exists (complying with storage-efficient cache requirement)
+                const cacheSnap = await getDoc(tempDocRef);
+                if (cacheSnap.exists()) {
+                  console.log("Check-in cache verified successfully.");
+                }
+              } catch (cacheErr) {
+                console.error(
+                  "Error managing check-in cache in Firebase:",
+                  cacheErr,
+                );
+              } finally {
+                // ALWAYS delete the temporary JSON document from Firestore immediately once duplicate check is complete
+                deleteDoc(tempDocRef).catch((delErr) =>
+                  console.error("Error deleting temp scan cache:", delErr),
+                );
+              }
+
+              // 3. Increment attendance stats on the local Event Firestore document if not already marked
+              if (!resObj.alreadyMarked) {
+                const eventRef = doc(db, "events", selectedScanEventId);
+                const eventSnap = await getDoc(eventRef);
+                if (eventSnap.exists()) {
+                  const currentAttendance =
+                    eventSnap.data().stats?.attendance || 0;
+                  await updateDoc(eventRef, {
+                    "stats.attendance": currentAttendance + 1,
+                  });
+                }
+              }
+
+              setScanResult({
+                success: true,
+                student: regData,
+                alreadyMarked: !!resObj.alreadyMarked,
+                ticketId: decodedText,
+              });
+
+              setLastScannedStudent(regData.studentName || "Attendee");
+              if (lastScanUiTimeoutRef.current) {
+                clearTimeout(lastScanUiTimeoutRef.current);
+              }
+              lastScanUiTimeoutRef.current = setTimeout(() => {
+                setLastScannedStudent(null);
+              }, 3000);
+
+              loadFirebaseData();
+            } catch (err: any) {
+              console.error("Scan error:", err);
+              setScanResult({ success: false, error: err.message });
+            } finally {
+              // Keep scanner open for the next scan.
+              // Reset the processing state after a brief 1.5-second cooldown to avoid rapid double-scanning of the same ticket.
+              setTimeout(() => {
+                isProcessingRef.current = false;
+              }, 1500);
             }
-            lastScanUiTimeoutRef.current = setTimeout(() => {
-              setLastScannedStudent(null);
-            }, 3000);
-            
-            loadFirebaseData();
-          } catch (err: any) {
-            console.error("Scan error:", err);
-            setScanResult({ success: false, error: err.message });
-          } finally {
-            // Keep scanner open for the next scan.
-            // Reset the processing state after a brief 1.5-second cooldown to avoid rapid double-scanning of the same ticket.
-            setTimeout(() => {
-              isProcessingRef.current = false;
-            }, 1500);
-          }
-        }, (err) => {
-          // ignore errors
-        });
+          },
+          (err) => {
+            // ignore errors
+          },
+        );
       }, 500); // Increased timeout to ensure DOM update
     }
 
     return () => {
       stopScanner();
       if (ScannerTimeout.current) clearTimeout(ScannerTimeout.current);
-      if (lastScanUiTimeoutRef.current) clearTimeout(lastScanUiTimeoutRef.current);
+      if (lastScanUiTimeoutRef.current)
+        clearTimeout(lastScanUiTimeoutRef.current);
     };
   }, [isScanning, activeTab, selectedScanEventId]);
 
   const stopScanner = () => {
     isProcessingRef.current = false;
     if (scannerRef.current) {
-        // Clear scanner only if initialized, needs to be wrapped in a try/catch if it fails
-        scannerRef.current.clear().catch(console.error);
-        scannerRef.current = null;
+      // Clear scanner only if initialized, needs to be wrapped in a try/catch if it fails
+      scannerRef.current.clear().catch(console.error);
+      scannerRef.current = null;
     }
   };
 
-  const COLORS = ['#14b8a6', '#0d9488', '#0f766e', '#115e59']; // brand-500, 600, 700, 800
+  const COLORS = ["#14b8a6", "#0d9488", "#0f766e", "#115e59"]; // brand-500, 600, 700, 800
 
   const liveStats = React.useMemo(() => {
     const sheetEvents = events.filter((e: any) => e.sheetId);
@@ -2284,7 +2885,7 @@ export default function Admin_Page() {
         hasLive = true;
       } else {
         try {
-          const raw = localStorage.getItem('temp_events_stats_json');
+          const raw = localStorage.getItem("temp_events_stats_json");
           if (raw) {
             const parsed = JSON.parse(raw);
             if (parsed[e.id] !== undefined) {
@@ -2305,73 +2906,102 @@ export default function Admin_Page() {
       totalRegistrations,
       totalAttendance,
       totalSocietyAttendance,
-      completionRate: totalRegistrations > 0 
-        ? Math.round((totalAttendance / totalRegistrations) * 100) 
-        : 0,
+      completionRate:
+        totalRegistrations > 0
+          ? Math.round((totalAttendance / totalRegistrations) * 100)
+          : 0,
       noSheets: false,
     };
   }, [events, fetchedStats]);
 
-  const chartData = events.filter((e: any) => e.sheetId).map((e: any) => {
-    let reg = e.stats?.registrations || 0;
-    let att = e.stats?.attendance || 0;
-    if (fetchedStats[e.id] !== undefined) {
-      reg = fetchedStats[e.id].registrations;
-      att = fetchedStats[e.id].attendance;
-    } else {
-      try {
-        const raw = localStorage.getItem('temp_events_stats_json');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (parsed[e.id] !== undefined) {
-            reg = parsed[e.id].registrations;
-            att = parsed[e.id].attendance;
+  const chartData = events
+    .filter((e: any) => e.sheetId)
+    .map((e: any) => {
+      let reg = e.stats?.registrations || 0;
+      let att = e.stats?.attendance || 0;
+      if (fetchedStats[e.id] !== undefined) {
+        reg = fetchedStats[e.id].registrations;
+        att = fetchedStats[e.id].attendance;
+      } else {
+        try {
+          const raw = localStorage.getItem("temp_events_stats_json");
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (parsed[e.id] !== undefined) {
+              reg = parsed[e.id].registrations;
+              att = parsed[e.id].attendance;
+            }
           }
-        }
-      } catch (_) {}
-    }
-    return {
-      name: e.title?.split(':')[0]?.substring(0, 15) || 'Event',
-      registrations: reg,
-      attendance: att,
-    };
-  });
-
-  const typeData = events.filter((e: any) => e.sheetId).reduce((acc: any, e: any) => {
-    const type = e.type || 'Other';
-    const eventName = e.title || 'Untitled Event';
-    const existing = acc.find((item: any) => item.name === type);
-    if (existing) {
-      existing.value += 1;
-      if (!existing.events.includes(eventName)) {
-        existing.events.push(eventName);
+        } catch (_) {}
       }
-    } else {
-      acc.push({ name: type, value: 1, events: [eventName] });
-    }
-    return acc;
-  }, []);
+      return {
+        name: e.title?.split(":")[0]?.substring(0, 15) || "Event",
+        registrations: reg,
+        attendance: att,
+      };
+    });
+
+  const typeData = events
+    .filter((e: any) => e.sheetId)
+    .reduce((acc: any, e: any) => {
+      const type = e.type || "Other";
+      const eventName = e.title || "Untitled Event";
+      const existing = acc.find((item: any) => item.name === type);
+      if (existing) {
+        existing.value += 1;
+        if (!existing.events.includes(eventName)) {
+          existing.events.push(eventName);
+        }
+      } else {
+        acc.push({ name: type, value: 1, events: [eventName] });
+      }
+      return acc;
+    }, []);
 
   // Dynamically compute estimated firebase database and storage usage based on real entity records loaded
   const storageMetrics = React.useMemo(() => {
-    const avgDocSizeKB = 2.4; 
+    const avgDocSizeKB = 2.4;
     const avgImageSizeKB = 120;
-    
-    const firestoreDocsCount = events.length + members.length + achievements.length + gallery.length + Object.keys(fetchedStats).length + 20;
-    const estimatedFirestoreBytes = (firestoreDocsCount * avgDocSizeKB * 1024) + (gallery.length * 0.15 * avgImageSizeKB * 1024);
-    const firestoreUsedMB = Math.max(0.24, Number((estimatedFirestoreBytes / (1024 * 1024)).toFixed(3)));
-    const firestoreLimitMB = 1024; 
-    const firestorePercent = Number(((firestoreUsedMB / firestoreLimitMB) * 100).toFixed(2));
-    
-    const mediaCount = gallery.length + events.filter((e: any) => e.image).length + members.filter((m: any) => m.image).length + achievements.filter((a: any) => a.image).length;
+
+    const firestoreDocsCount =
+      events.length +
+      members.length +
+      achievements.length +
+      gallery.length +
+      Object.keys(fetchedStats).length +
+      20;
+    const estimatedFirestoreBytes =
+      firestoreDocsCount * avgDocSizeKB * 1024 +
+      gallery.length * 0.15 * avgImageSizeKB * 1024;
+    const firestoreUsedMB = Math.max(
+      0.24,
+      Number((estimatedFirestoreBytes / (1024 * 1024)).toFixed(3)),
+    );
+    const firestoreLimitMB = 1024;
+    const firestorePercent = Number(
+      ((firestoreUsedMB / firestoreLimitMB) * 100).toFixed(2),
+    );
+
+    const mediaCount =
+      gallery.length +
+      events.filter((e: any) => e.image).length +
+      members.filter((m: any) => m.image).length +
+      achievements.filter((a: any) => a.image).length;
     const estimatedStorageBytes = mediaCount * avgImageSizeKB * 1024;
-    const storageUsedMB = Math.max(3.8, Number((estimatedStorageBytes / (1024 * 1024)).toFixed(1)));
-    const storageLimitMB = 5120; 
-    const storagePercent = Number(((storageUsedMB / storageLimitMB) * 100).toFixed(2));
-    
+    const storageUsedMB = Math.max(
+      3.8,
+      Number((estimatedStorageBytes / (1024 * 1024)).toFixed(1)),
+    );
+    const storageLimitMB = 5120;
+    const storagePercent = Number(
+      ((storageUsedMB / storageLimitMB) * 100).toFixed(2),
+    );
+
     const totalUsedMB = Number((firestoreUsedMB + storageUsedMB).toFixed(2));
     const totalLimitMB = firestoreLimitMB + storageLimitMB;
-    const totalPercent = Number(((totalUsedMB / totalLimitMB) * 100).toFixed(2));
+    const totalPercent = Number(
+      ((totalUsedMB / totalLimitMB) * 100).toFixed(2),
+    );
 
     return {
       firestoreUsedMB,
@@ -2384,35 +3014,58 @@ export default function Admin_Page() {
       totalLimitMB,
       totalPercent,
       firestoreDocsCount,
-      mediaCount
+      mediaCount,
     };
   }, [events, members, achievements, gallery, fetchedStats]);
 
   const storageGrowthData = React.useMemo(() => {
     const currentMB = storageMetrics.totalUsedMB;
-    const monthlyDocGrowth = Math.max(0.4, Number((events.length * 0.08).toFixed(2))); 
-    const monthlyAssetGrowth = Math.max(1.8, Number((gallery.length * 0.06 + events.length * 0.1).toFixed(2)));
+    const monthlyDocGrowth = Math.max(
+      0.4,
+      Number((events.length * 0.08).toFixed(2)),
+    );
+    const monthlyAssetGrowth = Math.max(
+      1.8,
+      Number((gallery.length * 0.06 + events.length * 0.1).toFixed(2)),
+    );
     const growthPerMonth = monthlyDocGrowth + monthlyAssetGrowth;
 
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const months = [
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
     const currentMonthIdx = new Date().getMonth();
-    
+
     const data = [];
     for (let i = -3; i <= 3; i++) {
       const monthLabel = months[(currentMonthIdx + i + 12) % 12];
       const distance = i;
-      const projectedValue = Math.max(0.5, Number((currentMB + (distance * growthPerMonth)).toFixed(2)));
+      const projectedValue = Math.max(
+        0.5,
+        Number((currentMB + distance * growthPerMonth).toFixed(2)),
+      );
       data.push({
         name: monthLabel,
         "Storage Used (MB)": projectedValue,
         "Free Tier Limit (MB)": 6144,
-        status: distance < 0 ? "Actual" : distance === 0 ? "Current" : "Projected"
+        status:
+          distance < 0 ? "Actual" : distance === 0 ? "Current" : "Projected",
       });
     }
     return data;
   }, [storageMetrics, events.length, gallery.length]);
 
-  const PIE_COLORS = ['#0d9488', '#0f766e', '#115e59', '#134e4a', '#14b8a6'];
+  const PIE_COLORS = ["#0d9488", "#0f766e", "#115e59", "#134e4a", "#14b8a6"];
 
   if (authLoading) {
     return (
@@ -2422,31 +3075,39 @@ export default function Admin_Page() {
     );
   }
 
-  if (!user || user.email !== 'teaminfinitium.arsd@gmail.com') {
+  if (!user || user.email !== "teaminfinitium.arsd@gmail.com") {
     return (
       <div className="min-h-screen bg-brand-50 flex items-center justify-center p-6">
         <div className="max-w-md w-full bg-white rounded-2xl p-12 border border-slate-100 shadow-2xl shadow-brand-950/10 text-center space-y-8">
           <Logo className="w-24 h-24 mx-auto" />
           <div>
-            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-4">Admin Login</h1>
+            <h1 className="text-3xl font-black text-slate-900 uppercase tracking-tighter mb-4">
+              Admin Login
+            </h1>
             <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mb-2 leading-relaxed">
-              This area is restricted to INFINITIUM core administrators. Please authenticate with your authorized Google account.
+              This area is restricted to INFINITIUM core administrators. Please
+              authenticate with your authorized Google account.
             </p>
           </div>
           <div className="py-8">
-            <button 
+            <button
               onClick={handleGoogleLogin}
               className="w-full py-5 bg-zinc-900 text-white rounded-xl font-black uppercase tracking-widest hover:bg-brand-600 transition-all flex items-center justify-center gap-4 active:scale-95 shadow-xl shadow-brand-950/20 group"
             >
-              <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5 group-hover:scale-125 transition-transform" alt="Google" /> Sign in with Google
+              <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                className="w-5 h-5 group-hover:scale-125 transition-transform"
+                alt="Google"
+              />{" "}
+              Sign in with Google
             </button>
           </div>
           {loginError && (
-              <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest text-center animate-shake mt-4">
-                {loginError}
-              </p>
-            )}
-          {user && user.email !== 'teaminfinitium.arsd@gmail.com' && (
+            <p className="text-red-500 text-[10px] font-bold uppercase tracking-widest text-center animate-shake mt-4">
+              {loginError}
+            </p>
+          )}
+          {user && user.email !== "teaminfinitium.arsd@gmail.com" && (
             <p className="text-red-600 text-xs font-bold uppercase tracking-widest">
               Access Denied for {user.email}
             </p>
@@ -2456,9 +3117,7 @@ export default function Admin_Page() {
     );
   }
 
-  const scannableEvents = events.filter((e: any) => 
-    e.status === 'Upcoming'
-  );
+  const scannableEvents = events.filter((e: any) => e.status === "Upcoming");
 
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col md:flex-row relative">
@@ -2467,22 +3126,30 @@ export default function Admin_Page() {
         <Link to="/" className="flex items-center gap-3">
           <Logo className="w-10 h-10" />
           <div>
-            <h2 className="font-black text-sm uppercase tracking-tighter text-zinc-900 leading-none">INFINITIUM</h2>
-            <p className="text-[6px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1 hidden sm:block">Society of Physical Sciences, ARSD College</p>
+            <h2 className="font-black text-sm uppercase tracking-tighter text-zinc-900 leading-none">
+              INFINITIUM
+            </h2>
+            <p className="text-[6px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1 hidden sm:block">
+              Society of Physical Sciences, ARSD College
+            </p>
           </div>
         </Link>
-        <button 
+        <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           className="p-2 bg-zinc-50 rounded-xl border border-zinc-100"
         >
-          {isSidebarOpen ? <XCircle className="w-6 h-6 text-zinc-600" /> : <Menu className="w-6 h-6 text-zinc-600" />}
+          {isSidebarOpen ? (
+            <XCircle className="w-6 h-6 text-zinc-600" />
+          ) : (
+            <Menu className="w-6 h-6 text-zinc-600" />
+          )}
         </button>
       </div>
 
       {/* Sidebar Overlay */}
       <AnimatePresence>
         {isSidebarOpen && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -2493,15 +3160,24 @@ export default function Admin_Page() {
       </AnimatePresence>
 
       {/* Sidebar */}
-      <aside className={cn(
-        "fixed inset-y-0 left-0 w-64 bg-white border-r border-zinc-100 shadow-xl shadow-zinc-200/40 p-6 flex flex-col gap-8 z-[80] transition-transform duration-300 md:relative md:translate-x-0",
-        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-      )}>
-        <Link to="/" className="hidden md:flex items-center gap-3 hover:opacity-80 transition-opacity">
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 w-64 bg-white border-r border-zinc-100 shadow-xl shadow-zinc-200/40 p-6 flex flex-col gap-8 z-[80] transition-transform duration-300 md:relative md:translate-x-0",
+          isSidebarOpen ? "translate-x-0" : "-translate-x-full",
+        )}
+      >
+        <Link
+          to="/"
+          className="hidden md:flex items-center gap-3 hover:opacity-80 transition-opacity"
+        >
           <Logo className="w-11 h-11 transition-transform hover:scale-105" />
           <div>
-            <h2 className="font-black text-sm uppercase tracking-tighter leading-none text-zinc-900">INFINITIUM</h2>
-            <p className="text-[7px] text-zinc-400 font-extrabold uppercase tracking-[0.1em] mt-1 hidden sm:block">PHYSICAL SCIENCES HUB</p>
+            <h2 className="font-black text-sm uppercase tracking-tighter leading-none text-zinc-900">
+              INFINITIUM
+            </h2>
+            <p className="text-[7px] text-zinc-400 font-extrabold uppercase tracking-[0.1em] mt-1 hidden sm:block">
+              PHYSICAL SCIENCES HUB
+            </p>
           </div>
         </Link>
 
@@ -2509,14 +3185,23 @@ export default function Admin_Page() {
         <div className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 mb-2 relative overflow-hidden group">
           <div className="flex items-center gap-3 relative z-10">
             <div className="relative">
-              <img src={user.photoURL || ''} className="w-10 h-10 rounded-xl object-cover ring-2 ring-brand-500/20" alt="Admin" referrerPolicy="no-referrer" />
+              <img
+                src={user.photoURL || ""}
+                className="w-10 h-10 rounded-xl object-cover ring-2 ring-brand-500/20"
+                alt="Admin"
+                referrerPolicy="no-referrer"
+              />
               <span className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-white animate-pulse"></span>
             </div>
             <div className="overflow-hidden">
-              <p className="text-[10px] font-black uppercase text-zinc-800 tracking-wider truncate mb-0.5">{user.displayName}</p>
+              <p className="text-[10px] font-black uppercase text-zinc-800 tracking-wider truncate mb-0.5">
+                {user.displayName}
+              </p>
               <div className="flex items-center gap-2">
-                <span className="text-[8px] bg-brand-100 text-brand-700 font-black uppercase px-1 rounded-sm">ADMIN</span>
-                <button 
+                <span className="text-[8px] bg-brand-100 text-brand-700 font-black uppercase px-1 rounded-sm">
+                  ADMIN
+                </span>
+                <button
                   onClick={handleLogout}
                   className="text-[9px] font-bold text-red-500 uppercase hover:text-red-700 transition-colors"
                 >
@@ -2530,15 +3215,15 @@ export default function Admin_Page() {
 
         <nav className="flex flex-col gap-1.5">
           {[
-            { id: 'overview', icon: BarChart3, label: 'Overview' },
-            { id: 'events', icon: ListOrdered, label: 'Events' },
-            { id: 'members', icon: Users, label: 'Team' },
-            { id: 'achievements', icon: Trophy, label: 'Achievements' },
-            { id: 'gallery', icon: Camera, label: 'Gallery' },
-            { id: 'scanner', icon: Scan, label: 'QR Scanner' },
-            { id: 'contacts', icon: Mail, label: 'Contacts' },
-            { id: 'about', icon: Info, label: 'About' },
-          ].map(tab => (
+            { id: "overview", icon: BarChart3, label: "Overview" },
+            { id: "events", icon: ListOrdered, label: "Events" },
+            { id: "members", icon: Users, label: "Team" },
+            { id: "achievements", icon: Trophy, label: "Achievements" },
+            { id: "gallery", icon: Camera, label: "Gallery" },
+            { id: "scanner", icon: Scan, label: "QR Scanner" },
+            { id: "contacts", icon: Mail, label: "Contacts" },
+            { id: "about", icon: Info, label: "About" },
+          ].map((tab) => (
             <button
               key={tab.id}
               onClick={() => {
@@ -2547,12 +3232,19 @@ export default function Admin_Page() {
               }}
               className={cn(
                 "flex items-center gap-3 px-4 py-3.5 rounded-xl font-bold uppercase text-[10px] tracking-widest transition-all duration-200 relative group/btn",
-                activeTab === tab.id 
-                  ? "bg-brand-600 text-white shadow-md shadow-brand-600/30 font-extrabold translate-x-1" 
-                  : "text-zinc-500 hover:bg-brand-50 hover:text-brand-600"
+                activeTab === tab.id
+                  ? "bg-brand-600 text-white shadow-md shadow-brand-600/30 font-extrabold translate-x-1"
+                  : "text-zinc-500 hover:bg-brand-50 hover:text-brand-600",
               )}
             >
-              <tab.icon className={cn("w-4.5 h-4.5 transition-transform group-hover/btn:scale-110", activeTab === tab.id ? "text-white" : "text-zinc-400 group-hover/btn:text-brand-500")} />
+              <tab.icon
+                className={cn(
+                  "w-4.5 h-4.5 transition-transform group-hover/btn:scale-110",
+                  activeTab === tab.id
+                    ? "text-white"
+                    : "text-zinc-400 group-hover/btn:text-brand-500",
+                )}
+              />
               {tab.label}
               {activeTab === tab.id && (
                 <span className="absolute right-3 w-1.5 h-1.5 bg-white rounded-full"></span>
@@ -2567,278 +3259,406 @@ export default function Admin_Page() {
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
           <div>
             <div className="flex items-center gap-4 flex-wrap">
-              <h1 className="text-3xl font-bold text-zinc-900 capitalize">{activeTab === 'members' ? 'Team' : activeTab} Panel</h1>
-              {(activeTab === 'overview' || activeTab === 'events') && isFetchingStats && (
-                <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-extrabold text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-full animate-pulse select-none self-center">
-                  <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping" />
-                  Syncing Live Sheets Stats...
-                </div>
-              )}
+              <h1 className="text-3xl font-bold text-zinc-900 capitalize">
+                {activeTab === "members" ? "Team" : activeTab} Panel
+              </h1>
+              {(activeTab === "overview" || activeTab === "events") &&
+                isFetchingStats && (
+                  <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-extrabold text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-full animate-pulse select-none self-center">
+                    <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping" />
+                    Syncing Live Sheets Stats...
+                  </div>
+                )}
             </div>
-            <p className="text-zinc-500 font-medium mt-1">Manage INFINITIUM's backend operations.</p>
+            <p className="text-zinc-500 font-medium mt-1">
+              Manage INFINITIUM's backend operations.
+            </p>
           </div>
           <div className="flex gap-4">
-            {activeTab === 'events' && (
-            <button 
-              onClick={() => {
-                setEditingEvent(null);
-                setSelectedEventDate('');
-                setEventImagePreview(null);
-                setShowAddEvent(true);
-              }}
-              className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
-            >
-              <Plus className="w-5 h-5" /> Create Event
-            </button>
-          )}
-          {activeTab === 'members' && (
-            <button 
-              onClick={() => {
-                setEditingMember(null);
-                setMemberImagePreview(null);
-                setShowMemberModal(true);
-              }}
-              className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
-            >
-              <Plus className="w-5 h-5" /> Add Team Member
-            </button>
-          )}
-          {activeTab === 'achievements' && (
-            <button 
-              onClick={() => {
-                setEditingAchievement(null);
-                setShowAchievementModal(true);
-              }}
-              className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
-            >
-              <Plus className="w-5 h-5" /> Add Achievement
-            </button>
-          )}
-          {activeTab === 'gallery' && (
-            <button 
-              onClick={() => {
-                setEditingGallery(null);
-                setShowGalleryModal(true);
-              }}
-              className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
-            >
-              <Plus className="w-5 h-5" /> Add Image
-            </button>
-          )}
+            {activeTab === "events" && (
+              <button
+                onClick={() => {
+                  setEditingEvent(null);
+                  setSelectedEventDate("");
+                  setEventImagePreview(null);
+                  setShowAddEvent(true);
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
+              >
+                <Plus className="w-5 h-5" /> Create Event
+              </button>
+            )}
+            {activeTab === "members" && (
+              <button
+                onClick={() => {
+                  setEditingMember(null);
+                  setMemberImagePreview("https://i.ibb.co/cKD8BFhN/logo.png");
+                  setSelectedMemberTenures(["2025-26"]);
+                  setShowMemberModal(true);
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
+              >
+                <Plus className="w-5 h-5" /> Add Team Member
+              </button>
+            )}
+            {activeTab === "achievements" && (
+              <button
+                onClick={() => {
+                  setEditingAchievement(null);
+                  setShowAchievementModal(true);
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
+              >
+                <Plus className="w-5 h-5" /> Add Achievement
+              </button>
+            )}
+            {activeTab === "gallery" && (
+              <button
+                onClick={() => {
+                  setEditingGallery(null);
+                  setShowGalleryModal(true);
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-brand-950 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-600 transition-all shadow-xl shadow-brand-950/20 border border-brand-900"
+              >
+                <Plus className="w-5 h-5" /> Add Image
+              </button>
+            )}
           </div>
         </header>
 
-        {activeTab === 'overview' && (
+        {activeTab === "overview" && (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <div className="bento-card bg-white p-8 border border-zinc-100 shadow-sm relative overflow-hidden group hover:border-brand-350 transition-all duration-300">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-zinc-400 font-extrabold text-[10px] uppercase tracking-[0.2em]">Total Registrations</p>
+                  <p className="text-zinc-400 font-extrabold text-[10px] uppercase tracking-[0.2em]">
+                    Total Registrations
+                  </p>
                   <div className="p-2 bg-brand-50 rounded-xl text-brand-600 transition-colors group-hover:bg-brand-100">
                     <Users className="w-4.5 h-4.5" />
                   </div>
                 </div>
                 <p className="text-4xl font-black text-zinc-900 tracking-tighter mt-1">
                   {isFirebaseLoading || isFetchingStats ? (
-                    <span className="text-2xl font-bold text-zinc-400 animate-pulse">Fetching...</span>
+                    <span className="text-2xl font-bold text-zinc-400 animate-pulse">
+                      Fetching...
+                    </span>
                   ) : liveStats.noSheets ? (
-                    <span className="text-sm font-black text-rose-500 uppercase tracking-widest">Sheet Not Available</span>
+                    <span className="text-sm font-black text-rose-500 uppercase tracking-widest">
+                      Sheet Not Available
+                    </span>
                   ) : (
                     liveStats.totalRegistrations
                   )}
                 </p>
                 <div className="mt-6 h-1 w-full bg-zinc-100 rounded-full overflow-hidden">
-                  <div className="h-full bg-brand-500 transition-all duration-1000" style={{ width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets && liveStats.totalRegistrations > 0 ? 80 : 0}%` }}></div>
+                  <div
+                    className="h-full bg-brand-500 transition-all duration-1000"
+                    style={{
+                      width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets && liveStats.totalRegistrations > 0 ? 80 : 0}%`,
+                    }}
+                  ></div>
                 </div>
               </div>
 
               <div className="bento-card bg-gradient-to-br from-brand-600 to-brand-700 p-8 text-white border-none shadow-xl shadow-brand-600/10 hover:shadow-brand-600/20 transition-all duration-300 relative overflow-hidden group">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-brand-100/90 font-extrabold text-[10px] uppercase tracking-[0.2em]">Total Attendance</p>
+                  <p className="text-brand-100/90 font-extrabold text-[10px] uppercase tracking-[0.2em]">
+                    Total Attendance
+                  </p>
                   <div className="p-2 bg-white/10 rounded-xl text-white transition-transform group-hover:scale-105">
                     <Scan className="w-4.5 h-4.5" />
                   </div>
                 </div>
                 <p className="text-4xl font-black tracking-tighter mt-1">
                   {isFirebaseLoading || isFetchingStats ? (
-                    <span className="text-2xl font-bold text-brand-100 animate-pulse">Fetching...</span>
+                    <span className="text-2xl font-bold text-brand-100 animate-pulse">
+                      Fetching...
+                    </span>
                   ) : liveStats.noSheets ? (
-                    <span className="text-sm font-black text-white/80 uppercase tracking-widest">Sheet Not Available</span>
+                    <span className="text-sm font-black text-white/80 uppercase tracking-widest">
+                      Sheet Not Available
+                    </span>
                   ) : (
                     liveStats.totalAttendance
                   )}
                 </p>
                 <div className="mt-6 h-1 w-full bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white transition-all duration-1000" style={{ width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets && liveStats.totalRegistrations > 0 ? (liveStats.totalAttendance / liveStats.totalRegistrations) * 100 : 0}%` }}></div>
+                  <div
+                    className="h-full bg-white transition-all duration-1000"
+                    style={{
+                      width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets && liveStats.totalRegistrations > 0 ? (liveStats.totalAttendance / liveStats.totalRegistrations) * 100 : 0}%`,
+                    }}
+                  ></div>
                 </div>
                 <div className="absolute right-0 top-0 w-24 h-24 bg-white/[0.03] rounded-full blur-xl pointer-events-none"></div>
               </div>
 
               <div className="bento-card bg-gradient-to-br from-teal-500 to-teal-600 p-8 text-white border-none shadow-xl shadow-teal-500/10 hover:shadow-teal-500/20 transition-all duration-300 relative overflow-hidden group">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-teal-100/90 font-extrabold text-[10px] uppercase tracking-[0.2em]">Present Society Members</p>
+                  <p className="text-teal-100/90 font-extrabold text-[10px] uppercase tracking-[0.2em]">
+                    Present Society Members
+                  </p>
                   <div className="p-2 bg-white/10 rounded-xl text-white transition-transform group-hover:scale-105">
                     <Award className="w-4.5 h-4.5" />
                   </div>
                 </div>
                 <p className="text-4xl font-black tracking-tighter mt-1">
                   {isFirebaseLoading || isFetchingStats ? (
-                    <span className="text-2xl font-bold text-teal-100 animate-pulse">Fetching...</span>
+                    <span className="text-2xl font-bold text-teal-100 animate-pulse">
+                      Fetching...
+                    </span>
                   ) : liveStats.noSheets ? (
-                    <span className="text-sm font-black text-white/80 uppercase tracking-widest">Sheet Not Available</span>
+                    <span className="text-sm font-black text-white/80 uppercase tracking-widest">
+                      Sheet Not Available
+                    </span>
                   ) : (
                     liveStats.totalSocietyAttendance
                   )}
                 </p>
                 <div className="mt-6 h-1 w-full bg-white/20 rounded-full overflow-hidden">
-                  <div className="h-full bg-white transition-all duration-1000" style={{ width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets && liveStats.totalAttendance > 0 ? (liveStats.totalSocietyAttendance / liveStats.totalAttendance) * 100 : 0}%` }}></div>
+                  <div
+                    className="h-full bg-white transition-all duration-1000"
+                    style={{
+                      width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets && liveStats.totalAttendance > 0 ? (liveStats.totalSocietyAttendance / liveStats.totalAttendance) * 100 : 0}%`,
+                    }}
+                  ></div>
                 </div>
                 <div className="absolute right-0 top-0 w-24 h-24 bg-white/[0.03] rounded-full blur-xl pointer-events-none"></div>
               </div>
 
               <div className="bento-card bg-gradient-to-br from-amber-400 to-amber-500 p-8 text-amber-950 border-none shadow-xl shadow-amber-500/10 hover:shadow-amber-500/25 transition-all duration-300 relative overflow-hidden group">
                 <div className="flex justify-between items-start mb-2">
-                  <p className="text-amber-950/75 font-extrabold text-[10px] uppercase tracking-[0.2em]">Completion Rate</p>
+                  <p className="text-amber-950/75 font-extrabold text-[10px] uppercase tracking-[0.2em]">
+                    Completion Rate
+                  </p>
                   <div className="p-2 bg-amber-950/10 rounded-xl text-amber-955">
                     <Trophy className="w-4.5 h-4.5" />
                   </div>
                 </div>
                 <p className="text-4xl font-black tracking-tighter mt-1">
                   {isFirebaseLoading || isFetchingStats ? (
-                    <span className="text-2xl font-bold text-amber-950/70 animate-pulse">Fetching...</span>
+                    <span className="text-2xl font-bold text-amber-950/70 animate-pulse">
+                      Fetching...
+                    </span>
                   ) : liveStats.noSheets ? (
-                    <span className="text-sm font-black text-amber-950/80 uppercase tracking-widest">Sheet Not Available</span>
+                    <span className="text-sm font-black text-amber-950/80 uppercase tracking-widest">
+                      Sheet Not Available
+                    </span>
                   ) : (
                     `${liveStats.completionRate}%`
                   )}
                 </p>
                 <div className="mt-6 h-1 w-full bg-amber-950/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-amber-950 transition-all duration-1000" style={{ width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets ? liveStats.completionRate : 0}%` }}></div>
+                  <div
+                    className="h-full bg-amber-950 transition-all duration-1000"
+                    style={{
+                      width: `${!(isFirebaseLoading || isFetchingStats) && !liveStats.noSheets ? liveStats.completionRate : 0}%`,
+                    }}
+                  ></div>
                 </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-               <div className="bento-card lg:col-span-2 h-[410px]">
-                 <div className="flex justify-between items-center mb-8">
-                   <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest">Event Statistics (Reg vs Att)</h3>
-                   <div className="flex gap-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-brand-600 rounded-full"></div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">Registrations</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                        <span className="text-[9px] font-bold text-slate-400 uppercase">Attendance</span>
-                      </div>
-                   </div>
-                 </div>
-                 {isFirebaseLoading || isFetchingStats ? (
-                   <div className="h-[80%] flex flex-col items-center justify-center text-center gap-2">
-                     <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-                     <p className="text-zinc-500 font-extrabold text-xs uppercase tracking-wider animate-pulse">Fetching Statistics...</p>
-                   </div>
-                 ) : liveStats.noSheets ? (
-                   <div className="h-[80%] flex flex-col items-center justify-center text-center gap-2">
-                     <XCircle className="w-12 h-12 text-rose-400" />
-                     <p className="text-zinc-500 font-extrabold text-xs uppercase tracking-wider">Sheet Not Available</p>
-                     <p className="text-[10px] text-zinc-400 max-w-xs px-4">There are no active Google sheets connected to any event to generate stats.</p>
-                   </div>
-                 ) : (
-                   <ResponsiveContainer width="100%" height="80%">
-                   <BarChart data={chartData}>
-                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} />
-                     <YAxis axisLine={false} tickLine={false} tick={{fill: '#94a3b8', fontSize: 9, fontWeight: 700}} />
-                     <Tooltip 
-                        cursor={{fill: '#f8fafc'}}
-                        contentStyle={{borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)', fontSize: '11px', fontWeight: 'bold'}}
-                     />
-                     <Bar dataKey="registrations" fill="#14b8a6" radius={[4, 4, 0, 0]} barSize={32} />
-                     <Bar dataKey="attendance" fill="#10b981" radius={[4, 4, 0, 0]} barSize={32} />
-                   </BarChart>
-                 </ResponsiveContainer>
-                 )}
-               </div>
-               
-               <div className="bento-card min-h-[410px] flex flex-col justify-between">
-                 <div>
-                   <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-4">Event Distribution</h3>
-                   {isFirebaseLoading || isFetchingStats ? (
-                     <div className="h-[180px] flex flex-col items-center justify-center text-center gap-1.5">
-                       <div className="w-10 h-10 border-4 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
-                       <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider animate-pulse">Fetching Categories...</p>
-                     </div>
-                   ) : liveStats.noSheets ? (
-                     <div className="h-[180px] flex flex-col items-center justify-center text-center gap-1.5">
-                       <XCircle className="w-10 h-10 text-rose-400" />
-                       <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Sheet Not Available</p>
-                     </div>
-                   ) : (
-                     <div className="h-[180px]">
-                       <ResponsiveContainer width="100%" height="100%">
-                         <PieChart>
-                           <Pie
-                             data={typeData}
-                             innerRadius={50}
-                             outerRadius={70}
-                             paddingAngle={5}
-                             dataKey="value"
-                           >
-                             {typeData.map((_, index) => (
-                               <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                             ))}
-                           </Pie>
-                           <Tooltip 
-                             content={({ active, payload }) => {
-                               if (active && payload && payload.length) {
-                                 const data = payload[0].payload;
-                                 return (
-                                   <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-xl text-[11px] font-bold">
-                                     <p className="text-slate-800 uppercase mb-1.5">{data.name}: {data.value}</p>
-                                     <div className="flex flex-col gap-1 border-t border-slate-50 pt-1.5 max-w-[200px]">
-                                       {(data.events || []).map((evt: string, i: number) => (
-                                         <span key={i} className="text-[9px] text-zinc-500 font-medium capitalize truncate block" title={evt}>
-                                           • {evt}
-                                         </span>
-                                       ))}
-                                     </div>
-                                   </div>
-                                 );
-                               }
-                               return null;
-                             }}
-                           />
-                         </PieChart>
-                       </ResponsiveContainer>
-                     </div>
-                   )}
-                 </div>
-                 <div className="mt-4 flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
-                    {isFirebaseLoading || isFetchingStats ? (
-                      <p className="text-[9px] text-zinc-400 font-medium text-center uppercase tracking-wide w-full py-4 animate-pulse">Loading categories...</p>
-                    ) : liveStats.noSheets ? (
-                      <p className="text-[9px] text-zinc-400 font-medium text-center uppercase tracking-wide w-full py-4">No categories to display</p>
-                    ) : (
-                      typeData.map((item, index) => (
-                        <div key={item.name} className="flex flex-col gap-1 p-2 rounded-xl bg-slate-50 border border-slate-100 text-left w-full">
-                          <div className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}></div>
-                            <span className="text-[9px] font-black text-slate-700 uppercase">{item.name}: {item.value}</span>
-                          </div>
-                          <div className="pl-3 flex flex-col gap-0.5">
-                            {(item.events || []).map((evt: string, i: number) => (
-                              <span key={i} className="text-[8px] font-bold text-slate-400 capitalize block truncate" title={evt}>
-                                • {evt}
-                              </span>
-                            ))}
-                          </div>
-                        </div>
-                      ))
-                    )}
+              <div className="bento-card lg:col-span-2 h-[410px]">
+                <div className="flex justify-between items-center mb-8">
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest">
+                    Event Statistics (Reg vs Att)
+                  </h3>
+                  <div className="flex gap-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-brand-600 rounded-full"></div>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase">
+                        Registrations
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                      <span className="text-[9px] font-bold text-slate-400 uppercase">
+                        Attendance
+                      </span>
+                    </div>
                   </div>
                 </div>
-             </div>
+                {isFirebaseLoading || isFetchingStats ? (
+                  <div className="h-[80%] flex flex-col items-center justify-center text-center gap-2">
+                    <div className="w-12 h-12 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
+                    <p className="text-zinc-500 font-extrabold text-xs uppercase tracking-wider animate-pulse">
+                      Fetching Statistics...
+                    </p>
+                  </div>
+                ) : liveStats.noSheets ? (
+                  <div className="h-[80%] flex flex-col items-center justify-center text-center gap-2">
+                    <XCircle className="w-12 h-12 text-rose-400" />
+                    <p className="text-zinc-500 font-extrabold text-xs uppercase tracking-wider">
+                      Sheet Not Available
+                    </p>
+                    <p className="text-[10px] text-zinc-400 max-w-xs px-4">
+                      There are no active Google sheets connected to any event
+                      to generate stats.
+                    </p>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="80%">
+                    <BarChart data={chartData}>
+                      <CartesianGrid
+                        strokeDasharray="3 3"
+                        vertical={false}
+                        stroke="#f1f5f9"
+                      />
+                      <XAxis
+                        dataKey="name"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 700 }}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#94a3b8", fontSize: 9, fontWeight: 700 }}
+                      />
+                      <Tooltip
+                        cursor={{ fill: "#f8fafc" }}
+                        contentStyle={{
+                          borderRadius: "16px",
+                          border: "none",
+                          boxShadow: "0 10px 15px -3px rgb(0 0 0 / 0.1)",
+                          fontSize: "11px",
+                          fontWeight: "bold",
+                        }}
+                      />
+                      <Bar
+                        dataKey="registrations"
+                        fill="#14b8a6"
+                        radius={[4, 4, 0, 0]}
+                        barSize={32}
+                      />
+                      <Bar
+                        dataKey="attendance"
+                        fill="#10b981"
+                        radius={[4, 4, 0, 0]}
+                        barSize={32}
+                      />
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+
+              <div className="bento-card min-h-[410px] flex flex-col justify-between">
+                <div>
+                  <h3 className="text-xs font-black uppercase text-slate-400 tracking-widest mb-4">
+                    Event Distribution
+                  </h3>
+                  {isFirebaseLoading || isFetchingStats ? (
+                    <div className="h-[180px] flex flex-col items-center justify-center text-center gap-1.5">
+                      <div className="w-10 h-10 border-4 border-slate-400 border-t-transparent rounded-full animate-spin"></div>
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider animate-pulse">
+                        Fetching Categories...
+                      </p>
+                    </div>
+                  ) : liveStats.noSheets ? (
+                    <div className="h-[180px] flex flex-col items-center justify-center text-center gap-1.5">
+                      <XCircle className="w-10 h-10 text-rose-400" />
+                      <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">
+                        Sheet Not Available
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="h-[180px]">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                          <Pie
+                            data={typeData}
+                            innerRadius={50}
+                            outerRadius={70}
+                            paddingAngle={5}
+                            dataKey="value"
+                          >
+                            {typeData.map((_, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={PIE_COLORS[index % PIE_COLORS.length]}
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0].payload;
+                                return (
+                                  <div className="bg-white p-3 rounded-2xl border border-zinc-100 shadow-xl text-[11px] font-bold">
+                                    <p className="text-slate-800 uppercase mb-1.5">
+                                      {data.name}: {data.value}
+                                    </p>
+                                    <div className="flex flex-col gap-1 border-t border-slate-50 pt-1.5 max-w-[200px]">
+                                      {(data.events || []).map(
+                                        (evt: string, i: number) => (
+                                          <span
+                                            key={i}
+                                            className="text-[9px] text-zinc-500 font-medium capitalize truncate block"
+                                            title={evt}
+                                          >
+                                            • {evt}
+                                          </span>
+                                        ),
+                                      )}
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 flex flex-wrap gap-2 max-h-[140px] overflow-y-auto pr-1">
+                  {isFirebaseLoading || isFetchingStats ? (
+                    <p className="text-[9px] text-zinc-400 font-medium text-center uppercase tracking-wide w-full py-4 animate-pulse">
+                      Loading categories...
+                    </p>
+                  ) : liveStats.noSheets ? (
+                    <p className="text-[9px] text-zinc-400 font-medium text-center uppercase tracking-wide w-full py-4">
+                      No categories to display
+                    </p>
+                  ) : (
+                    typeData.map((item, index) => (
+                      <div
+                        key={item.name}
+                        className="flex flex-col gap-1 p-2 rounded-xl bg-slate-50 border border-slate-100 text-left w-full"
+                      >
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="w-1.5 h-1.5 rounded-full"
+                            style={{
+                              backgroundColor:
+                                PIE_COLORS[index % PIE_COLORS.length],
+                            }}
+                          ></div>
+                          <span className="text-[9px] font-black text-slate-700 uppercase">
+                            {item.name}: {item.value}
+                          </span>
+                        </div>
+                        <div className="pl-3 flex flex-col gap-0.5">
+                          {(item.events || []).map((evt: string, i: number) => (
+                            <span
+                              key={i}
+                              className="text-[8px] font-bold text-slate-400 capitalize block truncate"
+                              title={evt}
+                            >
+                              • {evt}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
 
             {/* Firebase Storage and Growth Monitor */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
@@ -2847,8 +3667,12 @@ export default function Admin_Page() {
                 <div>
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-zinc-400">Quota Overview</span>
-                      <h4 className="text-sm font-black uppercase text-zinc-800 tracking-wider mt-1">Free Tier Limits</h4>
+                      <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-zinc-400">
+                        Quota Overview
+                      </span>
+                      <h4 className="text-sm font-black uppercase text-zinc-800 tracking-wider mt-1">
+                        Free Tier Limits
+                      </h4>
                     </div>
                     <div className="p-2 bg-brand-50 rounded-xl text-brand-600">
                       <Database className="w-5 h-5" />
@@ -2860,17 +3684,26 @@ export default function Admin_Page() {
                     <div>
                       <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
                         <span>Firestore Database (Documents)</span>
-                        <span className="font-mono">{storageMetrics.firestorePercent}%</span>
+                        <span className="font-mono">
+                          {storageMetrics.firestorePercent}%
+                        </span>
                       </div>
                       <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-cyan-500 rounded-full transition-all duration-1000" 
-                          style={{ width: `${storageMetrics.firestorePercent}%` }} 
+                        <div
+                          className="h-full bg-cyan-500 rounded-full transition-all duration-1000"
+                          style={{
+                            width: `${storageMetrics.firestorePercent}%`,
+                          }}
                         />
                       </div>
                       <div className="flex justify-between text-[10px] text-zinc-400 font-mono mt-1">
-                        <span>{storageMetrics.firestoreDocsCount} total documents</span>
-                        <span>{storageMetrics.firestoreUsedMB}MB / {storageMetrics.firestoreLimitMB}MB</span>
+                        <span>
+                          {storageMetrics.firestoreDocsCount} total documents
+                        </span>
+                        <span>
+                          {storageMetrics.firestoreUsedMB}MB /{" "}
+                          {storageMetrics.firestoreLimitMB}MB
+                        </span>
                       </div>
                     </div>
 
@@ -2878,17 +3711,24 @@ export default function Admin_Page() {
                     <div>
                       <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
                         <span>Firebase Storage (Media/Files)</span>
-                        <span className="font-mono">{storageMetrics.storagePercent}%</span>
+                        <span className="font-mono">
+                          {storageMetrics.storagePercent}%
+                        </span>
                       </div>
                       <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-brand-500 rounded-full transition-all duration-1000" 
-                          style={{ width: `${storageMetrics.storagePercent}%` }} 
+                        <div
+                          className="h-full bg-brand-500 rounded-full transition-all duration-1000"
+                          style={{ width: `${storageMetrics.storagePercent}%` }}
                         />
                       </div>
                       <div className="flex justify-between text-[10px] text-zinc-400 font-mono mt-1">
-                        <span>{storageMetrics.mediaCount} objects (gallery/events)</span>
-                        <span>{storageMetrics.storageUsedMB}MB / {storageMetrics.storageLimitMB}MB</span>
+                        <span>
+                          {storageMetrics.mediaCount} objects (gallery/events)
+                        </span>
+                        <span>
+                          {storageMetrics.storageUsedMB}MB /{" "}
+                          {storageMetrics.storageLimitMB}MB
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -2897,9 +3737,14 @@ export default function Admin_Page() {
                 <div className="pt-4 border-t border-slate-50 bg-slate-50/50 -mx-8 -mb-8 p-6 rounded-b-3xl">
                   <div className="flex justify-between items-center">
                     <div>
-                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">Total Stored Assets</p>
+                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
+                        Total Stored Assets
+                      </p>
                       <p className="text-xl font-black text-slate-800 leading-none mt-1 font-mono">
-                        {storageMetrics.totalUsedMB} <span className="text-xs font-bold text-zinc-400 uppercase font-sans">MB</span>
+                        {storageMetrics.totalUsedMB}{" "}
+                        <span className="text-xs font-bold text-zinc-400 uppercase font-sans">
+                          MB
+                        </span>
                       </p>
                     </div>
                     <span className="px-2.5 py-1 text-[9px] font-black leading-none bg-emerald-50 text-emerald-600 rounded-full border border-emerald-100 uppercase tracking-widest">
@@ -2910,11 +3755,16 @@ export default function Admin_Page() {
               </div>
 
               {/* Card 2: Database Operation & Free Quota Usage Monitor */}
-              <div key="db-quota-monitor" className="bento-card bg-white p-8 border border-zinc-100 shadow-sm md:col-span-2 flex flex-col justify-between min-h-[420px]">
+              <div
+                key="db-quota-monitor"
+                className="bento-card bg-white p-8 border border-zinc-100 shadow-sm md:col-span-2 flex flex-col justify-between min-h-[420px]"
+              >
                 <div>
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
                     <div>
-                      <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-zinc-400">Capacity Infrastructure</span>
+                      <span className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-zinc-400">
+                        Capacity Infrastructure
+                      </span>
                       <h4 className="text-sm font-black uppercase text-zinc-850 tracking-wider mt-1 flex items-center gap-2">
                         <Database className="w-4 h-4 text-brand-500" />
                         Firestore Database Usage Monitor
@@ -2928,13 +3778,22 @@ export default function Admin_Page() {
                   </div>
 
                   {/* 1. Alerts Banner */}
-                  {((dbMetrics.readsToday >= dbMetrics.readsLimit * 0.9) || (dbMetrics.writesToday >= dbMetrics.writesLimit * 0.9)) && (
+                  {(dbMetrics.readsToday >= dbMetrics.readsLimit * 0.9 ||
+                    dbMetrics.writesToday >= dbMetrics.writesLimit * 0.9) && (
                     <div className="mb-6 p-4 bg-rose-50 border border-rose-100 rounded-2xl flex items-start gap-3 animate-pulse">
                       <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
                       <div>
-                        <h5 className="text-[11px] font-extrabold uppercase tracking-wider text-rose-950">⚠️ QUOTA ALERT: 90%+ CAPACITY THRESHOLD REACHED</h5>
+                        <h5 className="text-[11px] font-extrabold uppercase tracking-wider text-rose-950">
+                          ⚠️ QUOTA ALERT: 90%+ CAPACITY THRESHOLD REACHED
+                        </h5>
                         <p className="text-[10px] leading-relaxed text-rose-900 mt-1 font-medium">
-                          Automated diagnostic alert dispatch was successfully sent to <strong className="font-bold underline text-rose-950 font-mono">teaminfinitium.arsd@gmail.com</strong>. High-frequency queries should be restricted to prevent Firebase account throttling or service limits.
+                          Automated diagnostic alert dispatch was successfully
+                          sent to{" "}
+                          <strong className="font-bold underline text-rose-950 font-mono">
+                            teaminfinitium.arsd@gmail.com
+                          </strong>
+                          . High-frequency queries should be restricted to
+                          prevent Firebase account throttling or service limits.
                         </p>
                       </div>
                     </div>
@@ -2946,25 +3805,46 @@ export default function Admin_Page() {
                     <div className="p-5 rounded-2xl bg-zinc-50/50 border border-zinc-100">
                       <div className="flex justify-between items-baseline mb-2">
                         <div>
-                          <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Database Reads</span>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
+                            Database Reads
+                          </span>
                           <p className="text-xl font-bold font-mono tracking-tight text-zinc-800 mt-0.5">
-                            {dbMetrics.readsToday.toLocaleString()} <span className="text-[10px] text-zinc-400 font-sans font-extrabold">/ {dbMetrics.readsLimit.toLocaleString()}</span>
+                            {dbMetrics.readsToday.toLocaleString()}{" "}
+                            <span className="text-[10px] text-zinc-400 font-sans font-extrabold">
+                              / {dbMetrics.readsLimit.toLocaleString()}
+                            </span>
                           </p>
                         </div>
-                        <span className={`text-xs font-black font-mono ${
-                          (dbMetrics.readsToday / dbMetrics.readsLimit) >= 0.9 ? 'text-rose-600' :
-                          (dbMetrics.readsToday / dbMetrics.readsLimit) >= 0.75 ? 'text-amber-500' : 'text-teal-600'
-                        }`}>
-                          {((dbMetrics.readsToday / dbMetrics.readsLimit) * 100).toFixed(1)}%
+                        <span
+                          className={`text-xs font-black font-mono ${
+                            dbMetrics.readsToday / dbMetrics.readsLimit >= 0.9
+                              ? "text-rose-600"
+                              : dbMetrics.readsToday / dbMetrics.readsLimit >=
+                                  0.75
+                                ? "text-amber-500"
+                                : "text-teal-600"
+                          }`}
+                        >
+                          {(
+                            (dbMetrics.readsToday / dbMetrics.readsLimit) *
+                            100
+                          ).toFixed(1)}
+                          %
                         </span>
                       </div>
                       <div className="h-2.5 w-full bg-zinc-200/60 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className={`h-full rounded-full transition-all duration-500 ${
-                            (dbMetrics.readsToday / dbMetrics.readsLimit) >= 0.9 ? 'bg-rose-500' :
-                            (dbMetrics.readsToday / dbMetrics.readsLimit) >= 0.75 ? 'bg-amber-400' : 'bg-teal-500'
-                          }`} 
-                          style={{ width: `${Math.min(100, (dbMetrics.readsToday / dbMetrics.readsLimit) * 100)}%` }}
+                            dbMetrics.readsToday / dbMetrics.readsLimit >= 0.9
+                              ? "bg-rose-500"
+                              : dbMetrics.readsToday / dbMetrics.readsLimit >=
+                                  0.75
+                                ? "bg-amber-400"
+                                : "bg-teal-500"
+                          }`}
+                          style={{
+                            width: `${Math.min(100, (dbMetrics.readsToday / dbMetrics.readsLimit) * 100)}%`,
+                          }}
                         />
                       </div>
                       <p className="text-[9px] font-bold text-zinc-400 uppercase mt-2 select-none">
@@ -2976,25 +3856,46 @@ export default function Admin_Page() {
                     <div className="p-5 rounded-2xl bg-zinc-50/50 border border-zinc-100">
                       <div className="flex justify-between items-baseline mb-2">
                         <div>
-                          <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">Database Writes</span>
+                          <span className="text-[9px] font-black uppercase tracking-wider text-zinc-400">
+                            Database Writes
+                          </span>
                           <p className="text-xl font-bold font-mono tracking-tight text-zinc-800 mt-0.5">
-                            {dbMetrics.writesToday.toLocaleString()} <span className="text-[10px] text-zinc-400 font-sans font-extrabold">/ {dbMetrics.writesLimit.toLocaleString()}</span>
+                            {dbMetrics.writesToday.toLocaleString()}{" "}
+                            <span className="text-[10px] text-zinc-400 font-sans font-extrabold">
+                              / {dbMetrics.writesLimit.toLocaleString()}
+                            </span>
                           </p>
                         </div>
-                        <span className={`text-xs font-black font-mono ${
-                          (dbMetrics.writesToday / dbMetrics.writesLimit) >= 0.9 ? 'text-rose-600' :
-                          (dbMetrics.writesToday / dbMetrics.writesLimit) >= 0.75 ? 'text-amber-500' : 'text-teal-600'
-                        }`}>
-                          {((dbMetrics.writesToday / dbMetrics.writesLimit) * 100).toFixed(1)}%
+                        <span
+                          className={`text-xs font-black font-mono ${
+                            dbMetrics.writesToday / dbMetrics.writesLimit >= 0.9
+                              ? "text-rose-600"
+                              : dbMetrics.writesToday / dbMetrics.writesLimit >=
+                                  0.75
+                                ? "text-amber-500"
+                                : "text-teal-600"
+                          }`}
+                        >
+                          {(
+                            (dbMetrics.writesToday / dbMetrics.writesLimit) *
+                            100
+                          ).toFixed(1)}
+                          %
                         </span>
                       </div>
                       <div className="h-2.5 w-full bg-zinc-200/60 rounded-full overflow-hidden">
-                        <div 
+                        <div
                           className={`h-full rounded-full transition-all duration-500 ${
-                            (dbMetrics.writesToday / dbMetrics.writesLimit) >= 0.9 ? 'bg-rose-500' :
-                            (dbMetrics.writesToday / dbMetrics.writesLimit) >= 0.75 ? 'bg-amber-400' : 'bg-teal-500'
-                          }`} 
-                          style={{ width: `${Math.min(100, (dbMetrics.writesToday / dbMetrics.writesLimit) * 100)}%` }}
+                            dbMetrics.writesToday / dbMetrics.writesLimit >= 0.9
+                              ? "bg-rose-500"
+                              : dbMetrics.writesToday / dbMetrics.writesLimit >=
+                                  0.75
+                                ? "bg-amber-400"
+                                : "bg-teal-500"
+                          }`}
+                          style={{
+                            width: `${Math.min(100, (dbMetrics.writesToday / dbMetrics.writesLimit) * 100)}%`,
+                          }}
                         />
                       </div>
                       <p className="text-[9px] font-bold text-zinc-400 uppercase mt-2 select-none">
@@ -3002,8 +3903,6 @@ export default function Admin_Page() {
                       </p>
                     </div>
                   </div>
-
-
                 </div>
 
                 {/* 4. Real-time Log Consolidation */}
@@ -3012,18 +3911,27 @@ export default function Admin_Page() {
                     🔄 Live Database Operations Logs (Recent Traces Trail)
                   </span>
                   <div className="bg-zinc-950 text-emerald-400 p-4 rounded-2xl font-mono text-[10.5px] max-h-[140px] overflow-y-auto shadow-inner flex flex-col gap-1.5">
-                    {dbMetrics.activityLog && dbMetrics.activityLog.length > 0 ? (
+                    {dbMetrics.activityLog &&
+                    dbMetrics.activityLog.length > 0 ? (
                       dbMetrics.activityLog.map((log, idx) => (
-                        <div key={idx} className="flex items-start gap-2 leading-relaxed">
+                        <div
+                          key={idx}
+                          className="flex items-start gap-2 leading-relaxed"
+                        >
                           <span className="text-zinc-500 font-bold tracking-tight select-none shrink-0 border-r border-zinc-800 pr-1.5 font-mono">
                             {log.time}
                           </span>
-                          <span className={`font-bold select-none uppercase tracking-wide px-1 py-0.5 rounded text-[8px] shrink-0 font-sans ${
-                            log.type === 'alert' ? 'bg-rose-950 text-rose-300 border border-rose-800 animate-pulse' :
-                            log.type === 'write' ? 'bg-amber-950 text-amber-300 border border-amber-800' :
-                            log.type === 'read' ? 'bg-teal-950 text-teal-300 border border-teal-800' :
-                            'bg-zinc-800 text-zinc-300 border border-zinc-700'
-                          }`}>
+                          <span
+                            className={`font-bold select-none uppercase tracking-wide px-1 py-0.5 rounded text-[8px] shrink-0 font-sans ${
+                              log.type === "alert"
+                                ? "bg-rose-950 text-rose-300 border border-rose-800 animate-pulse"
+                                : log.type === "write"
+                                  ? "bg-amber-950 text-amber-300 border border-amber-800"
+                                  : log.type === "read"
+                                    ? "bg-teal-950 text-teal-300 border border-teal-800"
+                                    : "bg-zinc-800 text-zinc-300 border border-zinc-700"
+                            }`}
+                          >
                             {log.type}
                           </span>
                           <p className="text-slate-100 break-all flex-1">
@@ -3032,22 +3940,25 @@ export default function Admin_Page() {
                         </div>
                       ))
                     ) : (
-                      <p className="text-zinc-500 italic select-none">No transactions registered today.</p>
+                      <p className="text-zinc-500 italic select-none">
+                        No transactions registered today.
+                      </p>
                     )}
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
         )}
 
         {/* Rebuilt Tabs and panels */}
-        {activeTab === 'events' && (
+        {activeTab === "events" && (
           <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl shadow-slate-100/50 overflow-hidden">
             <div className="px-8 py-6 border-b border-zinc-50 bg-zinc-50/50 flex justify-between items-center">
               <div className="flex items-center gap-3">
-                <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">All Events ({events.length})</h2>
+                <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">
+                  All Events ({events.length})
+                </h2>
                 {isFetchingStats && (
                   <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-extrabold text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-full animate-pulse select-none">
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping" />
@@ -3064,21 +3975,34 @@ export default function Admin_Page() {
                     <th className="px-8 py-5">Type</th>
                     <th className="px-8 py-5">Date & Time</th>
                     <th className="px-8 py-5">Location</th>
-                    <th className="px-8 py-5 text-center">Present / Registered</th>
+                    <th className="px-8 py-5 text-center">
+                      Present / Registered
+                    </th>
                     <th className="px-8 py-5 text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
                   {events.map((e: any, idx: number) => (
-                    <tr key={`admin-event-row-${e.id || idx}`} className="hover:bg-zinc-50/30 transition-colors">
+                    <tr
+                      key={`admin-event-row-${e.id || idx}`}
+                      className="hover:bg-zinc-50/30 transition-colors"
+                    >
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-4">
                           {e.image && (
-                            <img src={e.image} className="w-12 h-12 object-cover rounded-xl border border-zinc-100" referrerPolicy="no-referrer" />
+                            <img
+                              src={e.image}
+                              className="w-12 h-12 object-cover rounded-xl border border-zinc-100"
+                              referrerPolicy="no-referrer"
+                            />
                           )}
                           <div>
-                            <p className="text-sm font-bold text-zinc-900">{e.title}</p>
-                            <p className="text-xs text-zinc-400 font-medium">{e.subtitle}</p>
+                            <p className="text-sm font-bold text-zinc-900">
+                              {e.title}
+                            </p>
+                            <p className="text-xs text-zinc-400 font-medium">
+                              {e.subtitle}
+                            </p>
                           </div>
                         </div>
                       </td>
@@ -3088,8 +4012,12 @@ export default function Admin_Page() {
                         </span>
                       </td>
                       <td className="px-8 py-5">
-                        <p className="text-sm font-bold text-zinc-700">{e.date}</p>
-                        <p className="text-xs text-zinc-400 font-semibold uppercase">{e.startTime || 'No specific time'}</p>
+                        <p className="text-sm font-bold text-zinc-700">
+                          {e.date}
+                        </p>
+                        <p className="text-xs text-zinc-400 font-semibold uppercase">
+                          {e.startTime || "No specific time"}
+                        </p>
                       </td>
                       <td className="px-8 py-5 text-sm font-bold text-zinc-700">
                         {e.location}
@@ -3097,7 +4025,7 @@ export default function Admin_Page() {
                       <td className="px-8 py-5">
                         <div className="flex justify-center items-center">
                           {!e.sheetId ? (
-                            <div 
+                            <div
                               className="w-11 h-11 rounded-full bg-rose-50 border-2 border-rose-300 flex items-center justify-center text-center shadow-md shadow-rose-100 shrink-0 select-none relative group cursor-help transition-all duration-300 hover:scale-105"
                               id={`sheet-indicator-missing-${e.id}`}
                               title="Sheet not available"
@@ -3111,35 +4039,49 @@ export default function Admin_Page() {
                               </div>
                             </div>
                           ) : isFetchingStats ? (
-                            <span className="text-xs font-black text-cyan-500 animate-pulse uppercase tracking-wider font-mono">Fetching...</span>
+                            <span className="text-xs font-black text-cyan-500 animate-pulse uppercase tracking-wider font-mono">
+                              Fetching...
+                            </span>
                           ) : (
                             <div className="w-14 h-14 rounded-full bg-[#041a1a] border-2 border-[#5ce1e6] flex flex-col items-center justify-center text-center shadow-md shadow-[#5ce1e6]/10 shrink-0 select-none">
-                              <span className="block text-xs font-black text-[#5ce1e6] leading-none" title="Total Present">
+                              <span
+                                className="block text-xs font-black text-[#5ce1e6] leading-none"
+                                title="Total Present"
+                              >
                                 {(() => {
                                   if (fetchedStats[e.id] !== undefined) {
                                     return fetchedStats[e.id].attendance;
                                   }
                                   try {
-                                    const raw = localStorage.getItem('temp_events_stats_json');
+                                    const raw = localStorage.getItem(
+                                      "temp_events_stats_json",
+                                    );
                                     if (raw) {
                                       const parsed = JSON.parse(raw);
-                                      if (parsed[e.id] !== undefined) return parsed[e.id].attendance;
+                                      if (parsed[e.id] !== undefined)
+                                        return parsed[e.id].attendance;
                                     }
                                   } catch (_) {}
                                   return e.stats?.attendance || 0;
                                 })()}
                               </span>
                               <div className="w-6 h-[1px] bg-[#5ce1e6]/40 my-0.5" />
-                              <span className="block text-[10px] font-black text-cyan-200/70 leading-none" title="Total Registered">
+                              <span
+                                className="block text-[10px] font-black text-cyan-200/70 leading-none"
+                                title="Total Registered"
+                              >
                                 {(() => {
                                   if (fetchedStats[e.id] !== undefined) {
                                     return fetchedStats[e.id].registrations;
                                   }
                                   try {
-                                    const raw = localStorage.getItem('temp_events_stats_json');
+                                    const raw = localStorage.getItem(
+                                      "temp_events_stats_json",
+                                    );
                                     if (raw) {
                                       const parsed = JSON.parse(raw);
-                                      if (parsed[e.id] !== undefined) return parsed[e.id].registrations;
+                                      if (parsed[e.id] !== undefined)
+                                        return parsed[e.id].registrations;
                                     }
                                   } catch (_) {}
                                   return e.stats?.registrations || 0;
@@ -3153,7 +4095,11 @@ export default function Admin_Page() {
                         <div className="flex gap-3 justify-end items-center">
                           {e.sheetId ? (
                             <a
-                              href={e.sheetId.startsWith('http') ? e.sheetId : `https://docs.google.com/spreadsheets/d/${e.sheetId}/edit`}
+                              href={
+                                e.sheetId.startsWith("http")
+                                  ? e.sheetId
+                                  : `https://docs.google.com/spreadsheets/d/${e.sheetId}/edit`
+                              }
                               target="_blank"
                               rel="noopener noreferrer"
                               title="Open registration sheet (Google Sheets / Excel)"
@@ -3164,7 +4110,7 @@ export default function Admin_Page() {
                               <span>Sheet</span>
                             </a>
                           ) : (
-                            <span 
+                            <span
                               title="No sheet ID configured for this event"
                               className="p-2.5 bg-zinc-50 border border-zinc-100 text-zinc-400 rounded-xl text-xs font-semibold cursor-not-allowed select-none inline-flex items-center gap-1.5 px-3.5"
                             >
@@ -3193,7 +4139,9 @@ export default function Admin_Page() {
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => setDeleteConfirm({ id: e.id, type: 'event' })}
+                            onClick={() =>
+                              setDeleteConfirm({ id: e.id, type: "event" })
+                            }
                             className="p-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-red-600 transition-all border border-red-100/50"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -3204,7 +4152,10 @@ export default function Admin_Page() {
                   ))}
                   {events.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                      <td
+                        colSpan={6}
+                        className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest"
+                      >
                         No events found
                       </td>
                     </tr>
@@ -3215,10 +4166,12 @@ export default function Admin_Page() {
           </div>
         )}
 
-        {activeTab === 'members' && (
+        {activeTab === "members" && (
           <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl shadow-slate-100/50 overflow-hidden">
             <div className="px-8 py-6 border-b border-zinc-50 bg-zinc-50/50 flex justify-between items-center">
-              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">All Team Members ({members.length})</h2>
+              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">
+                All Team Members ({members.length})
+              </h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -3234,10 +4187,17 @@ export default function Admin_Page() {
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
                   {members.map((m: any, idx: number) => (
-                    <tr key={`admin-member-row-${m.id || idx}`} className="hover:bg-zinc-50/30 transition-colors">
+                    <tr
+                      key={`admin-member-row-${m.id || idx}`}
+                      className="hover:bg-zinc-50/30 transition-colors"
+                    >
                       <td className="px-8 py-5">
                         {m.image && (
-                          <img src={m.image} className="w-12 h-12 object-cover rounded-full border border-zinc-100" referrerPolicy="no-referrer" />
+                          <img
+                            src={m.image}
+                            className="w-12 h-12 object-cover rounded-full border border-zinc-100"
+                            referrerPolicy="no-referrer"
+                          />
                         )}
                       </td>
                       <td className="px-8 py-5 text-sm font-bold text-zinc-900">
@@ -3247,7 +4207,7 @@ export default function Admin_Page() {
                         {m.role}
                       </td>
                       <td className="px-8 py-5 text-sm text-zinc-600 select-none">
-                        {m.course ? `${m.course} (${m.year})` : '—'}
+                        {m.course ? `${m.course} (${m.year})` : "—"}
                       </td>
                       <td className="px-8 py-5 text-sm text-zinc-500 font-bold uppercase tracking-wider">
                         {m.tenure}
@@ -3257,7 +4217,12 @@ export default function Admin_Page() {
                           <button
                             onClick={() => {
                               setEditingMember(m);
-                              setMemberImagePreview(m.image);
+                              setMemberImagePreview(
+                                m.image || "https://i.ibb.co/cKD8BFhN/logo.png",
+                              );
+                              setSelectedMemberTenures(
+                                parseTenureToSingleYears(m.tenure),
+                              );
                               setShowMemberModal(true);
                             }}
                             className="p-2.5 bg-zinc-50 hover:bg-zinc-100 rounded-xl text-zinc-600 hover:text-zinc-900 transition-all border border-zinc-100"
@@ -3265,7 +4230,9 @@ export default function Admin_Page() {
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => setDeleteConfirm({ id: m.id, type: 'member' })}
+                            onClick={() =>
+                              setDeleteConfirm({ id: m.id, type: "member" })
+                            }
                             className="p-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-red-600 transition-all border border-red-100/50"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -3276,7 +4243,10 @@ export default function Admin_Page() {
                   ))}
                   {members.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                      <td
+                        colSpan={5}
+                        className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest"
+                      >
                         No team members found
                       </td>
                     </tr>
@@ -3287,10 +4257,12 @@ export default function Admin_Page() {
           </div>
         )}
 
-        {activeTab === 'achievements' && (
+        {activeTab === "achievements" && (
           <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl shadow-slate-100/50 overflow-hidden">
             <div className="px-8 py-6 border-b border-zinc-50 bg-zinc-50/50 flex justify-between items-center">
-              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">All Achievements ({achievements.length})</h2>
+              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">
+                All Achievements ({achievements.length})
+              </h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -3304,7 +4276,10 @@ export default function Admin_Page() {
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
                   {achievements.map((a: any, idx: number) => (
-                    <tr key={`admin-achievement-row-${a.id || idx}`} className="hover:bg-zinc-50/30 transition-colors">
+                    <tr
+                      key={`admin-achievement-row-${a.id || idx}`}
+                      className="hover:bg-zinc-50/30 transition-colors"
+                    >
                       <td className="px-8 py-5 text-sm font-bold text-zinc-900">
                         {a.title}
                       </td>
@@ -3326,7 +4301,12 @@ export default function Admin_Page() {
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => setDeleteConfirm({ id: a.id, type: 'achievement' })}
+                            onClick={() =>
+                              setDeleteConfirm({
+                                id: a.id,
+                                type: "achievement",
+                              })
+                            }
                             className="p-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-red-600 transition-all border border-red-100/50"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -3337,7 +4317,10 @@ export default function Admin_Page() {
                   ))}
                   {achievements.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                      <td
+                        colSpan={4}
+                        className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest"
+                      >
                         No achievements found
                       </td>
                     </tr>
@@ -3348,10 +4331,12 @@ export default function Admin_Page() {
           </div>
         )}
 
-        {activeTab === 'gallery' && (
+        {activeTab === "gallery" && (
           <div className="bg-white rounded-[2.5rem] border border-zinc-100 shadow-xl shadow-slate-100/50 overflow-hidden">
             <div className="px-8 py-6 border-b border-zinc-50 bg-zinc-50/50 flex justify-between items-center">
-              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">Gallery Directory ({gallery.length})</h2>
+              <h2 className="text-sm font-black uppercase text-zinc-400 tracking-[0.2em]">
+                Gallery Directory ({gallery.length})
+              </h2>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
@@ -3366,15 +4351,26 @@ export default function Admin_Page() {
                 </thead>
                 <tbody className="divide-y divide-zinc-50">
                   {gallery.map((g: any, idx: number) => (
-                    <tr key={`admin-gallery-row-${g.id || idx}`} className="hover:bg-zinc-50/30 transition-colors">
+                    <tr
+                      key={`admin-gallery-row-${g.id || idx}`}
+                      className="hover:bg-zinc-50/30 transition-colors"
+                    >
                       <td className="px-8 py-5">
                         {g.src && (
-                          <img src={g.src} className="w-14 h-14 object-cover rounded-xl border border-zinc-100" referrerPolicy="no-referrer" />
+                          <img
+                            src={g.src}
+                            className="w-14 h-14 object-cover rounded-xl border border-zinc-100"
+                            referrerPolicy="no-referrer"
+                          />
                         )}
                       </td>
                       <td className="px-8 py-5">
-                        <p className="text-sm font-bold text-zinc-900">{g.title}</p>
-                        <p className="text-xs text-zinc-400 font-medium max-w-xs truncate">{g.description}</p>
+                        <p className="text-sm font-bold text-zinc-900">
+                          {g.title}
+                        </p>
+                        <p className="text-xs text-zinc-400 font-medium max-w-xs truncate">
+                          {g.description}
+                        </p>
                       </td>
                       <td className="px-8 py-5">
                         <span className="inline-flex px-3 py-1 bg-zinc-100 text-zinc-700 rounded-full text-xs font-bold uppercase tracking-wider">
@@ -3382,7 +4378,7 @@ export default function Admin_Page() {
                         </span>
                       </td>
                       <td className="px-8 py-5 text-sm text-zinc-500 font-bold">
-                        {g.eventDate || 'N/A'}
+                        {g.eventDate || "N/A"}
                       </td>
                       <td className="px-8 py-5 text-right">
                         <div className="flex gap-3 justify-end">
@@ -3397,7 +4393,9 @@ export default function Admin_Page() {
                             <Edit3 className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => setDeleteConfirm({ id: g.id, type: 'gallery' })}
+                            onClick={() =>
+                              setDeleteConfirm({ id: g.id, type: "gallery" })
+                            }
                             className="p-2.5 bg-red-50 hover:bg-red-100 rounded-xl text-red-600 transition-all border border-red-100/50"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -3408,7 +4406,10 @@ export default function Admin_Page() {
                   ))}
                   {gallery.length === 0 && (
                     <tr>
-                      <td colSpan={5} className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest">
+                      <td
+                        colSpan={5}
+                        className="px-8 py-16 text-center text-sm font-bold text-zinc-400 uppercase tracking-widest"
+                      >
                         No gallery images found
                       </td>
                     </tr>
@@ -3419,15 +4420,21 @@ export default function Admin_Page() {
           </div>
         )}
 
-        {activeTab === 'scanner' && (
+        {activeTab === "scanner" && (
           <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-8 max-w-2xl mx-auto">
             <div className="text-center">
-              <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">QR Ticket Scanner</h2>
-              <p className="text-sm text-zinc-500 font-medium">Verify event tickets and log student attendees instantly.</p>
+              <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">
+                QR Ticket Scanner
+              </h2>
+              <p className="text-sm text-zinc-500 font-medium">
+                Verify event tickets and log student attendees instantly.
+              </p>
             </div>
 
             <div className="space-y-4">
-              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Select Active Event</label>
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                Select Active Event
+              </label>
               <select
                 value={selectedScanEventId}
                 onChange={(e) => {
@@ -3440,7 +4447,9 @@ export default function Admin_Page() {
               >
                 <option value="">-- Choose Event to Check attendance --</option>
                 {events.map((e: any, idx: number) => (
-                  <option key={`checker-event-opt-${e.id || idx}`} value={e.id}>{e.title}</option>
+                  <option key={`checker-event-opt-${e.id || idx}`} value={e.id}>
+                    {e.title}
+                  </option>
                 ))}
               </select>
             </div>
@@ -3458,9 +4467,9 @@ export default function Admin_Page() {
                       setScanResult(null);
                     }
                   }}
-                  className={`px-8 py-4 ${isScanning ? 'bg-zinc-600 hover:bg-zinc-700' : 'bg-brand-600 hover:bg-brand-700'} text-white rounded-3xl font-bold uppercase tracking-widest text-xs transition-all shadow-xl`}
+                  className={`px-8 py-4 ${isScanning ? "bg-zinc-600 hover:bg-zinc-700" : "bg-brand-600 hover:bg-brand-700"} text-white rounded-3xl font-bold uppercase tracking-widest text-xs transition-all shadow-xl`}
                 >
-                  {isScanning ? 'Stop Camera' : 'Start Ticket Scanner'}
+                  {isScanning ? "Stop Camera" : "Start Ticket Scanner"}
                 </button>
 
                 {isScanning && (
@@ -3468,7 +4477,9 @@ export default function Admin_Page() {
                     {lastScannedStudent ? (
                       <div className="absolute top-4 left-4 right-4 z-10 bg-emerald-600/95 backdrop-blur-sm text-white text-xs font-black tracking-wide px-4 py-3 rounded-2xl flex items-center gap-2 shadow-lg border border-emerald-400">
                         <CheckCircle className="w-5 h-5 text-white shrink-0" />
-                        <span className="truncate">{lastScannedStudent} Check-In Successful!</span>
+                        <span className="truncate">
+                          {lastScannedStudent} Check-In Successful!
+                        </span>
                       </div>
                     ) : (
                       <div className="absolute top-4 left-4 z-10 bg-emerald-500/95 backdrop-blur-sm text-white text-[10px] font-black tracking-widest px-3 py-1.5 rounded-full animate-pulse flex items-center gap-1.5 shadow-md">
@@ -3476,22 +4487,31 @@ export default function Admin_Page() {
                         ONLINE & ACTIVE
                       </div>
                     )}
-                    <div id="reader" className="w-full max-w-md mx-auto aspect-square"></div>
+                    <div
+                      id="reader"
+                      className="w-full max-w-md mx-auto aspect-square"
+                    ></div>
                   </div>
                 )}
               </div>
             )}
 
             {scanResult && (scanResult.loading || !scanResult.success) && (
-              <div className={`p-6 rounded-3xl border-2 ${scanResult.loading ? 'bg-zinc-50 border-zinc-100 text-zinc-600' : 'bg-red-50 border-red-100 text-red-900'} transition-all text-center space-y-3`}>
+              <div
+                className={`p-6 rounded-3xl border-2 ${scanResult.loading ? "bg-zinc-50 border-zinc-100 text-zinc-600" : "bg-red-50 border-red-100 text-red-900"} transition-all text-center space-y-3`}
+              >
                 {scanResult.loading ? (
                   <div className="flex items-center justify-center gap-3">
                     <div className="w-5 h-5 border-2 border-zinc-200 border-t-zinc-600 rounded-full animate-spin"></div>
-                    <span className="font-bold uppercase tracking-widest text-xs">Processing check-in...</span>
+                    <span className="font-bold uppercase tracking-widest text-xs">
+                      Processing check-in...
+                    </span>
                   </div>
                 ) : (
                   <>
-                    <h3 className="text-lg font-black uppercase text-red-800">Check-in Failed</h3>
+                    <h3 className="text-lg font-black uppercase text-red-800">
+                      Check-in Failed
+                    </h3>
                     <p className="text-sm font-bold">{scanResult.error}</p>
                   </>
                 )}
@@ -3500,25 +4520,35 @@ export default function Admin_Page() {
           </div>
         )}
 
-        {activeTab === 'contacts' && (
+        {activeTab === "contacts" && (
           <div className="space-y-8 max-w-2xl mx-auto">
             {/* Google Sheets Configuration Card */}
             <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-8">
               <div>
-                <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Google Sheets Configuration</h2>
-                <p className="text-sm text-zinc-500 font-medium">Configure where the inquiries, registrations and feedback data are stored in Google Sheets.</p>
+                <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">
+                  Google Sheets Configuration
+                </h2>
+                <p className="text-sm text-zinc-500 font-medium">
+                  Configure where the inquiries, registrations and feedback data
+                  are stored in Google Sheets.
+                </p>
               </div>
 
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const formData = new FormData(e.currentTarget);
-                handleSaveContactConfig(
-                  formData.get('sheetId') as string,
-                  formData.get('adminEmail') as string
-                );
-              }} className="space-y-6">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.currentTarget);
+                  handleSaveContactConfig(
+                    formData.get("sheetId") as string,
+                    formData.get("adminEmail") as string,
+                  );
+                }}
+                className="space-y-6"
+              >
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Master Spreadsheet Google Sheet ID</label>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                    Master Spreadsheet Google Sheet ID
+                  </label>
                   <input
                     name="sheetId"
                     defaultValue={contactConfig.sheetId}
@@ -3529,7 +4559,9 @@ export default function Admin_Page() {
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Admin Notification Email</label>
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                    Admin Notification Email
+                  </label>
                   <input
                     name="adminEmail"
                     type="email"
@@ -3545,21 +4577,33 @@ export default function Admin_Page() {
                   disabled={isSavingContactConfig}
                   className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all disabled:opacity-50"
                 >
-                  {isSavingContactConfig ? 'Saving settings...' : 'Save Settings'}
+                  {isSavingContactConfig
+                    ? "Saving settings..."
+                    : "Save Settings"}
                 </button>
               </form>
 
               {contactConfig.sheetId && (
-                <div className="border-t border-zinc-100 pt-6 space-y-4" id="view-contact-responses-panel">
+                <div
+                  className="border-t border-zinc-100 pt-6 space-y-4"
+                  id="view-contact-responses-panel"
+                >
                   <div className="bg-emerald-50/50 border border-emerald-100 rounded-3xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <div className="space-y-1 text-center sm:text-left">
-                      <h3 className="text-sm font-black text-emerald-950 uppercase tracking-tight">Contact Form Responses</h3>
+                      <h3 className="text-sm font-black text-emerald-950 uppercase tracking-tight">
+                        Contact Form Responses
+                      </h3>
                       <p className="text-xs text-emerald-700/80 font-semibold leading-normal">
-                        Access all submitted inquiries, contact messages and feedback in your master spreadsheet.
+                        Access all submitted inquiries, contact messages and
+                        feedback in your master spreadsheet.
                       </p>
                     </div>
                     <a
-                      href={contactConfig.sheetId.startsWith('http') ? contactConfig.sheetId : `https://docs.google.com/spreadsheets/d/${contactConfig.sheetId}/edit`}
+                      href={
+                        contactConfig.sheetId.startsWith("http")
+                          ? contactConfig.sheetId
+                          : `https://docs.google.com/spreadsheets/d/${contactConfig.sheetId}/edit`
+                      }
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/10 hover:scale-105 active:scale-95 shrink-0"
@@ -3572,134 +4616,62 @@ export default function Admin_Page() {
                 </div>
               )}
             </div>
-
-            {/* Firebase Certificate Logos Configuration Card */}
-            <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-8">
-              <div>
-                <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">Certificate Logos (Firebase)</h2>
-                <p className="text-sm text-zinc-500 font-medium">Upload or update the JPEG logo files hosted on Firebase for use in dynamic certificates.</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-6 bg-zinc-50 p-6 rounded-3xl border border-zinc-100">
-                <div className="space-y-3 flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm text-center">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">Infinitium Logo</span>
-                  <div className="h-28 w-28 bg-zinc-50 rounded-xl p-2 flex items-center justify-center border border-zinc-100 overflow-hidden">
-                    <img
-                      src={firebaseLogos?.infinitium || INFINITIUM_LOGO_BASE64}
-                      alt="Infinitium Logo"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  </div>
-                  <label className="cursor-pointer text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-4 py-2 rounded-xl transition">
-                    Upload JPEG
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          try {
-                            const base64 = await compressImage(file, 400, 400, 0.9);
-                            await handleSaveLogosConfig(base64, firebaseLogos?.arsd || ARSD_LOGO_BASE64);
-                          } catch (err) {
-                            alert("Upload failed: " + (err instanceof Error ? err.message : String(err)));
-                          }
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-
-                <div className="space-y-3 flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-zinc-100 shadow-sm text-center">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-zinc-400">ARSD Logo</span>
-                  <div className="h-28 w-28 bg-zinc-50 rounded-xl p-2 flex items-center justify-center border border-zinc-100 overflow-hidden">
-                    <img
-                      src={firebaseLogos?.arsd || ARSD_LOGO_BASE64}
-                      alt="ARSD Logo"
-                      className="max-h-full max-w-full object-contain"
-                    />
-                  </div>
-                  <label className="cursor-pointer text-xs font-bold text-brand-600 hover:text-brand-700 bg-brand-50 hover:bg-brand-100 px-4 py-2 rounded-xl transition">
-                    Upload JPEG
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          try {
-                            const base64 = await compressImage(file, 400, 400, 0.9);
-                            await handleSaveLogosConfig(firebaseLogos?.infinitium || INFINITIUM_LOGO_BASE64, base64);
-                          } catch (err) {
-                            alert("Upload failed: " + (err instanceof Error ? err.message : String(err)));
-                          }
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  disabled={isSavingLogos}
-                  onClick={async () => {
-                    if (confirm("Are you sure you want to re-sync or reset logos to original defaults in Firebase?")) {
-                      await handleSaveLogosConfig(INFINITIUM_LOGO_BASE64, ARSD_LOGO_BASE64);
-                    }
-                  }}
-                  className="w-full py-4 bg-zinc-100 text-zinc-700 hover:bg-zinc-200 rounded-3xl font-bold uppercase tracking-widest text-[10px] transition-all disabled:opacity-50"
-                >
-                  Reset Defaults
-                </button>
-              </div>
-            </div>
           </div>
         )}
 
-        {activeTab === 'about' && (
+        {activeTab === "about" && (
           <div className="bg-white rounded-[2.5rem] p-10 border border-zinc-100 shadow-xl shadow-slate-100/50 space-y-10 max-w-4xl mx-auto">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-zinc-100 pb-6">
               <div>
-                <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">About Page Settings</h2>
-                <p className="text-sm text-zinc-500 font-medium">Manage the cover image, hero text, and department specifications of your public About Page.</p>
+                <h2 className="text-2xl font-black text-zinc-900 uppercase tracking-tight mb-2">
+                  About Page Settings
+                </h2>
+                <p className="text-sm text-zinc-500 font-medium">
+                  Manage the cover image, hero text, and department
+                  specifications of your public About Page.
+                </p>
               </div>
               <div className="flex items-center gap-2 self-start bg-indigo-50 border border-indigo-100 px-3.5 py-2 rounded-2xl">
                 <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-700">Live Customization</span>
+                <span className="text-[10px] font-black uppercase tracking-widest text-indigo-700">
+                  Live Customization
+                </span>
               </div>
             </div>
 
             {/* Change Cover Image Section */}
             <div className="space-y-4">
-              <h3 className="text-sm font-black uppercase text-zinc-400 tracking-widest">About Cover Image</h3>
-              
+              <h3 className="text-sm font-black uppercase text-zinc-400 tracking-widest">
+                About Cover Image
+              </h3>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center bg-zinc-50/50 p-6 rounded-3xl border border-zinc-100">
                 <div className="space-y-4">
                   <p className="text-xs text-zinc-500 font-semibold leading-relaxed">
-                    Upload a high-quality visual banner for the top of your About Page. The image will be dynamically compressed to ensure high performance and fast page load speeds.
+                    Upload a high-quality visual banner for the top of your
+                    About Page. The image will be dynamically compressed to
+                    ensure high performance and fast page load speeds.
                   </p>
-                  
+
                   <div className="flex items-center gap-3">
-                    <label 
-                      htmlFor="about-hero-upload" 
+                    <label
+                      htmlFor="about-hero-upload"
                       className={cn(
                         "inline-flex items-center justify-center gap-2 px-6 py-4 bg-brand-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-brand-700 transition-all cursor-pointer shadow-lg shadow-brand-600/10",
-                        isSavingAbout && "opacity-50 pointer-events-none"
+                        isSavingAbout && "opacity-50 pointer-events-none",
                       )}
                     >
                       <Camera className="w-4 h-4" />
-                      <span>{isSavingAbout ? "Uploading..." : "Upload New Cover"}</span>
+                      <span>
+                        {isSavingAbout ? "Uploading..." : "Upload New Cover"}
+                      </span>
                     </label>
-                    <input 
-                      id="about-hero-upload" 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={handleAboutHeroImageChange} 
+                    <input
+                      id="about-hero-upload"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleAboutHeroImageChange}
                       disabled={isSavingAbout}
                     />
                   </div>
@@ -3708,10 +4680,10 @@ export default function Admin_Page() {
                 <div className="relative aspect-video rounded-2xl bg-zinc-100 border-4 border-white shadow-xl overflow-hidden group">
                   {aboutData?.hero?.image ? (
                     <>
-                      <img 
-                        src={aboutData.hero.image} 
-                        alt="Current Cover" 
-                        className="w-full h-full object-cover" 
+                      <img
+                        src={aboutData.hero.image}
+                        alt="Current Cover"
+                        className="w-full h-full object-cover"
                         referrerPolicy="no-referrer"
                       />
                       <div className="absolute inset-0 bg-brand-950/10 group-hover:bg-brand-950/20 transition-colors" />
@@ -3719,7 +4691,9 @@ export default function Admin_Page() {
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 bg-zinc-50 gap-2">
                       <Camera className="w-8 h-8" />
-                      <span className="text-[9px] font-black uppercase tracking-widest">No Cover Image</span>
+                      <span className="text-[9px] font-black uppercase tracking-widest">
+                        No Cover Image
+                      </span>
                     </div>
                   )}
                   {isSavingAbout && (
@@ -3733,7 +4707,6 @@ export default function Admin_Page() {
                 </div>
               </div>
             </div>
-
           </div>
         )}
 
@@ -3741,28 +4714,49 @@ export default function Admin_Page() {
         <AnimatePresence>
           {showAddEvent && (
             <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-              <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={() => setShowAddEvent(false)} />
+              <div
+                className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
+                onClick={() => setShowAddEvent(false)}
+              />
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="relative bg-white w-full max-w-2xl rounded-[3.5rem] p-12 shadow-2xl max-h-[90vh] overflow-y-auto"
               >
-                <h2 className="text-3xl font-bold mb-8">{editingEvent ? 'Edit Event' : 'Create New Event'}</h2>
+                <h2 className="text-3xl font-bold mb-8">
+                  {editingEvent ? "Edit Event" : "Create New Event"}
+                </h2>
                 <form className="space-y-6" onSubmit={handleEventSubmit}>
                   <div className="flex flex-col items-center gap-4 mb-8">
                     <div className="w-full aspect-[16/10] max-w-[400px] rounded-2xl bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group mx-auto">
                       {eventImagePreview ? (
-                        <img src={eventImagePreview} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <img
+                          src={eventImagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
                       ) : (
                         <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 gap-2">
                           <Camera className="w-10 h-10" />
-                          <span className="text-[10px] font-black uppercase tracking-widest">No Poster Selected</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest">
+                            No Poster Selected
+                          </span>
                         </div>
                       )}
-                      <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" htmlFor="event-upload">
+                      <label
+                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                        htmlFor="event-upload"
+                      >
                         <Plus className="text-white w-10 h-10" />
-                        <input id="event-upload" type="file" className="hidden" accept="image/*" onChange={handleEventFileChange} />
+                        <input
+                          id="event-upload"
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleEventFileChange}
+                        />
                       </label>
                     </div>
                     <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-center">
@@ -3772,20 +4766,24 @@ export default function Admin_Page() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Event Title</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                        Event Title
+                      </label>
                       <input
                         name="title"
-                        defaultValue={editingEvent?.title || ''}
+                        defaultValue={editingEvent?.title || ""}
                         required
                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
                         placeholder="e.g. Pulsar 2026"
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Subtitle</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                        Subtitle
+                      </label>
                       <input
                         name="subtitle"
-                        defaultValue={editingEvent?.subtitle || ''}
+                        defaultValue={editingEvent?.subtitle || ""}
                         required
                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
                         placeholder="e.g. The Science extravaganza"
@@ -3795,10 +4793,12 @@ export default function Admin_Page() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Event Type</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                        Event Type
+                      </label>
                       <select
                         name="type"
-                        defaultValue={editingEvent?.type || 'Seminar'}
+                        defaultValue={editingEvent?.type || "Seminar"}
                         required
                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold outline-none"
                       >
@@ -3812,11 +4812,13 @@ export default function Admin_Page() {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Event Date</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                        Event Date
+                      </label>
                       <input
                         name="date"
                         type="date"
-                        defaultValue={editingEvent?.date || ''}
+                        defaultValue={editingEvent?.date || ""}
                         required
                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
                       />
@@ -3826,21 +4828,29 @@ export default function Admin_Page() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2 relative">
                       <div className="flex justify-between items-center pl-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Start Time (Optional)</label>
+                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                          Start Time (Optional)
+                        </label>
                         <button
                           type="button"
-                          onClick={() => setShowClockDropdown(!showClockDropdown)}
+                          onClick={() =>
+                            setShowClockDropdown(!showClockDropdown)
+                          }
                           className="text-[10px] bg-zinc-50 hover:bg-zinc-100 border border-zinc-200 rounded-lg px-2.5 py-1.5 font-bold text-zinc-500 uppercase tracking-wider flex items-center gap-1 transition-all"
                         >
                           <Clock className="w-3.5 h-3.5 text-zinc-400" />
-                          <span>{showClockDropdown ? "Close Picker" : "Open Clock"}</span>
+                          <span>
+                            {showClockDropdown ? "Close Picker" : "Open Clock"}
+                          </span>
                         </button>
                       </div>
 
                       <div className="relative">
                         {/* Selected Time Display Trigger */}
-                        <div 
-                          onClick={() => setShowClockDropdown(!showClockDropdown)}
+                        <div
+                          onClick={() =>
+                            setShowClockDropdown(!showClockDropdown)
+                          }
                           className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold flex items-center justify-between cursor-pointer hover:border-brand-500 transition-all select-none"
                         >
                           <div className="flex items-center gap-3">
@@ -3848,20 +4858,24 @@ export default function Admin_Page() {
                               <Clock className="w-4 h-4" />
                             </div>
                             <div>
-                              <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-bold">Scheduled for</p>
+                              <p className="text-[9px] text-zinc-400 uppercase tracking-widest font-bold">
+                                Scheduled for
+                              </p>
                               <p className="text-sm font-black text-zinc-900 tracking-tight">
-                                {selectedHour ? `${selectedHour.padStart(2, '0')}:${selectedMinute} ${selectedPeriod}` : "No specific time selected"}
+                                {selectedHour
+                                  ? `${selectedHour.padStart(2, "0")}:${selectedMinute} ${selectedPeriod}`
+                                  : "No specific time selected"}
                               </p>
                             </div>
                           </div>
-                          
+
                           <div className="flex items-center gap-2">
                             {selectedHour && (
                               <button
                                 type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setSelectedHour('');
+                                  setSelectedHour("");
                                 }}
                                 className="text-[10px] bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg px-2.5 py-1 font-bold uppercase tracking-wider transition-all"
                               >
@@ -3875,35 +4889,48 @@ export default function Admin_Page() {
                         <input
                           type="hidden"
                           name="startTime"
-                          value={selectedHour ? `${selectedHour.padStart(2, '0')}:${selectedMinute} ${selectedPeriod}` : ""}
+                          value={
+                            selectedHour
+                              ? `${selectedHour.padStart(2, "0")}:${selectedMinute} ${selectedPeriod}`
+                              : ""
+                          }
                         />
 
                         {/* Interactive Clock Picker Dropdown Panel */}
                         {showClockDropdown && (
                           <div className="absolute top-full left-0 right-0 mt-3 bg-white border-2 border-zinc-100 rounded-3xl p-6 shadow-2xl z-[180] space-y-5 animate-in fade-in slide-in-from-top-2 duration-200">
-                            
                             {/* Visual Time Preview header */}
                             <div className="flex items-center justify-between bg-zinc-50 p-4 rounded-2xl border border-zinc-100">
-                              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Clock Preview</span>
+                              <span className="text-[10px] font-black uppercase tracking-widest text-zinc-400">
+                                Clock Preview
+                              </span>
                               <div className="flex items-center gap-2">
                                 <span className="text-2xl font-black text-brand-600 font-mono">
-                                  {selectedHour ? selectedHour.padStart(2, '0') : '--'}
+                                  {selectedHour
+                                    ? selectedHour.padStart(2, "0")
+                                    : "--"}
                                 </span>
-                                <span className="text-xl font-bold text-zinc-300 font-mono">:</span>
+                                <span className="text-xl font-bold text-zinc-300 font-mono">
+                                  :
+                                </span>
                                 <span className="text-2xl font-black text-brand-600 font-mono">
-                                  {selectedHour ? selectedMinute : '--'}
+                                  {selectedHour ? selectedMinute : "--"}
                                 </span>
                                 <span className="text-xs font-black uppercase text-zinc-400 ml-1">
-                                  {selectedHour ? selectedPeriod : ''}
+                                  {selectedHour ? selectedPeriod : ""}
                                 </span>
                               </div>
                             </div>
 
                             {/* Hours Grid */}
                             <div className="space-y-2">
-                              <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">Select Hour</p>
+                              <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
+                                Select Hour
+                              </p>
                               <div className="grid grid-cols-6 gap-1.5">
-                                {Array.from({ length: 12 }, (_, i) => (i + 1).toString()).map(hr => {
+                                {Array.from({ length: 12 }, (_, i) =>
+                                  (i + 1).toString(),
+                                ).map((hr) => {
                                   const isActive = selectedHour === hr;
                                   return (
                                     <button
@@ -3912,20 +4939,20 @@ export default function Admin_Page() {
                                       onClick={() => {
                                         if (!selectedHour) {
                                           setSelectedHour(hr);
-                                          setSelectedMinute('00');
-                                          setSelectedPeriod('AM');
+                                          setSelectedMinute("00");
+                                          setSelectedPeriod("AM");
                                         } else {
                                           setSelectedHour(hr);
                                         }
                                       }}
                                       className={cn(
                                         "py-2 px-1 rounded-xl text-xs font-black font-mono transition-all border",
-                                        isActive 
-                                          ? "bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-600/20 scale-105" 
-                                          : "bg-zinc-50 text-zinc-600 border-zinc-100 hover:bg-zinc-100"
+                                        isActive
+                                          ? "bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-600/20 scale-105"
+                                          : "bg-zinc-50 text-zinc-600 border-zinc-100 hover:bg-zinc-100",
                                       )}
                                     >
-                                      {hr.padStart(2, '0')}
+                                      {hr.padStart(2, "0")}
                                     </button>
                                   );
                                 })}
@@ -3934,9 +4961,20 @@ export default function Admin_Page() {
 
                             {/* Minutes Quick Select Grid */}
                             <div className="space-y-2">
-                              <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">Select Minute</p>
+                              <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
+                                Select Minute
+                              </p>
                               <div className="grid grid-cols-4 gap-1.5">
-                                {['00', '15', '30', '45', '10', '20', '40', '50'].map(min => {
+                                {[
+                                  "00",
+                                  "15",
+                                  "30",
+                                  "45",
+                                  "10",
+                                  "20",
+                                  "40",
+                                  "50",
+                                ].map((min) => {
                                   const isActive = selectedMinute === min;
                                   return (
                                     <button
@@ -3947,8 +4985,8 @@ export default function Admin_Page() {
                                       className={cn(
                                         "py-2 rounded-xl text-xs font-black font-mono transition-all border disabled:opacity-40",
                                         isActive && selectedHour
-                                          ? "bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-600/20" 
-                                          : "bg-zinc-50 text-zinc-600 border-zinc-100 hover:bg-zinc-100"
+                                          ? "bg-brand-600 text-white border-brand-600 shadow-lg shadow-brand-600/20"
+                                          : "bg-zinc-50 text-zinc-600 border-zinc-100 hover:bg-zinc-100",
                                       )}
                                     >
                                       {min}
@@ -3961,9 +4999,11 @@ export default function Admin_Page() {
                             {/* AM/PM Grid and Done control */}
                             <div className="flex gap-4 pt-1">
                               <div className="flex-1 space-y-2">
-                                <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">AM / PM</p>
+                                <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest">
+                                  AM / PM
+                                </p>
                                 <div className="flex bg-zinc-100 p-1 rounded-xl border border-zinc-200">
-                                  {['AM', 'PM'].map(p => {
+                                  {["AM", "PM"].map((p) => {
                                     const isActive = selectedPeriod === p;
                                     return (
                                       <button
@@ -3975,7 +5015,7 @@ export default function Admin_Page() {
                                           "flex-1 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-40",
                                           isActive && selectedHour
                                             ? "bg-white text-zinc-900 shadow-sm"
-                                            : "text-zinc-500 hover:text-zinc-950"
+                                            : "text-zinc-500 hover:text-zinc-950",
                                         )}
                                       >
                                         {p}
@@ -3995,16 +5035,17 @@ export default function Admin_Page() {
                                 </button>
                               </div>
                             </div>
-
                           </div>
                         )}
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Location</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                        Location
+                      </label>
                       <input
                         name="location"
-                        defaultValue={editingEvent?.location || ''}
+                        defaultValue={editingEvent?.location || ""}
                         required
                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
                         placeholder="e.g. Seminar Hall, ARSD College"
@@ -4014,19 +5055,23 @@ export default function Admin_Page() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">WhatsApp Group Link (Optional)</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                        WhatsApp Group Link (Optional)
+                      </label>
                       <input
                         name="whatsappGroup"
-                        defaultValue={editingEvent?.whatsappGroup || ''}
+                        defaultValue={editingEvent?.whatsappGroup || ""}
                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
                         placeholder="e.g. https://chat.whatsapp.com/..."
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Sync Spreadsheet ID (Optional)</label>
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                        Sync Spreadsheet ID (Optional)
+                      </label>
                       <input
                         name="sheetId"
-                        defaultValue={editingEvent?.sheetId || ''}
+                        defaultValue={editingEvent?.sheetId || ""}
                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
                         placeholder="Google Sheet Spreadsheet ID"
                       />
@@ -4035,8 +5080,12 @@ export default function Admin_Page() {
 
                   <div className="flex items-center justify-between p-5 bg-zinc-50 rounded-2xl border-2 border-zinc-100">
                     <div className="space-y-0.5">
-                      <label className="text-[10px] font-black text-zinc-900 uppercase tracking-widest pl-1">Inter-College Event</label>
-                      <p className="text-[9px] text-zinc-400 font-medium uppercase tracking-tight pl-1">Allow students from other colleges to register</p>
+                      <label className="text-[10px] font-black text-zinc-900 uppercase tracking-widest pl-1">
+                        Inter-College Event
+                      </label>
+                      <p className="text-[9px] text-zinc-400 font-medium uppercase tracking-tight pl-1">
+                        Allow students from other colleges to register
+                      </p>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -4052,32 +5101,53 @@ export default function Admin_Page() {
 
                   <div className="space-y-3 p-5 bg-zinc-50 rounded-2xl border-2 border-zinc-100/80">
                     <div className="flex justify-between items-center">
-                      <label className="text-[10px] font-black text-zinc-900 uppercase tracking-widest pl-1">Event Highlights (Multiple Photos)</label>
-                      <span className="text-[9px] font-bold text-zinc-400 uppercase">Optional</span>
+                      <label className="text-[10px] font-black text-zinc-900 uppercase tracking-widest pl-1">
+                        Event Highlights (Multiple Photos)
+                      </label>
+                      <span className="text-[9px] font-bold text-zinc-400 uppercase">
+                        Optional
+                      </span>
                     </div>
                     <div className="border-2 border-dashed border-zinc-200 hover:border-brand-500 rounded-xl p-5 bg-white relative flex flex-col items-center justify-center cursor-pointer transition-all min-h-[100px]">
                       <div className="flex flex-col items-center gap-1 text-center text-zinc-400">
                         <Camera className="w-6 h-6 text-zinc-300" />
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-700">Browse Highlight Pictures</span>
-                        <span className="text-[8px] font-medium text-zinc-400 uppercase tracking-tight">Supports multiple file selection</span>
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-zinc-700">
+                          Browse Highlight Pictures
+                        </span>
+                        <span className="text-[8px] font-medium text-zinc-400 uppercase tracking-tight">
+                          Supports multiple file selection
+                        </span>
                       </div>
-                      <input 
-                        type="file" 
-                        multiple 
-                        accept="image/*" 
+                      <input
+                        type="file"
+                        multiple
+                        accept="image/*"
                         onChange={handleEventMediaChange}
                         className="absolute inset-0 opacity-0 cursor-pointer"
                         id="event-highlights-uploader"
                       />
                     </div>
                     {isEventImageProcessing && (
-                      <p className="text-[10px] text-cyan-600 font-black animate-pulse uppercase tracking-widest pl-1">Processing and compressing images...</p>
+                      <p className="text-[10px] text-cyan-600 font-black animate-pulse uppercase tracking-widest pl-1">
+                        Processing and compressing images...
+                      </p>
                     )}
                     {eventMediaPreviews.length > 0 && (
-                      <div className="grid grid-cols-4 gap-3.5 pt-3 border-t border-zinc-150" id="event-media-previews-list">
+                      <div
+                        className="grid grid-cols-4 gap-3.5 pt-3 border-t border-zinc-150"
+                        id="event-media-previews-list"
+                      >
                         {eventMediaPreviews.map((src, idx) => (
-                          <div key={idx} className="relative aspect-square group/hl-pic rounded-lg overflow-hidden border border-zinc-200/80 bg-zinc-100 shadow-sm">
-                            <img src={src} className="w-full h-full object-cover" referrerPolicy="no-referrer" alt="Highlight preview" />
+                          <div
+                            key={idx}
+                            className="relative aspect-square group/hl-pic rounded-lg overflow-hidden border border-zinc-200/80 bg-zinc-100 shadow-sm"
+                          >
+                            <img
+                              src={src}
+                              className="w-full h-full object-cover"
+                              referrerPolicy="no-referrer"
+                              alt="Highlight preview"
+                            />
                             <button
                               type="button"
                               onClick={() => removeEventMedia(idx)}
@@ -4093,7 +5163,9 @@ export default function Admin_Page() {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Description</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                      Description
+                    </label>
                     <textarea
                       name="description"
                       defaultValue={editingEvent?.description}
@@ -4113,8 +5185,10 @@ export default function Admin_Page() {
                         <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                         Saving...
                       </>
+                    ) : editingEvent ? (
+                      "Update Event"
                     ) : (
-                      editingEvent ? 'Update Event' : 'Create Event'
+                      "Create Event"
                     )}
                   </button>
                 </form>
@@ -4127,40 +5201,51 @@ export default function Admin_Page() {
         <AnimatePresence>
           {showAchievementModal && (
             <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-              <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={() => setShowAchievementModal(false)} />
+              <div
+                className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
+                onClick={() => setShowAchievementModal(false)}
+              />
               <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 className="relative bg-white w-full max-w-lg rounded-[3.5rem] p-12 shadow-2xl max-h-[90vh] overflow-y-auto"
               >
-                <h2 className="text-3xl font-bold mb-8">{editingAchievement ? 'Edit Achievement' : 'Add Achievement'}</h2>
+                <h2 className="text-3xl font-bold mb-8">
+                  {editingAchievement ? "Edit Achievement" : "Add Achievement"}
+                </h2>
                 <form className="space-y-6" onSubmit={handleAchievementSubmit}>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Title</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                      Title
+                    </label>
                     <input
                       name="title"
-                      defaultValue={editingAchievement?.title || ''}
+                      defaultValue={editingAchievement?.title || ""}
                       required
                       className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
                       placeholder="e.g. Best Society Award 2026"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Date</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                      Date
+                    </label>
                     <input
                       name="date"
                       type="date"
-                      defaultValue={editingAchievement?.date || ''}
+                      defaultValue={editingAchievement?.date || ""}
                       required
                       className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold"
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Description</label>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                      Description
+                    </label>
                     <textarea
                       name="description"
-                      defaultValue={editingAchievement?.description || ''}
+                      defaultValue={editingAchievement?.description || ""}
                       required
                       className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-32 text-sm font-medium"
                       placeholder="Describe the achievement in detail..."
@@ -4170,7 +5255,9 @@ export default function Admin_Page() {
                     type="submit"
                     className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all flex items-center justify-center gap-2"
                   >
-                    {editingAchievement ? 'Update Achievement' : 'Add Achievement'}
+                    {editingAchievement
+                      ? "Update Achievement"
+                      : "Add Achievement"}
                   </button>
                 </form>
               </motion.div>
@@ -4178,184 +5265,261 @@ export default function Admin_Page() {
           )}
         </AnimatePresence>
 
-      {/* Gallery Modal */}
-      <AnimatePresence>
-        {showGalleryModal && (
-          <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={closeGalleryModal} />
-             <motion.div 
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               exit={{ opacity: 0, scale: 0.9 }}
-               className="relative bg-white w-full max-w-2xl rounded-[3.5rem] p-12 shadow-2xl max-h-[90vh] overflow-y-auto"
-             >
-                <h2 className="text-3xl font-bold mb-8">{editingGallery ? 'Edit Gallery Item' : 'Add Gallery Image'}</h2>
+        {/* Gallery Modal */}
+        <AnimatePresence>
+          {showGalleryModal && (
+            <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
+                onClick={closeGalleryModal}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="relative bg-white w-full max-w-2xl rounded-[3.5rem] p-12 shadow-2xl max-h-[90vh] overflow-y-auto"
+              >
+                <h2 className="text-3xl font-bold mb-8">
+                  {editingGallery ? "Edit Gallery Item" : "Add Gallery Image"}
+                </h2>
                 <form className="space-y-6" onSubmit={handleGallerySubmit}>
-                   <div className="flex flex-col items-center gap-4 mb-8">
-                      <div className="w-full aspect-square max-w-[300px] rounded-2xl bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group mx-auto">
-                        {galleryImagePreview ? (
-                          <img src={galleryImagePreview} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 gap-2">
-                            <Camera className="w-10 h-10" />
-                            <span className="text-[10px] font-black uppercase tracking-widest">No Image Selected</span>
-                          </div>
-                        )}
-                        <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer" htmlFor="gallery-upload">
-                          <Plus className="text-white w-10 h-10" />
-                          <input id="gallery-upload" type="file" className="hidden" accept="image/*" onChange={handleGalleryFileChange} />
-                        </label>
-                      </div>
-                      <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-center">
-                        {isImageProcessing ? "Processing Image..." : "Click to upload photo from your device"}
-                      </p>
-                   </div>
-
-                   <input 
-                    name="title" 
-                    defaultValue={editingGallery?.title}
-                    required 
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 font-bold" 
-                    placeholder="Image Title" 
-                   />
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Category</label>
-                        <select 
-                          name="category" 
-                          defaultValue={editingGallery?.category || 'Events'}
-                          required
-                          className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-sm outline-none focus:border-brand-600 appearance-none" 
-                        >
-                          <option value="Events">Events</option>
-                          <option value="Academic">Academic</option>
-                          <option value="Team">Team</option>
-                          <option value="Moments">Moments</option>
-                          <option value="Trips">Trips</option>
-                        </select>
-                      </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">Capture Date (Optional)</label>
-                        <input 
-                         name="eventDate" 
-                         type="date"
-                         defaultValue={editingGallery?.eventDate}
-                         className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-sm" 
+                  <div className="flex flex-col items-center gap-4 mb-8">
+                    <div className="w-full aspect-square max-w-[300px] rounded-2xl bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group mx-auto">
+                      {galleryImagePreview ? (
+                        <img
+                          src={galleryImagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
                         />
-                      </div>
-                   </div>
-                   <textarea 
-                    name="description" 
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-zinc-300 gap-2">
+                          <Camera className="w-10 h-10" />
+                          <span className="text-[10px] font-black uppercase tracking-widest">
+                            No Image Selected
+                          </span>
+                        </div>
+                      )}
+                      <label
+                        className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                        htmlFor="gallery-upload"
+                      >
+                        <Plus className="text-white w-10 h-10" />
+                        <input
+                          id="gallery-upload"
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleGalleryFileChange}
+                        />
+                      </label>
+                    </div>
+                    <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest text-center">
+                      {isImageProcessing
+                        ? "Processing Image..."
+                        : "Click to upload photo from your device"}
+                    </p>
+                  </div>
+
+                  <input
+                    name="title"
+                    defaultValue={editingGallery?.title}
+                    required
+                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 placeholder:text-zinc-300 font-bold"
+                    placeholder="Image Title"
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                        Category
+                      </label>
+                      <select
+                        name="category"
+                        defaultValue={editingGallery?.category || "Events"}
+                        required
+                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-sm outline-none focus:border-brand-600 appearance-none"
+                      >
+                        <option value="Events">Events</option>
+                        <option value="Academic">Academic</option>
+                        <option value="Team">Team</option>
+                        <option value="Moments">Moments</option>
+                        <option value="Trips">Trips</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest pl-2">
+                        Capture Date (Optional)
+                      </label>
+                      <input
+                        name="eventDate"
+                        type="date"
+                        defaultValue={editingGallery?.eventDate}
+                        className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 font-bold text-sm"
+                      />
+                    </div>
+                  </div>
+                  <textarea
+                    name="description"
                     defaultValue={editingGallery?.description}
-                    required 
-                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-32 placeholder:text-zinc-300" 
+                    required
+                    className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 h-32 placeholder:text-zinc-300"
                     placeholder="Description of the moment"
-                   ></textarea>
-                   <button 
-                    type="submit" 
+                  ></textarea>
+                  <button
+                    type="submit"
                     disabled={isSubmittingGallery || isImageProcessing}
                     className="w-full py-5 bg-brand-600 text-white rounded-3xl font-bold uppercase tracking-widest text-xs hover:bg-brand-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
-                   >
+                  >
                     {isSubmittingGallery ? (
                       <>
                         <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
                         Saving...
                       </>
+                    ) : editingGallery ? (
+                      "Update Item"
                     ) : (
-                      editingGallery ? 'Update Item' : 'Add to Gallery'
+                      "Add to Gallery"
                     )}
-                   </button>
+                  </button>
                 </form>
-             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
-      {/* Member Modal */}
-      <AnimatePresence>
-        {deleteConfirm && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm" onClick={() => setDeleteConfirm(null)} />
-             <motion.div 
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               exit={{ opacity: 0, scale: 0.9 }}
-               className="relative bg-white w-full max-w-sm rounded-2xl p-10 shadow-2xl text-center"
-             >
+        {/* Member Modal */}
+        <AnimatePresence>
+          {deleteConfirm && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
+                onClick={() => setDeleteConfirm(null)}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="relative bg-white w-full max-w-sm rounded-2xl p-10 shadow-2xl text-center"
+              >
                 <div className="w-16 h-16 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
                   <Trash2 className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl font-bold text-zinc-900 mb-4 tracking-tight">Confirm Deletion</h3>
-                <p className="text-sm text-zinc-500 mb-8 font-medium">Are you sure you want to delete this {deleteConfirm.type === 'member' ? 'team member' : deleteConfirm.type}? This action cannot be undone.</p>
-                
+                <h3 className="text-xl font-bold text-zinc-900 mb-4 tracking-tight">
+                  Confirm Deletion
+                </h3>
+                <p className="text-sm text-zinc-500 mb-8 font-medium">
+                  Are you sure you want to delete this{" "}
+                  {deleteConfirm.type === "member"
+                    ? "team member"
+                    : deleteConfirm.type}
+                  ? This action cannot be undone.
+                </p>
+
                 <div className="flex gap-4">
-                   <button 
-                     onClick={() => setDeleteConfirm(null)}
-                     className="flex-1 py-4 bg-zinc-100 text-zinc-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-zinc-200 transition-all font-bold"
-                   >
-                     Cancel
-                   </button>
-                   <button 
-                     onClick={async () => {
-                        if (deleteConfirm && deleteConfirm.id && deleteConfirm.type) {
-                           const col = deleteConfirm.type === 'member' ? 'members' : 
-                                       deleteConfirm.type === 'event' ? 'events' :
-                                       deleteConfirm.type === 'gallery' ? 'gallery' : 'achievements';
-                           try {
-                              if (deleteConfirm.type === 'gallery') {
-                                 // Fetch the gallery document to see if it is associated with an event
-                                 const galleryItemSnap = await getDoc(doc(db, 'gallery', deleteConfirm.id));
-                                 if (galleryItemSnap.exists()) {
-                                    const gData = galleryItemSnap.data();
-                                    if (gData && gData.eventId && gData.src) {
-                                       // Synchronously locate and delete matching image from event photos subcollection
-                                       const photosRef = collection(db, 'events', gData.eventId, 'photos');
-                                       const photosSnap = await getDocs(photosRef);
-                                       for (const photoDoc of photosSnap.docs) {
-                                          if (photoDoc.data().src === gData.src) {
-                                             await deleteDoc(doc(db, 'events', gData.eventId, 'photos', photoDoc.id));
-                                          }
-                                       }
-                                    }
-                                 }
+                  <button
+                    onClick={() => setDeleteConfirm(null)}
+                    className="flex-1 py-4 bg-zinc-100 text-zinc-600 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-zinc-200 transition-all font-bold"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (
+                        deleteConfirm &&
+                        deleteConfirm.id &&
+                        deleteConfirm.type
+                      ) {
+                        const col =
+                          deleteConfirm.type === "member"
+                            ? "members"
+                            : deleteConfirm.type === "event"
+                              ? "events"
+                              : deleteConfirm.type === "gallery"
+                                ? "gallery"
+                                : "achievements";
+                        try {
+                          if (deleteConfirm.type === "gallery") {
+                            // Fetch the gallery document to see if it is associated with an event
+                            const galleryItemSnap = await getDoc(
+                              doc(db, "gallery", deleteConfirm.id),
+                            );
+                            if (galleryItemSnap.exists()) {
+                              const gData = galleryItemSnap.data();
+                              if (gData && gData.eventId && gData.src) {
+                                // Synchronously locate and delete matching image from event photos subcollection
+                                const photosRef = collection(
+                                  db,
+                                  "events",
+                                  gData.eventId,
+                                  "photos",
+                                );
+                                const photosSnap = await getDocs(photosRef);
+                                for (const photoDoc of photosSnap.docs) {
+                                  if (photoDoc.data().src === gData.src) {
+                                    await deleteDoc(
+                                      doc(
+                                        db,
+                                        "events",
+                                        gData.eventId,
+                                        "photos",
+                                        photoDoc.id,
+                                      ),
+                                    );
+                                  }
+                                }
                               }
-
-                              await deleteDoc(doc(db, col, deleteConfirm.id));
-                              invalidateFirestoreCache(col);
-                              if (deleteConfirm.type === 'gallery') {
-                                 invalidateFirestoreCache('events');
-                              }
-                              loadFirebaseData();
-                              setDeleteConfirm(null);
-                            } catch (err) {
-                              console.error(err);
                             }
-                        }
-                     }}
-                     className="flex-1 py-4 bg-red-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-xl shadow-red-600/20"
-                   >
-                     Clear Data
-                   </button>
-                </div>
-             </motion.div>
-          </div>
-        )}
+                          }
 
-        {showDeleteHighlightsConfirm && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm" onClick={() => !isDeletingHighlights && setShowDeleteHighlightsConfirm(false)} />
-             <motion.div 
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               exit={{ opacity: 0, scale: 0.9 }}
-               className="relative bg-white w-full max-w-sm rounded-[2rem] p-8 md:p-10 shadow-2xl text-center border border-zinc-100"
-             >
+                          await deleteDoc(doc(db, col, deleteConfirm.id));
+                          invalidateFirestoreCache(col);
+                          if (deleteConfirm.type === "gallery") {
+                            invalidateFirestoreCache("events");
+                          }
+                          loadFirebaseData();
+                          setDeleteConfirm(null);
+                        } catch (err) {
+                          console.error(err);
+                        }
+                      }
+                    }}
+                    className="flex-1 py-4 bg-red-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-red-700 transition-all shadow-xl shadow-red-600/20"
+                  >
+                    Clear Data
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          {showDeleteHighlightsConfirm && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-zinc-900/60 backdrop-blur-sm"
+                onClick={() =>
+                  !isDeletingHighlights && setShowDeleteHighlightsConfirm(false)
+                }
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="relative bg-white w-full max-w-sm rounded-[2rem] p-8 md:p-10 shadow-2xl text-center border border-zinc-100"
+              >
                 <div className="w-16 h-16 bg-rose-50 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-md shadow-rose-100 animate-bounce">
                   <Trash2 className="w-8 h-8" />
                 </div>
-                <h3 className="text-xl font-black text-rose-600 mb-3 tracking-tighter uppercase">Confirm Mass Deletion</h3>
+                <h3 className="text-xl font-black text-rose-600 mb-3 tracking-tighter uppercase">
+                  Confirm Mass Deletion
+                </h3>
                 <p className="text-xs text-zinc-500 mb-6 font-semibold leading-relaxed">
-                  Are you sure you want to delete <strong className="text-rose-600 uppercase font-black">all</strong> event highlights photos from the database? This will clear all attached photographs under every single event highlights container AND their gallery directory shadows.
+                  Are you sure you want to delete{" "}
+                  <strong className="text-rose-600 uppercase font-black">
+                    all
+                  </strong>{" "}
+                  event highlights photos from the database? This will clear all
+                  attached photographs under every single event highlights
+                  container AND their gallery directory shadows.
                 </p>
 
                 {highlightDeleteStatus && (
@@ -4363,532 +5527,733 @@ export default function Admin_Page() {
                     {highlightDeleteStatus}
                   </div>
                 )}
-                
+
                 <div className="flex gap-4">
-                   <button 
-                     type="button"
-                     disabled={isDeletingHighlights}
-                     onClick={() => setShowDeleteHighlightsConfirm(false)}
-                     className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50"
-                   >
-                     Cancel
-                   </button>
-                   <button 
-                     type="button"
-                     disabled={isDeletingHighlights}
-                     onClick={handleDeleteAllHighlights}
-                     className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-red-600/20 disabled:opacity-50"
-                   >
-                     {isDeletingHighlights ? "Wiping..." : "Confirm Delete"}
-                   </button>
+                  <button
+                    type="button"
+                    disabled={isDeletingHighlights}
+                    onClick={() => setShowDeleteHighlightsConfirm(false)}
+                    className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-700 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isDeletingHighlights}
+                    onClick={handleDeleteAllHighlights}
+                    className="flex-1 py-4 bg-red-600 hover:bg-red-700 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-red-600/20 disabled:opacity-50"
+                  >
+                    {isDeletingHighlights ? "Wiping..." : "Confirm Delete"}
+                  </button>
                 </div>
-             </motion.div>
-          </div>
-        )}
+              </motion.div>
+            </div>
+          )}
 
-        {selectedCertEvent && (
-          <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm overflow-y-auto">
-            <div className="absolute inset-0" onClick={() => setSelectedCertEvent(null)} />
-            <motion.div
-              initial={{ opacity: 0, y: 80 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 80 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative bg-white w-full max-w-7xl rounded-[2.5rem] p-8 shadow-2xl border border-zinc-100 flex flex-col gap-6 max-h-[90vh] overflow-y-auto xl:overflow-hidden z-[170]"
-            >
-              <div className="flex flex-col xl:flex-row gap-8 flex-1 xl:overflow-hidden w-full">
-                {/* Left Column: Form & Configuration */}
-                <div className="flex-1 space-y-6 xl:max-h-[65vh] xl:overflow-y-auto xl:pr-4">
-                  <div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-cyan-50 rounded-full flex items-center justify-center border border-cyan-100">
-                        <Award className="w-6 h-6 text-cyan-500 animate-pulse" />
+          {selectedCertEvent && (
+            <div className="fixed inset-0 z-[160] flex items-center justify-center p-4 bg-zinc-950/40 backdrop-blur-sm overflow-y-auto">
+              <div
+                className="absolute inset-0"
+                onClick={() => setSelectedCertEvent(null)}
+              />
+              <motion.div
+                initial={{ opacity: 0, y: 80 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 80 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="relative bg-white w-full max-w-7xl rounded-[2.5rem] p-8 shadow-2xl border border-zinc-100 flex flex-col gap-6 max-h-[90vh] overflow-y-auto xl:overflow-hidden z-[170]"
+              >
+                <div className="flex flex-col xl:flex-row gap-8 flex-1 xl:overflow-hidden w-full">
+                  {/* Left Column: Form & Configuration */}
+                  <div className="flex-1 space-y-6 xl:max-h-[65vh] xl:overflow-y-auto xl:pr-4">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-cyan-50 rounded-full flex items-center justify-center border border-cyan-100">
+                          <Award className="w-6 h-6 text-cyan-500 animate-pulse" />
+                        </div>
+                        <div>
+                          <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">
+                            Issue Event Certificates
+                          </h3>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            {selectedCertEvent.title}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Issue Event Certificates</h3>
-                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">{selectedCertEvent.title}</p>
+                    </div>
+
+                    {/* Info Cards / Registrants Counter */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-slate-50 border border-slate-100/80 rounded-2xl p-4 text-center">
+                        <span className="block text-2xl font-black text-slate-800 font-mono">
+                          {loadingRegistrants
+                            ? "..."
+                            : registrantsForCert.length}
+                        </span>
+                        <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
+                          Registered
+                        </span>
                       </div>
-                    </div>
-                  </div>
-
-                  {/* Info Cards / Registrants Counter */}
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="bg-slate-50 border border-slate-100/80 rounded-2xl p-4 text-center">
-                      <span className="block text-2xl font-black text-slate-800 font-mono">
-                        {loadingRegistrants ? "..." : registrantsForCert.length}
-                      </span>
-                      <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Registered</span>
-                    </div>
-                    <div className="bg-emerald-50 border border-emerald-100/50 rounded-2xl p-4 text-center">
-                      <span className="block text-2xl font-black text-emerald-600 font-mono">
-                        {loadingRegistrants ? "..." : registrantsForCert.filter(r => r.attended).length}
-                      </span>
-                      <span className="text-[10px] uppercase font-bold text-emerald-500 tracking-wider">Present</span>
-                    </div>
-                    <div className="bg-amber-50 border border-amber-100/50 rounded-2xl p-4 text-center">
-                      <span className="block text-2xl font-black text-amber-600 font-mono">
-                        {loadingRegistrants ? "..." : registrantsForCert.filter(r => !r.attended).length}
-                      </span>
-                      <span className="text-[10px] uppercase font-bold text-amber-500 tracking-wider">Absent</span>
-                    </div>
-                  </div>
-
-                  {/* Signature Upload and Configuration Section */}
-                  <div className="bg-white border-2 border-zinc-100 rounded-[2rem] p-6 space-y-4">
-                    <div className="flex justify-between items-center pb-2 border-b border-zinc-100">
-                      <div>
-                        <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800">Authorized Signatures</h4>
-                        <p className="text-[10px] text-zinc-400 font-semibold mt-0.5">Customize up to 4 signees on the final certificates.</p>
+                      <div className="bg-emerald-50 border border-emerald-100/50 rounded-2xl p-4 text-center">
+                        <span className="block text-2xl font-black text-emerald-600 font-mono">
+                          {loadingRegistrants
+                            ? "..."
+                            : registrantsForCert.filter((r) => r.attended)
+                                .length}
+                        </span>
+                        <span className="text-[10px] uppercase font-bold text-emerald-500 tracking-wider">
+                          Present
+                        </span>
                       </div>
-                      <span className="text-[10px] uppercase font-black px-2.5 py-1 bg-cyan-50 text-cyan-600 rounded-full font-mono">
-                        {uploadedSignatures.length} / 4
-                      </span>
-                    </div>
-
-                    {/* Notice for uploading background removed signatures */}
-                    <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-100 flex items-start gap-3">
-                      <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
-                      <div className="text-[10px] leading-relaxed text-amber-950 font-bold">
-                        <strong>Quality Notice:</strong> Please upload signatures with <strong>transparent backgrounds</strong> (PNG format) so that they render neatly without white boxes on the certificate artwork.
-                        <span className="block mt-1 font-semibold text-amber-800">
-                          💡 You can remove any signature image background for free using online tools like <a href="https://www.remove.bg" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-900">remove.bg</a> or Adobe Express.
+                      <div className="bg-amber-50 border border-amber-100/50 rounded-2xl p-4 text-center">
+                        <span className="block text-2xl font-black text-amber-600 font-mono">
+                          {loadingRegistrants
+                            ? "..."
+                            : registrantsForCert.filter((r) => !r.attended)
+                                .length}
+                        </span>
+                        <span className="text-[10px] uppercase font-bold text-amber-500 tracking-wider">
+                          Absent
                         </span>
                       </div>
                     </div>
 
-                    {/* Signatures List Builder */}
-                    <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
-                      {uploadedSignatures.map((sig) => (
-                        <div key={sig.id} className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 flex flex-col md:flex-row gap-4 items-center">
-                          {/* Left: Signature File Upload / Preview Box */}
-                          <div className="w-32 h-16 shrink-0 bg-white border border-zinc-200 rounded-xl relative overflow-hidden flex flex-col items-center justify-center group cursor-pointer shadow-sm">
-                            {sig.image ? (
-                              <img src={sig.image} className="max-h-full max-w-full object-contain p-1" alt="Signature preview" />
-                            ) : (
-                              <div className="text-center p-1">
-                                <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">No Signature</span>
-                                <span className="block text-[8px] text-zinc-300 font-semibold mt-0.5">(Click to Add)</span>
-                              </div>
-                            )}
-                            <input 
-                              type="file" 
-                              className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
-                              accept="image/*"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) handleSignatureUpload(sig.id, file);
-                              }}
-                            />
-                          </div>
-
-                          {/* Middle: Name and Position Inputs */}
-                          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                            <div className="space-y-1">
-                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest pl-1">Holder Name</label>
-                              <input 
-                                type="text"
-                                value={sig.name}
-                                onChange={(e) => {
-                                  setUploadedSignatures(prev => prev.map(s => s.id === sig.id ? { ...s, name: e.target.value } : s));
-                                }}
-                                placeholder="e.g. Dr. Arthur Dent"
-                                className="w-full px-3 py-1.5 bg-white border border-zinc-200 rounded-lg text-xs font-bold text-slate-805 focus:border-cyan-500 outline-none"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest pl-1">Position / Office</label>
-                              <input 
-                                type="text"
-                                value={sig.position}
-                                onChange={(e) => {
-                                  setUploadedSignatures(prev => prev.map(s => s.id === sig.id ? { ...s, position: e.target.value } : s));
-                                }}
-                                placeholder="e.g. Convener, Infinitium"
-                                className="w-full px-3 py-1.5 bg-white border border-zinc-200 rounded-lg text-xs font-bold text-slate-805 focus:border-cyan-500 outline-none"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Right: Remove button */}
-                          <button
-                            type="button"
-                            onClick={() => removeSignatureField(sig.id)}
-                            className="p-2 bg-red-100 hover:bg-red-500 hover:text-white text-red-500 rounded-lg transition-all border border-red-500/10 shrink-0"
-                            title="Remove signee"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
+                    {/* Signature Upload and Configuration Section */}
+                    <div className="bg-white border-2 border-zinc-100 rounded-[2rem] p-6 space-y-4">
+                      <div className="flex justify-between items-center pb-2 border-b border-zinc-100">
+                        <div>
+                          <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800">
+                            Authorized Signatures
+                          </h4>
+                          <p className="text-[10px] text-zinc-400 font-semibold mt-0.5">
+                            Customize up to 4 signees on the final certificates.
+                          </p>
                         </div>
-                      ))}
-                      
-                      {uploadedSignatures.length === 0 && (
-                        <div className="py-8 text-center text-xs font-bold text-slate-400 border border-dashed border-zinc-200 rounded-2xl bg-zinc-50/50">
-                          No authorized signatures configured. Use the button below to add signees.
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Add Signee Button */}
-                    {uploadedSignatures.length < 4 && (
-                      <button
-                        type="button"
-                        onClick={addSignatureField}
-                        className="w-full py-2.5 bg-slate-50 border border-zinc-200 text-slate-700 hover:bg-slate-100 hover:border-zinc-300 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>Add Authorized Signee ({4 - uploadedSignatures.length} remaining)</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Right Column: PDF Previews (First Generated Certificate) */}
-                <div className="w-full xl:w-[540px] bg-slate-50 rounded-[2rem] p-6 border border-slate-100 flex flex-col gap-4 xl:max-h-[65vh] xl:overflow-y-auto">
-                  <div>
-                    <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800 flex items-center gap-1">
-                      <span>Generated PDF Preview</span>
-                      {generatingPreviews && <span className="text-cyan-500 text-[10px] lowercase italic">(regenerating...)</span>}
-                    </h4>
-                    <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
-                      Displays a preview of how certificates look for marked attendees using the minimalist standard template.
-                    </p>
-                  </div>
-
-                {loadingRegistrants ? (
-                  <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
-                    <Clock className="w-8 h-8 text-cyan-500 animate-spin mb-2" />
-                    <span className="text-xs font-black uppercase tracking-wider text-zinc-400 font-mono">Syncing sheets attendee rolls...</span>
-                  </div>
-                ) : registrantsForCert.filter(r => r.attended).length === 0 ? (
-                  <div className="flex-1 border-2 border-dashed border-zinc-200 rounded-2xl p-8 text-center flex flex-col items-center justify-center bg-white">
-                    <span className="text-2xl text-zinc-300">⚠️</span>
-                    <span className="text-xs font-bold text-zinc-500 mt-2 uppercase tracking-wide">No attendants present</span>
-                    <p className="text-[10px] text-zinc-400 leading-normal max-w-xs mt-1 text-center">
-                      No registrants are currently marked as attended ("Yes" in column L) in Google Sheets for this event. 
-                      Displaying default mock certificate sample preview.
-                    </p>
-                    <div className="w-full mt-4 flex flex-col gap-4">
-                      {previewImgDataUrls.slice(0, 1).map((imgUrl, idx) => {
-                        const pdfUrl = previewBlobUrls[idx];
-                        return (
-                          <div key={idx} className="border border-zinc-200 rounded-xl overflow-hidden shadow-sm bg-white">
-                            <div className="px-4 py-2 border-b border-zinc-100 flex justify-between items-center bg-zinc-50">
-                              <span className="text-[10px] font-black uppercase text-slate-500 truncate">
-                                Sample Certificate Preview
-                              </span>
-                              {pdfUrl && (
-                                <a 
-                                  href={pdfUrl} 
-                                  target="_blank" 
-                                  rel="noreferrer noopener"
-                                  className="p-1 px-2.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-all flex items-center gap-1 text-[10px] font-bold"
-                                  title="Open full sample certificate"
-                                >
-                                  <span>Open PDF</span>
-                                  <ExternalLink className="w-3 h-3" />
-                                </a>
-                              )}
-                            </div>
-                            <div className="relative w-full aspect-[1123/794] overflow-hidden bg-slate-100 flex items-center justify-center p-2">
-                              <img 
-                                src={imgUrl} 
-                                className="w-full h-auto object-contain border border-zinc-200 shadow-sm rounded-lg" 
-                                alt="Sample Certificate Preview" 
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {previewImgDataUrls.length === 0 && (
-                        <div className="py-12 text-center text-[11px] text-zinc-400 font-mono">Generating default certificate preview...</div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {previewImgDataUrls.slice(0, 1).map((imgUrl, index) => {
-                      const student = registrantsForCert.filter(r => r.attended)[index] || { studentName: 'Attendant' };
-                      const pdfUrl = previewBlobUrls[index];
-                      return (
-                        <div key={index} className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm">
-                          <div className="px-4 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-100/50">
-                            <span className="text-[10px] font-black uppercase text-slate-500 truncate max-w-[240px]">
-                              {student.studentName} ({student['collegeName'] || 'ARSD'})
-                            </span>
-                            <div className="flex items-center gap-2">
-                              <span className="text-[9px] font-mono font-bold text-emerald-500 leading-none bg-emerald-50 px-2 py-1 rounded-full">Attended</span>
-                              {pdfUrl && (
-                                <a 
-                                  href={pdfUrl} 
-                                  target="_blank" 
-                                  rel="noreferrer noopener"
-                                  className="p-1 px-2.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-all flex items-center gap-1 text-[10px] font-bold"
-                                  title="Open full certificate"
-                                >
-                                  <span>Open PDF</span>
-                                  <ExternalLink className="w-3 h-3" />
-                                </a>
-                              )}
-                            </div>
-                          </div>
-                          <div className="relative w-full aspect-[1123/794] overflow-hidden bg-zinc-800 flex items-center justify-center p-2">
-                            <img 
-                              src={imgUrl} 
-                              className="w-full h-auto object-contain border border-zinc-200 shadow-sm rounded-lg" 
-                              alt="Certificate Preview" 
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {previewImgDataUrls.length === 0 && (
-                      <div className="py-12 text-center text-[11px] text-zinc-400 font-mono">Generating certificate preview...</div>
-                    )}
-                  </div>
-                )}
-
-                {/* Status / Log Console (Placed after preview) */}
-                {(certError || certSuccessMessage || sendingCertificates) && (
-                  <div className="p-4 rounded-2xl bg-zinc-900 text-zinc-100 border border-zinc-800 space-y-2 mt-2 shrink-0">
-                    <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-extrabold">Dispatch Console Output</span>
-                    
-                    {sendingCertificates && (
-                      <div className="space-y-2 font-mono text-xs text-zinc-300">
-                        <div className="flex justify-between text-[11px] text-cyan-400 animate-pulse">
-                          <span>Progress: {certSendingProgress.sent} of {certSendingProgress.total}</span>
-                          <span>{Math.round((certSendingProgress.sent / certSendingProgress.total) * 100)}%</span>
-                        </div>
-                        <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                          <div 
-                            className="bg-cyan-400 h-full transition-all duration-300" 
-                            style={{ width: `${(certSendingProgress.sent / certSendingProgress.total) * 100}%` }}
-                          />
-                        </div>
-                        <p className="text-[11px] text-zinc-400 font-semibold italic text-ellipsis overflow-hidden whitespace-nowrap">
-                          🚀 Packing & dispatching certificate for: {certSendingProgress.currentStudentName}...
-                        </p>
+                        <span className="text-[10px] uppercase font-black px-2.5 py-1 bg-cyan-50 text-cyan-600 rounded-full font-mono">
+                          {uploadedSignatures.length} / 4
+                        </span>
                       </div>
-                    )}
 
-                    {certSuccessMessage && (
-                      <p className="text-emerald-400 font-mono text-xs font-semibold">{certSuccessMessage}</p>
-                    )}
+                      {/* Notice for uploading background removed signatures */}
+                      <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-100 flex items-start gap-3">
+                        <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+                        <div className="text-[10px] leading-relaxed text-amber-950 font-bold">
+                          <strong>Quality Notice:</strong> Please upload
+                          signatures with{" "}
+                          <strong>transparent backgrounds</strong> (PNG format)
+                          so that they render neatly without white boxes on the
+                          certificate artwork.
+                          <span className="block mt-1 font-semibold text-amber-800">
+                            💡 You can remove any signature image background for
+                            free using online tools like{" "}
+                            <a
+                              href="https://www.remove.bg"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline hover:text-amber-900"
+                            >
+                              remove.bg
+                            </a>{" "}
+                            or Adobe Express.
+                          </span>
+                        </div>
+                      </div>
 
-                    {certError && (
-                      <p className="text-red-400 font-mono text-xs font-semibold uppercase">{certError}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            </div>
+                      {/* Signatures List Builder */}
+                      <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+                        {uploadedSignatures.map((sig) => (
+                          <div
+                            key={sig.id}
+                            className="p-4 bg-zinc-50 rounded-2xl border border-zinc-100 flex flex-col md:flex-row gap-4 items-center"
+                          >
+                            {/* Left: Signature File Upload / Preview Box */}
+                            <div className="w-32 h-16 shrink-0 bg-white border border-zinc-200 rounded-xl relative overflow-hidden flex flex-col items-center justify-center group cursor-pointer shadow-sm">
+                              {sig.image ? (
+                                <img
+                                  src={sig.image}
+                                  className="max-h-full max-w-full object-contain p-1"
+                                  alt="Signature preview"
+                                />
+                              ) : (
+                                <div className="text-center p-1">
+                                  <span className="text-[9px] font-black uppercase text-zinc-400 tracking-wider">
+                                    No Signature
+                                  </span>
+                                  <span className="block text-[8px] text-zinc-300 font-semibold mt-0.5">
+                                    (Click to Add)
+                                  </span>
+                                </div>
+                              )}
+                              <input
+                                type="file"
+                                className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                                accept="image/*"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) handleSignatureUpload(sig.id, file);
+                                }}
+                              />
+                            </div>
 
-            {/* Custom Aligned Setup Actions at the very end of the popup */}
-            <div className="flex flex-col sm:flex-row gap-4 border-t border-zinc-100 pt-5 mt-auto w-full shrink-0">
-              <button
-                type="button"
-                onClick={() => setSelectedCertEvent(null)}
-                className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all font-bold"
-              >
-                Close Setup
-              </button>
-              <button
-                type="button"
-                onClick={handleSendCertificates}
-                disabled={sendingCertificates || loadingRegistrants || registrantsForCert.filter(r => r.attended).length === 0}
-                className="flex-2 py-4 bg-cyan-500 hover:bg-cyan-600 disabled:bg-zinc-100 disabled:text-zinc-400 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-cyan-500/20 flex items-center justify-center gap-2 font-bold"
-              >
-                {sendingCertificates ? (
-                  <>
-                    <Clock className="w-4 h-4 animate-spin" />
-                    <span>Sending {certSendingProgress.sent}/{certSendingProgress.total}...</span>
-                  </>
-                ) : (
-                  <>
-                    <Award className="w-4 h-4" />
-                    <span>Send Certificates</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </motion.div>
-          </div>
-        )}
+                            {/* Middle: Name and Position Inputs */}
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                              <div className="space-y-1">
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                                  Holder Name
+                                </label>
+                                <input
+                                  type="text"
+                                  value={sig.name}
+                                  onChange={(e) => {
+                                    setUploadedSignatures((prev) =>
+                                      prev.map((s) =>
+                                        s.id === sig.id
+                                          ? { ...s, name: e.target.value }
+                                          : s,
+                                      ),
+                                    );
+                                  }}
+                                  placeholder="e.g. Dr. Arthur Dent"
+                                  className="w-full px-3 py-1.5 bg-white border border-zinc-200 rounded-lg text-xs font-bold text-slate-805 focus:border-cyan-500 outline-none"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                                  Position / Office
+                                </label>
+                                <input
+                                  type="text"
+                                  value={sig.position}
+                                  onChange={(e) => {
+                                    setUploadedSignatures((prev) =>
+                                      prev.map((s) =>
+                                        s.id === sig.id
+                                          ? { ...s, position: e.target.value }
+                                          : s,
+                                      ),
+                                    );
+                                  }}
+                                  placeholder="e.g. Convener, Infinitium"
+                                  className="w-full px-3 py-1.5 bg-white border border-zinc-200 rounded-lg text-xs font-bold text-slate-805 focus:border-cyan-500 outline-none"
+                                />
+                              </div>
+                            </div>
 
-        {showCertSendConfirm && (
-          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm shadow-xl" onClick={() => setShowCertSendConfirm(false)} />
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative bg-white w-full max-w-md rounded-[3rem] p-8 shadow-2xl border border-zinc-100 flex flex-col gap-6 z-[210] text-center"
-            >
-              <div className="mx-auto w-16 h-16 bg-cyan-50 rounded-full flex items-center justify-center border border-cyan-100">
-                <Send className="w-8 h-8 text-cyan-500 animate-bounce" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">Confirm Sending</h3>
-                <p className="text-sm text-zinc-500 font-semibold px-2">
-                  You are about to generate and email certificates to all <span className="text-cyan-500 font-black">{registrantsForCert.filter(r => r.attended).length} attendees</span> marked as Present.
-                </p>
-                <div className="bg-zinc-50 rounded-2xl p-4 mt-4 text-left border border-zinc-100 space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-zinc-400 font-bold uppercase font-mono">Event:</span>
-                    <span className="text-zinc-700 font-black truncate max-w-[200px]">{selectedCertEvent?.title}</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-zinc-400 font-bold uppercase font-mono">Recipient Count:</span>
-                    <span className="text-zinc-700 font-black">{registrantsForCert.filter(r => r.attended).length} people</span>
-                  </div>
+                            {/* Right: Remove button */}
+                            <button
+                              type="button"
+                              onClick={() => removeSignatureField(sig.id)}
+                              className="p-2 bg-red-100 hover:bg-red-500 hover:text-white text-red-500 rounded-lg transition-all border border-red-500/10 shrink-0"
+                              title="Remove signee"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
 
-                </div>
-              </div>
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCertSendConfirm(false)}
-                  className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  onClick={executeSendCertificates}
-                  className="flex-1 py-4 bg-cyan-500 hover:bg-cyan-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-cyan-500/20"
-                >
-                  Confirm & Send
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-
-        {showMemberModal && (
-          <div className="fixed inset-0 z-[160] flex items-center justify-center p-4">
-             <div className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm" onClick={closeMemberModal} />
-             <motion.div 
-               initial={{ opacity: 0, scale: 0.9 }}
-               animate={{ opacity: 1, scale: 1 }}
-               exit={{ opacity: 0, scale: 0.9 }}
-               className="relative bg-white w-full max-w-lg rounded-[3.5rem] p-10 shadow-2xl max-h-[90vh] overflow-y-auto"
-             >
-                <h2 className="text-3xl font-bold mb-8">
-                  {editingMember ? 'Edit Team Member' : 'Add New Team Member'}
-                </h2>
-                <form onSubmit={handleMemberSubmit} className="space-y-6">
-                   <div className="flex flex-col items-center gap-4 mb-8">
-                      <div className="w-32 h-32 rounded-2xl bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group">
-                        {memberImagePreview ? (
-                          <img src={memberImagePreview} alt="Preview" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-zinc-300">
-                            <Camera className="w-10 h-10" />
+                        {uploadedSignatures.length === 0 && (
+                          <div className="py-8 text-center text-xs font-bold text-slate-400 border border-dashed border-zinc-200 rounded-2xl bg-zinc-50/50">
+                            No authorized signatures configured. Use the button
+                            below to add signees.
                           </div>
                         )}
-                        <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
-                          <Plus className="text-white w-8 h-8" />
-                          <input type="file" className="hidden" accept="image/*" onChange={handleMemberFileChange} />
-                        </label>
                       </div>
-                      <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Click to upload photo</p>
-                   </div>
 
-                   <div className="space-y-2">
-                     <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">Full Name</label>
-                     <input 
-                       name="name" 
-                       defaultValue={editingMember?.name}
-                       required
-                       className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all" 
-                       placeholder="e.g. Sneha Sharma" 
-                     />
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="space-y-2">
-                       <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">Role</label>
-                       <input 
-                         name="role" 
-                         defaultValue={editingMember?.role}
-                         required
-                         className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all" 
-                         placeholder="e.g. President" 
-                       />
-                     </div>
-                      <div className="space-y-2">
-                        <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">Tenure</label>
-                        <div className="flex items-center gap-2">
-                          <select 
-                            name="startYear" 
-                            defaultValue={editingMember?.tenure?.split('-')[0] || new Date().getFullYear()}
-                            className="w-full px-4 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all font-bold text-sm"
-                          >
-                            {Array.from({ length: 15 }, (_, i) => (new Date().getFullYear() + 1) - i).map(year => (
-                              <option key={year} value={year}>{year}</option>
-                            ))}
-                          </select>
-                          <span className="font-black text-zinc-300">-</span>
-                          <select 
-                            name="endYear" 
-                            defaultValue={editingMember?.tenure ? '20' + editingMember.tenure.split('-')[1] : new Date().getFullYear() + 1}
-                            className="w-full px-4 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all font-bold text-sm"
-                          >
-                            {Array.from({ length: 15 }, (_, i) => (new Date().getFullYear() + 2) - i).map(year => (
-                              <option key={year} value={year}>{year}</option>
-                            ))}
-                          </select>
+                      {/* Add Signee Button */}
+                      {uploadedSignatures.length < 4 && (
+                        <button
+                          type="button"
+                          onClick={addSignatureField}
+                          className="w-full py-2.5 bg-slate-50 border border-zinc-200 text-slate-700 hover:bg-slate-100 hover:border-zinc-300 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center gap-1.5"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>
+                            Add Authorized Signee (
+                            {4 - uploadedSignatures.length} remaining)
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right Column: PDF Previews (First Generated Certificate) */}
+                  <div className="w-full xl:w-[540px] bg-slate-50 rounded-[2rem] p-6 border border-slate-100 flex flex-col gap-4 xl:max-h-[65vh] xl:overflow-y-auto">
+                    <div>
+                      <h4 className="text-xs font-extrabold uppercase tracking-widest text-slate-800 flex items-center gap-1">
+                        <span>Generated PDF Preview</span>
+                        {generatingPreviews && (
+                          <span className="text-cyan-500 text-[10px] lowercase italic">
+                            (regenerating...)
+                          </span>
+                        )}
+                      </h4>
+                      <p className="text-[10px] text-slate-400 font-semibold mt-1 leading-normal">
+                        Displays a preview of how certificates look for marked
+                        attendees using the minimalist standard template.
+                      </p>
+                    </div>
+
+                    {loadingRegistrants ? (
+                      <div className="flex-1 flex flex-col items-center justify-center py-16 text-center">
+                        <Clock className="w-8 h-8 text-cyan-500 animate-spin mb-2" />
+                        <span className="text-xs font-black uppercase tracking-wider text-zinc-400 font-mono">
+                          Syncing sheets attendee rolls...
+                        </span>
+                      </div>
+                    ) : registrantsForCert.filter((r) => r.attended).length ===
+                      0 ? (
+                      <div className="flex-1 border-2 border-dashed border-zinc-200 rounded-2xl p-8 text-center flex flex-col items-center justify-center bg-white">
+                        <span className="text-2xl text-zinc-300">⚠️</span>
+                        <span className="text-xs font-bold text-zinc-500 mt-2 uppercase tracking-wide">
+                          No attendants present
+                        </span>
+                        <p className="text-[10px] text-zinc-400 leading-normal max-w-xs mt-1 text-center">
+                          No registrants are currently marked as attended ("Yes"
+                          in column L) in Google Sheets for this event.
+                          Displaying default mock certificate sample preview.
+                        </p>
+                        <div className="w-full mt-4 flex flex-col gap-4">
+                          {previewImgDataUrls.slice(0, 1).map((imgUrl, idx) => {
+                            const pdfUrl = previewBlobUrls[idx];
+                            return (
+                              <div
+                                key={idx}
+                                className="border border-zinc-200 rounded-xl overflow-hidden shadow-sm bg-white"
+                              >
+                                <div className="px-4 py-2 border-b border-zinc-100 flex justify-between items-center bg-zinc-50">
+                                  <span className="text-[10px] font-black uppercase text-slate-500 truncate">
+                                    Sample Certificate Preview
+                                  </span>
+                                  {pdfUrl && (
+                                    <a
+                                      href={pdfUrl}
+                                      target="_blank"
+                                      rel="noreferrer noopener"
+                                      className="p-1 px-2.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-all flex items-center gap-1 text-[10px] font-bold"
+                                      title="Open full sample certificate"
+                                    >
+                                      <span>Open PDF</span>
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  )}
+                                </div>
+                                <div className="relative w-full aspect-[1123/794] overflow-hidden bg-slate-100 flex items-center justify-center p-2">
+                                  <img
+                                    src={imgUrl}
+                                    className="w-full h-auto object-contain border border-zinc-200 shadow-sm rounded-lg"
+                                    alt="Sample Certificate Preview"
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {previewImgDataUrls.length === 0 && (
+                            <div className="py-12 text-center text-[11px] text-zinc-400 font-mono">
+                              Generating default certificate preview...
+                            </div>
+                          )}
                         </div>
                       </div>
-                   </div>
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="space-y-2">
-                       <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">Course Name</label>
-                       <select 
-                         name="course" 
-                         defaultValue={editingMember?.course || 'B.Sc. Physical Science with Computer Science'}
-                         required
-                         className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all cursor-pointer"
-                       >
-                         <option value="B.Sc. Physical Science with Computer Science">B.Sc. Physical Science with Computer Science</option>
-                         <option value="B.Sc. Physical Science with Chemistry">B.Sc. Physical Science with Chemistry</option>
-                         <option value="B.Sc. Physical Science with Electronics">B.Sc. Physical Science with Electronics</option>
-                         <option value="B.Sc. Applied Physical Science with Industrial Chemistry">B.Sc. Applied Physical Science with Industrial Chemistry</option>
-                       </select>
-                     </div>
-                     <div className="space-y-2">
-                       <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">Academic Year / Status</label>
-                       <select 
-                         name="year" 
-                         defaultValue={editingMember?.year || 'I Year'}
-                         required
-                         className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all cursor-pointer"
-                       >
-                         <option value="I Year">I Year</option>
-                         <option value="II Year">II Year</option>
-                         <option value="III Year">III Year</option>
-                         <option value="IV Year">IV Year</option>
-                       </select>
-                     </div>
-                   </div>
-                   <div className="space-y-2">
-                     <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">LinkedIn URL</label>
-                     <input 
-                       name="linkedin" 
-                       defaultValue={editingMember?.linkedin}
-                       className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all" 
-                       placeholder="https://linkedin.com/..." 
-                     />
-                   </div>
-                   <button 
-                     type="submit"
-                     className="w-full py-5 bg-zinc-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all shadow-xl"
-                   >
-                     {editingMember ? 'Update Profile' : 'Add to Team'}
-                   </button>
+                    ) : (
+                      <div className="space-y-4">
+                        {previewImgDataUrls.slice(0, 1).map((imgUrl, index) => {
+                          const student = registrantsForCert.filter(
+                            (r) => r.attended,
+                          )[index] || { studentName: "Attendant" };
+                          const pdfUrl = previewBlobUrls[index];
+                          return (
+                            <div
+                              key={index}
+                              className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm"
+                            >
+                              <div className="px-4 py-2 border-b border-slate-100 flex justify-between items-center bg-slate-100/50">
+                                <span className="text-[10px] font-black uppercase text-slate-500 truncate max-w-[240px]">
+                                  {student.studentName} (
+                                  {student["collegeName"] || "ARSD"})
+                                </span>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-[9px] font-mono font-bold text-emerald-500 leading-none bg-emerald-50 px-2 py-1 rounded-full">
+                                    Attended
+                                  </span>
+                                  {pdfUrl && (
+                                    <a
+                                      href={pdfUrl}
+                                      target="_blank"
+                                      rel="noreferrer noopener"
+                                      className="p-1 px-2.5 bg-cyan-50 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-all flex items-center gap-1 text-[10px] font-bold"
+                                      title="Open full certificate"
+                                    >
+                                      <span>Open PDF</span>
+                                      <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="relative w-full aspect-[1123/794] overflow-hidden bg-zinc-800 flex items-center justify-center p-2">
+                                <img
+                                  src={imgUrl}
+                                  className="w-full h-auto object-contain border border-zinc-200 shadow-sm rounded-lg"
+                                  alt="Certificate Preview"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {previewImgDataUrls.length === 0 && (
+                          <div className="py-12 text-center text-[11px] text-zinc-400 font-mono">
+                            Generating certificate preview...
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Status / Log Console (Placed after preview) */}
+                    {(certError ||
+                      certSuccessMessage ||
+                      sendingCertificates) && (
+                      <div className="p-4 rounded-2xl bg-zinc-900 text-zinc-100 border border-zinc-800 space-y-2 mt-2 shrink-0">
+                        <span className="text-[10px] font-mono tracking-widest uppercase text-zinc-500 font-extrabold">
+                          Dispatch Console Output
+                        </span>
+
+                        {sendingCertificates && (
+                          <div className="space-y-2 font-mono text-xs text-zinc-300">
+                            <div className="flex justify-between text-[11px] text-cyan-400 animate-pulse">
+                              <span>
+                                Progress: {certSendingProgress.sent} of{" "}
+                                {certSendingProgress.total}
+                              </span>
+                              <span>
+                                {Math.round(
+                                  (certSendingProgress.sent /
+                                    certSendingProgress.total) *
+                                    100,
+                                )}
+                                %
+                              </span>
+                            </div>
+                            <div className="w-full h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                              <div
+                                className="bg-cyan-400 h-full transition-all duration-300"
+                                style={{
+                                  width: `${(certSendingProgress.sent / certSendingProgress.total) * 100}%`,
+                                }}
+                              />
+                            </div>
+                            <p className="text-[11px] text-zinc-400 font-semibold italic text-ellipsis overflow-hidden whitespace-nowrap">
+                              🚀 Packing & dispatching certificate for:{" "}
+                              {certSendingProgress.currentStudentName}...
+                            </p>
+                          </div>
+                        )}
+
+                        {certSuccessMessage && (
+                          <p className="text-emerald-400 font-mono text-xs font-semibold">
+                            {certSuccessMessage}
+                          </p>
+                        )}
+
+                        {certError && (
+                          <p className="text-red-400 font-mono text-xs font-semibold uppercase">
+                            {certError}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Custom Aligned Setup Actions at the very end of the popup */}
+                <div className="flex flex-col sm:flex-row gap-4 border-t border-zinc-100 pt-5 mt-auto w-full shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCertEvent(null)}
+                    className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all font-bold"
+                  >
+                    Close Setup
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleSendCertificates}
+                    disabled={
+                      sendingCertificates ||
+                      loadingRegistrants ||
+                      registrantsForCert.filter((r) => r.attended).length === 0
+                    }
+                    className="flex-2 py-4 bg-cyan-500 hover:bg-cyan-600 disabled:bg-zinc-100 disabled:text-zinc-400 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-cyan-500/20 flex items-center justify-center gap-2 font-bold"
+                  >
+                    {sendingCertificates ? (
+                      <>
+                        <Clock className="w-4 h-4 animate-spin" />
+                        <span>
+                          Sending {certSendingProgress.sent}/
+                          {certSendingProgress.total}...
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Award className="w-4 h-4" />
+                        <span>Send Certificates</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          {showCertSendConfirm && (
+            <div className="fixed inset-0 z-[200] flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-zinc-950/40 backdrop-blur-sm shadow-xl"
+                onClick={() => setShowCertSendConfirm(false)}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                className="relative bg-white w-full max-w-md rounded-[3rem] p-8 shadow-2xl border border-zinc-100 flex flex-col gap-6 z-[210] text-center"
+              >
+                <div className="mx-auto w-16 h-16 bg-cyan-50 rounded-full flex items-center justify-center border border-cyan-100">
+                  <Send className="w-8 h-8 text-cyan-500 animate-bounce" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">
+                    Confirm Sending
+                  </h3>
+                  <p className="text-sm text-zinc-500 font-semibold px-2">
+                    You are about to generate and email certificates to all{" "}
+                    <span className="text-cyan-500 font-black">
+                      {registrantsForCert.filter((r) => r.attended).length}{" "}
+                      attendees
+                    </span>{" "}
+                    marked as Present.
+                  </p>
+                  <div className="bg-zinc-50 rounded-2xl p-4 mt-4 text-left border border-zinc-100 space-y-2">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-400 font-bold uppercase font-mono">
+                        Event:
+                      </span>
+                      <span className="text-zinc-700 font-black truncate max-w-[200px]">
+                        {selectedCertEvent?.title}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-xs">
+                      <span className="text-zinc-400 font-bold uppercase font-mono">
+                        Recipient Count:
+                      </span>
+                      <span className="text-zinc-700 font-black">
+                        {registrantsForCert.filter((r) => r.attended).length}{" "}
+                        people
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowCertSendConfirm(false)}
+                    className="flex-1 py-4 bg-zinc-100 hover:bg-zinc-200 text-zinc-600 rounded-2xl text-xs font-bold uppercase tracking-widest transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={executeSendCertificates}
+                    className="flex-1 py-4 bg-cyan-500 hover:bg-cyan-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-xl shadow-cyan-500/20"
+                  >
+                    Confirm & Send
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+
+          {showMemberModal && (
+            <div className="fixed inset-0 z-[160] flex items-center justify-center p-4">
+              <div
+                className="absolute inset-0 bg-zinc-900/40 backdrop-blur-sm"
+                onClick={closeMemberModal}
+              />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="relative bg-white w-full max-w-lg rounded-[3.5rem] p-10 shadow-2xl max-h-[90vh] overflow-y-auto"
+              >
+                <h2 className="text-3xl font-bold mb-8">
+                  {editingMember ? "Edit Team Member" : "Add New Team Member"}
+                </h2>
+                <form onSubmit={handleMemberSubmit} className="space-y-6">
+                  <div className="flex flex-col items-center gap-4 mb-8">
+                    <div className="w-32 h-32 rounded-2xl bg-zinc-50 border-4 border-zinc-100 overflow-hidden relative group">
+                      {memberImagePreview ? (
+                        <img
+                          src={memberImagePreview}
+                          alt="Preview"
+                          className="w-full h-full object-cover"
+                          referrerPolicy="no-referrer"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-zinc-300">
+                          <Camera className="w-10 h-10" />
+                        </div>
+                      )}
+                      <label className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
+                        <Plus className="text-white w-8 h-8" />
+                        <input
+                          type="file"
+                          className="hidden"
+                          accept="image/*"
+                          onChange={handleMemberFileChange}
+                        />
+                      </label>
+                    </div>
+                    <p className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">
+                      Click to upload photo
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">
+                      Full Name
+                    </label>
+                    <input
+                      name="name"
+                      defaultValue={editingMember?.name}
+                      required
+                      className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all"
+                      placeholder="e.g. Sneha Sharma"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">
+                        Role
+                      </label>
+                      <input
+                        name="role"
+                        defaultValue={editingMember?.role}
+                        required
+                        className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all"
+                        placeholder="e.g. President"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2 block">
+                        Select Tenure Year(s) (Check all active years)
+                      </label>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-zinc-50 border border-zinc-200 rounded-3xl p-4 max-h-40 overflow-y-auto">
+                        {[
+                          "2020-21",
+                          "2021-22",
+                          "2022-23",
+                          "2023-24",
+                          "2024-25",
+                          "2025-26",
+                          "2026-27",
+                          "2027-28",
+                          "2028-29",
+                          "2029-30",
+                        ].map((y) => {
+                          const isChecked = selectedMemberTenures.includes(y);
+                          return (
+                            <label
+                              key={y}
+                              className="flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-zinc-700 hover:text-black"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isChecked}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedMemberTenures((prev) => [
+                                      ...prev,
+                                      y,
+                                    ]);
+                                  } else {
+                                    setSelectedMemberTenures((prev) =>
+                                      prev.filter((item) => item !== y),
+                                    );
+                                  }
+                                }}
+                                className="w-4 h-4 rounded text-brand-600 focus:ring-brand-500 border-zinc-300"
+                              />
+                              {y}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">
+                        Course Name
+                      </label>
+                      <select
+                        name="course"
+                        defaultValue={
+                          editingMember?.course ||
+                          "B.Sc. Physical Science with Computer Science"
+                        }
+                        required
+                        className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all cursor-pointer"
+                      >
+                        <option value="B.Sc. Physical Science with Computer Science">
+                          B.Sc. Physical Science with Computer Science
+                        </option>
+                        <option value="B.Sc. Physical Science with Chemistry">
+                          B.Sc. Physical Science with Chemistry
+                        </option>
+                        <option value="B.Sc. Physical Science with Electronics">
+                          B.Sc. Physical Science with Electronics
+                        </option>
+                        <option value="B.Sc. Applied Physical Science with Industrial Chemistry">
+                          B.Sc. Applied Physical Science with Industrial
+                          Chemistry
+                        </option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">
+                        Academic Year / Status
+                      </label>
+                      <select
+                        name="year"
+                        defaultValue={editingMember?.year || "I Year"}
+                        required
+                        className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all cursor-pointer"
+                      >
+                        <option value="I Year">I Year</option>
+                        <option value="II Year">II Year</option>
+                        <option value="III Year">III Year</option>
+                        <option value="IV Year">IV Year</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-zinc-400 uppercase tracking-widest pl-2">
+                      LinkedIn URL
+                    </label>
+                    <input
+                      name="linkedin"
+                      defaultValue={editingMember?.linkedin}
+                      className="w-full px-6 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 focus:border-brand-600 outline-none transition-all"
+                      placeholder="https://linkedin.com/..."
+                    />
+                  </div>
+                  <button
+                    type="submit"
+                    className="w-full py-5 bg-zinc-900 text-white rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-brand-600 transition-all shadow-xl"
+                  >
+                    {editingMember ? "Update Profile" : "Add to Team"}
+                  </button>
                 </form>
-             </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </main>
     </div>
   );
