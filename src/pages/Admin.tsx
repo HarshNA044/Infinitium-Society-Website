@@ -487,6 +487,7 @@ export default function Admin_Page() {
     image: string;
     name: string;
     position: string;
+    height?: number;
   }
 
   const [uploadedSignatures, setUploadedSignatures] = useState<SignatureItem[]>(
@@ -505,12 +506,14 @@ export default function Admin_Page() {
           image: "",
           name: "Dr. John Doe",
           position: "President, Infinitium Society",
+          height: 45,
         },
         {
           id: "sig-2",
           image: "",
           name: "Dr. Jane Smith",
           position: "Vice President, Infinitium Society",
+          height: 45,
         },
       ];
     },
@@ -548,6 +551,7 @@ export default function Admin_Page() {
         image: "",
         name: "Holder Name",
         position: "Holder Position",
+        height: 45,
       },
     ]);
   };
@@ -684,7 +688,7 @@ export default function Admin_Page() {
       .map(
         (sig) => `
       <div class="signature-block">
-          ${sig.image ? `<img class="signature-img" src="${sig.image}" alt="Signature" />` : '<div style="height: 45px;"></div>'}
+          ${sig.image ? `<img class="signature-img" style="height: ${sig.height || 45}px;" src="${sig.image}" alt="Signature" />` : `<div style="height: ${sig.height || 45}px;"></div>`}
           <div class="signature-line">
               <p class="signer-name">${sig.name || ""}</p>
               <p class="signer-title">${(sig.position || "").replace(/\n/g, "<br>")}</p>
@@ -980,7 +984,6 @@ export default function Admin_Page() {
               }
 
               .signature-img {
-                  height: 45px;
                   max-width: 180px;
                   object-fit: contain;
                   margin-bottom: 5px;
@@ -5695,8 +5698,8 @@ export default function Admin_Page() {
                               />
                             </div>
 
-                            {/* Middle: Name and Position Inputs */}
-                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                            {/* Middle: Name, Position, and Size Inputs */}
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
                               <div className="space-y-1">
                                 <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest pl-1">
                                   Holder Name
@@ -5734,8 +5737,37 @@ export default function Admin_Page() {
                                     );
                                   }}
                                   placeholder="e.g. Convener, Infinitium"
-                                  className="w-full px-3 py-1.5 bg-white border border-zinc-200 rounded-lg text-xs font-bold text-slate-805 focus:border-cyan-500 outline-none"
+                                  className="w-full px-3 py-1.5 bg-white border border-zinc-205 rounded-lg text-xs font-bold text-slate-805 focus:border-cyan-500 outline-none"
                                 />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex justify-between items-center px-1">
+                                  <label className="text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                                    Sig Image Height
+                                  </label>
+                                  <span className="text-[8px] font-black text-cyan-600 font-mono">
+                                    {sig.height || 45}px
+                                  </span>
+                                </div>
+                                <div className="flex items-center h-8">
+                                  <input
+                                    type="range"
+                                    min="20"
+                                    max="120"
+                                    value={sig.height || 45}
+                                    onChange={(e) => {
+                                      const val = parseInt(e.target.value, 10);
+                                      setUploadedSignatures((prev) =>
+                                        prev.map((s) =>
+                                          s.id === sig.id
+                                            ? { ...s, height: val }
+                                            : s,
+                                        ),
+                                      );
+                                    }}
+                                    className="w-full accent-cyan-600 bg-zinc-200 h-1 rounded-lg cursor-pointer"
+                                  />
+                                </div>
                               </div>
                             </div>
 
