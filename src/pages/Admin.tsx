@@ -675,6 +675,44 @@ export default function Admin_Page() {
       }
     }
 
+    const formatEventDate = (dateStr: string): string => {
+      if (!dateStr) return "";
+      const yyyymmddRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
+      const match = dateStr.match(yyyymmddRegex);
+      const monthNames = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
+      if (match) {
+        const year = parseInt(match[1], 10);
+        const monthIndex = parseInt(match[2], 10) - 1;
+        const day = parseInt(match[3], 10);
+        if (monthIndex >= 0 && monthIndex < 12) {
+          return `${day} ${monthNames[monthIndex]} ${year}`;
+        }
+      }
+
+      const dateObj = new Date(dateStr);
+      if (!isNaN(dateObj.getTime())) {
+        const day = dateObj.getDate();
+        const month = monthNames[dateObj.getMonth()];
+        const year = dateObj.getFullYear();
+        return `${day} ${month} ${year}`;
+      }
+
+      return dateStr;
+    };
+
     // Define correct logo sources (with Firestore custom upload support & fallback to requested static URLs)
     const logoBase64 = firebaseLogos?.infinitium || INFINITIUM_LOGO_BASE64;
     const arsdLogoBase64 = firebaseLogos?.arsd || ARSD_LOGO_BASE64;
@@ -1063,7 +1101,7 @@ export default function Admin_Page() {
                   <p class="recognition-text">
                       of <span class="highlight">${student.course || "Course Title"}</span>, <span class="highlight">${yearStr}</span>, 
                       for their outstanding participation and achievement in the event 
-                      <span class="highlight" style="color: #c59b27;">${eventTitle || "Event Name"}</span> organized by the <span class="highlight">Infinitium Society</span>, held on <span class="highlight">${eventDate || "Event Date"}</span>.
+                      <span class="highlight" style="color: #c59b27;">${eventTitle || "Event Name"}</span> organised by <span class="highlight">INFINITIUM: Physical Science Society</span> held on <span class="highlight">${formatEventDate(eventDate)}</span>.
                   </p>
               </div>
 
