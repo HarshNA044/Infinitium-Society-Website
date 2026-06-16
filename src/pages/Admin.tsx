@@ -225,8 +225,8 @@ export default function Admin_Page() {
 
   // Database Daily Quota Usage Tracking State
   const [dbMetrics, setDbMetrics] = useState({
-    readsToday: 23150,
-    writesToday: 5120,
+    readsToday: 21570,
+    writesToday: 4850,
     readsLimit: 50000,
     writesLimit: 20000,
     lastResetDate: "",
@@ -256,7 +256,7 @@ export default function Admin_Page() {
         if (data.lastResetDate !== todayStr) {
           // New day! Reset metrics to active society dashboard baselines
           baseMetrics = {
-            readsToday: 21450,
+            readsToday: 21570,
             writesToday: 4850,
             readsLimit: 50000,
             writesLimit: 20000,
@@ -273,7 +273,7 @@ export default function Admin_Page() {
           };
         } else {
           baseMetrics = {
-            readsToday: data.readsToday ?? 21450,
+            readsToday: data.readsToday ?? 21570,
             writesToday: data.writesToday ?? 4850,
             readsLimit: data.readsLimit ?? 50000,
             writesLimit: data.writesLimit ?? 20000,
@@ -286,8 +286,8 @@ export default function Admin_Page() {
       } else {
         // Initial setup for the app database metrics
         baseMetrics = {
-          readsToday: 23150,
-          writesToday: 5120,
+          readsToday: 21570,
+          writesToday: 4850,
           readsLimit: 50000,
           writesLimit: 20000,
           lastResetDate: todayStr,
@@ -3166,21 +3166,21 @@ export default function Admin_Page() {
   return (
     <div className="min-h-screen bg-zinc-50 flex flex-col md:flex-row relative">
       {/* Mobile Sidebar Header */}
-      <div className="md:hidden bg-white border-b border-zinc-200 p-4 flex items-center justify-between sticky top-0 z-[60]">
-        <Link to="/" className="flex items-center gap-3">
-          <Logo className="w-10 h-10" />
+      <div className="md:hidden bg-white border-b border-zinc-200 py-2.5 px-4 flex items-center justify-between sticky top-0 z-[60]">
+        <Link to="/" className="flex items-center gap-2.5">
+          <Logo className="w-8 h-8" />
           <div>
             <h2 className="font-black text-sm uppercase tracking-tighter text-zinc-900 leading-none">
               INFINITIUM
             </h2>
-            <p className="text-[6px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1 hidden sm:block">
+            <p className="text-[6px] text-zinc-400 font-black uppercase tracking-[0.1em] mt-1.5 hidden sm:block">
               Society of Physical Sciences, ARSD College
             </p>
           </div>
         </Link>
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-2 bg-zinc-50 rounded-xl border border-zinc-100"
+          className="p-1.5 bg-zinc-50 rounded-lg border border-zinc-100"
         >
           {isSidebarOpen ? (
             <XCircle className="w-6 h-6 text-zinc-600" />
@@ -3299,23 +3299,23 @@ export default function Admin_Page() {
       </aside>
 
       {/* Main Area */}
-      <main className="flex-1 p-6 md:p-12 overflow-y-auto">
-        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-6">
+      <main className="flex-1 p-4 sm:p-6 md:p-8 lg:p-10 overflow-y-auto">
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 pb-4 border-b border-zinc-100 gap-4">
           <div>
             <div className="flex items-center gap-4 flex-wrap">
-              <h1 className="text-3xl font-bold text-zinc-900 capitalize">
+              <h1 className="text-2xl font-extrabold tracking-tight text-zinc-900 capitalize">
                 {activeTab === "members" ? "Team" : activeTab} Panel
               </h1>
               {(activeTab === "overview" || activeTab === "events") &&
                 isFetchingStats && (
-                  <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-extrabold text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-full animate-pulse select-none self-center">
+                  <div className="flex items-center gap-1.5 text-[9px] uppercase tracking-widest font-black text-cyan-600 bg-cyan-50 border border-cyan-100 px-2.5 py-1 rounded-full animate-pulse select-none self-center">
                     <span className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-ping" />
-                    Syncing Live Sheets Stats...
+                    Syncing Live Stats...
                   </div>
                 )}
             </div>
-            <p className="text-zinc-500 font-medium mt-1">
-              Manage INFINITIUM's backend operations.
+            <p className="text-zinc-400 text-xs font-semibold mt-1">
+              Manage INFINITIUM's society backend operations.
             </p>
           </div>
           <div className="flex gap-4">
@@ -3707,7 +3707,7 @@ export default function Admin_Page() {
             {/* Firebase Storage and Growth Monitor */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
               {/* Card 1: Storage Overview & Limits Dial */}
-              <div className="bento-card bg-white p-8 border border-zinc-100 shadow-sm flex flex-col justify-between">
+              <div className="bento-card bg-white p-4 sm:p-6 lg:p-8 border border-zinc-100 shadow-sm flex flex-col justify-between rounded-3xl">
                 <div>
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -3778,7 +3778,7 @@ export default function Admin_Page() {
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-50 bg-slate-50/50 -mx-8 -mb-8 p-6 rounded-b-3xl">
+                <div className="pt-4 border-t border-slate-50 bg-slate-50/50 -mx-4 sm:-mx-6 lg:-mx-8 -mb-4 sm:-mb-6 lg:-mb-8 p-4 sm:p-6 rounded-b-[22px] mt-4">
                   <div className="flex justify-between items-center">
                     <div>
                       <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider">
@@ -3801,7 +3801,7 @@ export default function Admin_Page() {
               {/* Card 2: Database Operation & Free Quota Usage Monitor */}
               <div
                 key="db-quota-monitor"
-                className="bento-card bg-white p-8 border border-zinc-100 shadow-sm md:col-span-2 flex flex-col justify-between min-h-[420px]"
+                className="bento-card bg-white p-4 sm:p-6 lg:p-8 border border-zinc-100 shadow-sm md:col-span-2 flex flex-col justify-between min-h-[360px] md:min-h-[420px] rounded-3xl"
               >
                 <div>
                   <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
@@ -4490,11 +4490,21 @@ export default function Admin_Page() {
                 className="w-full px-5 py-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-sm font-bold outline-none"
               >
                 <option value="">-- Choose Event to Check attendance --</option>
-                {events.map((e: any, idx: number) => (
-                  <option key={`checker-event-opt-${e.id || idx}`} value={e.id}>
-                    {e.title}
-                  </option>
-                ))}
+                {events
+                  .filter((e: any) => {
+                    if (!e.date) return false;
+                    const d = new Date();
+                    const yyyy = d.getFullYear();
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd = String(d.getDate()).padStart(2, '0');
+                    const todayStr = `${yyyy}-${mm}-${dd}`;
+                    return e.date >= todayStr;
+                  })
+                  .map((e: any, idx: number) => (
+                    <option key={`checker-event-opt-${e.id || idx}`} value={e.id}>
+                      {e.title}
+                    </option>
+                  ))}
               </select>
             </div>
 
