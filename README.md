@@ -1,4 +1,4 @@
-# INFINITIUM — Official Physical Sciences Society Portal
+# INFINITIUM — Society of Physical Sciences
 
 **Atma Ram Sanatan Dharma College, University of Delhi**
 
